@@ -6,6 +6,11 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>JMOS — Jeota Media Operating System</title>
 
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{{ asset('assets/img/jeota-logo.png') }}">
+  <link rel="shortcut icon" type="image/png" href="{{ asset('assets/img/jeota-logo.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('assets/img/jeota-logo.png') }}">
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +28,10 @@
   <script>
     (function() {
       try {
+        // Restore theme preference before paint to prevent flash
+        var theme = localStorage.getItem('jmos_theme') || 'light';
+        if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
         var token = localStorage.getItem('jmos_api_token');
         var user = localStorage.getItem('jmos_user');
         var lastAct = parseInt(localStorage.getItem('jmos_last_activity') || '0', 10);
@@ -103,7 +112,7 @@
       </a>
 
       <div class="grp">Live Data</div>
-      <a class="item" href="#" data-view="clients" data-perm="owner finance sales">
+      <a class="item" href="#" data-view="clients" data-perm="owner finance sales manager">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clients
       </a>
@@ -116,7 +125,7 @@
         Team Chat
         <span class="chat-nav-badge" id="sidebarChatBadge" style="display:none">0</span>
       </a>
-      <a class="item" href="#" data-view="pipeline" data-perm="owner finance sales">
+      <a class="item" href="#" data-view="pipeline" data-perm="owner finance sales manager">
         <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20v-11"/></svg>
         Pipeline
       </a>
@@ -147,16 +156,16 @@
         Production Budget
       </a>
 
-      <div class="grp" data-perm="owner finance">Setup</div>
-      <a class="item" href="#" data-view="people" data-perm="owner finance">
+      <div class="grp" data-perm="owner finance manager">Setup</div>
+      <a class="item" href="#" data-view="people" data-perm="owner finance manager">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>
         People
       </a>
-      <a class="item" href="#" data-view="services" data-perm="owner">
+      <a class="item" href="#" data-view="services" data-perm="owner manager">
         <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
         Services
       </a>
-      <a class="item" href="#" data-view="settings" data-perm="owner">
+      <a class="item" href="#" data-view="settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Settings
       </a>
@@ -185,10 +194,65 @@
           <input placeholder="Search clients, projects, invoices, tasks…">
         </div>
         <div class="spacer"></div>
-        <button type="button" class="icon-btn" title="Notifications">
-          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span class="ping"></span>
+        <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle dark mode" aria-label="Toggle dark mode" onclick="toggleTheme()">
+          <!-- Sun icon (shown in dark mode) -->
+          <svg class="theme-icon-light" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <!-- Moon icon (shown in light mode) -->
+          <svg class="theme-icon-dark" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
+        <div class="notif-dropdown-wrapper" id="notifDropdownWrapper">
+          <button type="button" class="icon-btn notif-bell-btn" id="notifBellBtn" title="Notifications" onclick="toggleNotificationPanel(event)" aria-label="Toggle Notifications">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="ping" id="notifPing" style="display:none"></span>
+            <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+          </button>
+
+          <!-- Notification Popover Panel anchored right at the bell -->
+          <div class="notif-popover-panel" id="notifPanel" role="region" aria-label="Notifications Panel">
+            <!-- Header -->
+            <div class="notif-panel-head">
+              <div class="notif-head-title">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <h3>Notifications</h3>
+                <span class="notif-unread-pill" id="notifModalUnreadPill">0 unread</span>
+              </div>
+              <button type="button" class="notif-head-close-btn" onclick="closeNotificationPanel()" title="Close notifications" aria-label="Close notifications">&times;</button>
+            </div>
+
+            <!-- Filter Tabs & Bulk Actions -->
+            <div class="notif-tabs-bar">
+              <div class="notif-segmented" role="tablist">
+                <button type="button" class="notif-tab-btn active" id="notifTabAll" onclick="filterNotifications('all')">
+                  All <span class="notif-tab-badge" id="notifBadgeAll">0</span>
+                </button>
+                <button type="button" class="notif-tab-btn" id="notifTabUnread" onclick="filterNotifications('unread')">
+                  Unread <span class="notif-tab-badge" id="notifBadgeUnread">0</span>
+                </button>
+                <button type="button" class="notif-tab-btn" id="notifTabRead" onclick="filterNotifications('read')">
+                  Read <span class="notif-tab-badge" id="notifBadgeRead">0</span>
+                </button>
+              </div>
+
+              <button type="button" class="notif-mark-all-btn" id="notifMarkAllReadBtn" onclick="markAllNotificationsRead()" title="Mark all notifications as read">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Mark all read
+              </button>
+            </div>
+
+            <!-- Notifications List -->
+            <div class="notif-list-container" id="notifItemsList">
+              <!-- Injected dynamically by JS -->
+            </div>
+
+            <!-- Footer -->
+            <div class="notif-panel-foot">
+              <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px">
+                <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
+                Live operational updates
+              </div>
+            </div>
+          </div>
+        </div>
         <button type="button" class="btn signout" id="signoutBtn">
           <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
           Sign out
@@ -265,6 +329,7 @@
   <script src="{{ asset('js/people.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/calendar.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/chat.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/notifications.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/settings.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/modals.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/app.js') }}?v={{ time() }}"></script>

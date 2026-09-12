@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: Services (Recipe Book)
      ========================================================================== -->
-<section class="view" data-view="services" hidden data-perm="owner">
+<section class="view" data-view="services" hidden data-perm="owner manager">
   <div class="page-head">
     <div>
       <h1 class="pt">Services</h1>

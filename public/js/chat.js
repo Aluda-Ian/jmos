@@ -9,8 +9,10 @@ const CHAT_STATE = {
   threads: [],
   teamMembers: [],
   messages: [],
+  stagedAttachment: null,
   pollTimer: null,
-  searchFilter: ''
+  searchFilter: '',
+  lastTotalUnread: null
 };
 
 // --------------------------------------------------------------------------
@@ -144,10 +146,15 @@ async function loadActiveThreadMessages(isBackground = false) {
     const res = await JMOS_API.get(`/chat/threads/${CHAT_STATE.activeThreadId}/messages`);
     if (res.status === 'success') {
       CHAT_STATE.activeThreadMeta = res.thread;
+      const prevLength = CHAT_STATE.messages.length;
       CHAT_STATE.messages = res.messages || [];
 
       updateActiveThreadHeader();
-      renderMessageList(isBackground);
+
+      // Only re-render if message count changed or not in background
+      if (!isBackground || CHAT_STATE.messages.length !== prevLength) {
+        renderMessageList(isBackground);
+      }
     }
   } catch (err) {
     console.warn('Messages load error:', err.message);
@@ -186,7 +193,7 @@ function renderMessageList(isBackground = false) {
   if (CHAT_STATE.messages.length === 0) {
     streamEl.innerHTML = `
       <div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px">
-        <div style="font-size:28px;margin-bottom:8px">💬</div>
+        <div style="margin-bottom:10px;display:flex;justify-content:center"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" style="color:var(--muted)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
         <b style="color:var(--ink)">No messages here yet</b>
         <p style="margin:4px 0 0">Be the first to say hello and start the conversation!</p>
       </div>
@@ -199,14 +206,38 @@ function renderMessageList(isBackground = false) {
     const bubbleClass = isMe ? 'bubble-me' : 'bubble-them';
     const alignClass = isMe ? 'msg-align-right' : 'msg-align-left';
 
+    let attachmentHtml = '';
+    if (m.attachment_url) {
+      const ext = (m.attachment_url.split('.').pop() || '').toLowerCase();
+      const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+
+      if (isImage) {
+        attachmentHtml = `
+          <a href="${escHtml(m.attachment_url)}" target="_blank" class="chat-img-attachment" title="Click to view full photo">
+            <img src="${escHtml(m.attachment_url)}" alt="${escHtml(m.attachment_name || 'Photo')}" loading="lazy">
+          </a>
+        `;
+      } else {
+        attachmentHtml = `
+          <div class="chat-file-attachment">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div class="chat-file-info">
+              <div class="name"><b>${escHtml(m.attachment_name || 'Document')}</b></div>
+              <a href="${escHtml(m.attachment_url)}" download="${escHtml(m.attachment_name || 'attachment')}" class="download-link" target="_blank">Download file ⤓</a>
+            </div>
+          </div>
+        `;
+      }
+    }
+
     return `
       <div class="chat-msg-row ${alignClass}">
         ${!isMe ? `<div class="chat-msg-av" style="background:${m.sender_color}">${escHtml(m.sender_initials)}</div>` : ''}
         <div class="chat-msg-content">
           ${!isMe ? `<div class="chat-msg-meta"><span class="chat-msg-author">${escHtml(m.sender_name)}</span> <span class="chat-msg-time">${escHtml(m.time_formatted)}</span></div>` : ''}
           <div class="chat-bubble ${bubbleClass}">
-            <div class="chat-bubble-text">${formatMessageText(m.message)}</div>
-            ${m.attachment_url ? `<div class="chat-attachment-chip"><a href="${escHtml(m.attachment_url)}" target="_blank">📎 ${escHtml(m.attachment_name || 'Attachment')}</a></div>` : ''}
+            ${m.message ? `<div class="chat-bubble-text">${formatMessageText(m.message)}</div>` : ''}
+            ${attachmentHtml}
           </div>
           ${isMe ? `<div class="chat-msg-meta right"><span class="chat-msg-time">${escHtml(m.time_formatted)}</span></div>` : ''}
         </div>
@@ -228,7 +259,106 @@ function formatMessageText(text) {
 }
 
 // --------------------------------------------------------------------------
-// 3. SEND MESSAGE
+// 3. ATTACHMENT & EMOJI PICKER HANDLING
+// --------------------------------------------------------------------------
+window.handleChatFileSelect = function(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name);
+  const previewUrl = isImage ? URL.createObjectURL(file) : '';
+
+  CHAT_STATE.stagedAttachment = {
+    file,
+    name: file.name,
+    size: formatFileSize(file.size),
+    isImage,
+    previewUrl,
+  };
+
+  renderStagedAttachment();
+  e.target.value = '';
+};
+
+function formatFileSize(bytes) {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function renderStagedAttachment() {
+  const stagingBar = document.getElementById('chatStagingBar');
+  const previewEl = document.getElementById('chatStagingPreview');
+  const nameEl = document.getElementById('chatStagingName');
+  const sizeEl = document.getElementById('chatStagingSize');
+
+  if (!stagingBar) return;
+
+  if (!CHAT_STATE.stagedAttachment) {
+    stagingBar.style.display = 'none';
+    return;
+  }
+
+  const att = CHAT_STATE.stagedAttachment;
+  stagingBar.style.display = 'flex';
+  if (nameEl) nameEl.textContent = att.name;
+  if (sizeEl) sizeEl.textContent = att.size;
+
+  if (previewEl) {
+    if (att.isImage && att.previewUrl) {
+      previewEl.innerHTML = `<img src="${att.previewUrl}" alt="Preview">`;
+    } else {
+      previewEl.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
+    }
+  }
+}
+
+window.clearChatAttachment = function() {
+  if (CHAT_STATE.stagedAttachment && CHAT_STATE.stagedAttachment.previewUrl) {
+    URL.revokeObjectURL(CHAT_STATE.stagedAttachment.previewUrl);
+  }
+  CHAT_STATE.stagedAttachment = null;
+  renderStagedAttachment();
+};
+
+window.toggleEmojiPicker = function(e) {
+  if (e) e.stopPropagation();
+  const picker = document.getElementById('chatEmojiPicker');
+  const btn = document.getElementById('chatEmojiBtn');
+  if (!picker) return;
+
+  const isOpen = picker.style.display === 'block';
+  if (isOpen) {
+    window.closeEmojiPicker();
+  } else {
+    picker.style.display = 'block';
+    if (btn) btn.classList.add('active');
+  }
+};
+
+window.closeEmojiPicker = function() {
+  const picker = document.getElementById('chatEmojiPicker');
+  const btn = document.getElementById('chatEmojiBtn');
+  if (picker) picker.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+};
+
+window.insertEmoji = function(emoji) {
+  const input = document.getElementById('chatMessageInput');
+  if (!input) return;
+
+  const start = input.selectionStart || 0;
+  const end = input.selectionEnd || 0;
+  const text = input.value;
+  input.value = text.substring(0, start) + emoji + text.substring(end);
+  input.selectionStart = input.selectionEnd = start + emoji.length;
+  input.focus();
+};
+
+// --------------------------------------------------------------------------
+// 4. SEND MESSAGE
 // --------------------------------------------------------------------------
 window.sendActiveChatMessage = async function() {
   const inputEl = document.getElementById('chatMessageInput');
@@ -237,27 +367,64 @@ window.sendActiveChatMessage = async function() {
   if (!inputEl || !CHAT_STATE.activeThreadId) return;
 
   const text = inputEl.value.trim();
-  if (!text) return;
+  const staged = CHAT_STATE.stagedAttachment;
 
-  inputEl.value = '';
-  inputEl.focus();
+  if (!text && !staged) return;
 
-  if (sendBtn) sendBtn.disabled = true;
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+  }
 
   try {
+    let attachmentName = null;
+    let attachmentUrl = null;
+
+    // Upload attachment if staged
+    if (staged && staged.file) {
+      const formData = new FormData();
+      formData.append('file', staged.file);
+
+      const uploadRes = await fetch('/api/chat/upload', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          ...(JMOS_STATE.apiToken ? { 'Authorization': `Bearer ${JMOS_STATE.apiToken}` } : {})
+        },
+        body: formData
+      });
+
+      const uploadJson = await uploadRes.json();
+      if (!uploadRes.ok || uploadJson.status !== 'success') {
+        throw new Error(uploadJson.message || 'File upload failed');
+      }
+
+      attachmentName = uploadJson.attachment_name;
+      attachmentUrl = uploadJson.attachment_url;
+    }
+
     const res = await JMOS_API.post(`/chat/threads/${CHAT_STATE.activeThreadId}/messages`, {
-      message: text
+      message: text,
+      attachment_name: attachmentName,
+      attachment_url: attachmentUrl
     });
 
     if (res.status === 'success' && res.message) {
       CHAT_STATE.messages.push(res.message);
       renderMessageList(false);
-      fetchChatData(); // Refresh unread and last message previews
+      inputEl.value = '';
+      clearChatAttachment();
+      closeEmojiPicker();
+      fetchChatData();
     }
   } catch (err) {
     showToast('Failed to Send', err.message, true);
   } finally {
-    if (sendBtn) sendBtn.disabled = false;
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = `<svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> Send`;
+    }
+    inputEl.focus();
   }
 };
 
@@ -326,6 +493,20 @@ async function updateGlobalChatBadge() {
           sidebarBadge.style.display = 'none';
         }
       }
+
+      // Seamless alert: if new chat arrives while user is on another view
+      const chatView = document.querySelector('.view[data-view="chat"]');
+      const isChatVisible = chatView && !chatView.hidden;
+
+      if (!isChatVisible && CHAT_STATE.lastTotalUnread !== null && unread > CHAT_STATE.lastTotalUnread) {
+        if (typeof showToast === 'function') {
+          showToast('New Chat Message', 'You have new unread messages in Team Chat');
+        }
+        if (typeof fetchNotifications === 'function') {
+          fetchNotifications();
+        }
+      }
+      CHAT_STATE.lastTotalUnread = unread;
     }
   } catch (err) {
     // Silent catch
@@ -350,6 +531,15 @@ function initChat() {
       const userId = directItem.getAttribute('data-direct-user');
       openDirectChatWith(userId);
       return;
+    }
+
+    // Dismiss emoji picker if clicked outside
+    const picker = document.getElementById('chatEmojiPicker');
+    const emojiBtn = document.getElementById('chatEmojiBtn');
+    if (picker && picker.style.display === 'block') {
+      if (!picker.contains(e.target) && !emojiBtn?.contains(e.target)) {
+        window.closeEmojiPicker();
+      }
     }
   });
 
@@ -376,7 +566,7 @@ function initChat() {
   // Initial fetch
   fetchChatData();
 
-  // Periodic polling timer (every 4 seconds for active thread messages + unread badges)
+  // Periodic polling timer (every 3 seconds for active thread messages + unread badges)
   if (!CHAT_STATE.pollTimer) {
     CHAT_STATE.pollTimer = setInterval(() => {
       const chatView = document.querySelector('.view[data-view="chat"]');
@@ -386,7 +576,7 @@ function initChat() {
         loadActiveThreadMessages(true);
       }
       updateGlobalChatBadge();
-    }, 4000);
+    }, 3000);
   }
 }
 

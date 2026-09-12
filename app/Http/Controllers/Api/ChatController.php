@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
 use App\Models\ChatMessage;
 use App\Models\ChatParticipant;
 use App\Models\ChatThread;
 use App\Models\User;
 use App\Services\NotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ChatController extends Controller
 {
@@ -55,70 +58,70 @@ class ChatController extends Controller
         $threads = ChatThread::whereHas('participants', function ($q) use ($user) {
             $q->where('user_id', $user->id);
         })
-        ->with(['participants.user', 'lastMessage.sender'])
-        ->get()
-        ->map(function ($thread) use ($user) {
-            $participant = $thread->participants->firstWhere('user_id', $user->id);
-            $lastReadAt = $participant ? $participant->last_read_at : null;
+            ->with(['participants.user', 'lastMessage.sender'])
+            ->get()
+            ->map(function ($thread) use ($user) {
+                $participant = $thread->participants->firstWhere('user_id', $user->id);
+                $lastReadAt = $participant ? $participant->last_read_at : null;
 
-            // Unread messages count
-            $unreadQuery = ChatMessage::where('thread_id', $thread->id)
-                ->where('sender_id', '!=', $user->id);
+                // Unread messages count
+                $unreadQuery = ChatMessage::where('thread_id', $thread->id)
+                    ->where('sender_id', '!=', $user->id);
 
-            if ($lastReadAt) {
-                $unreadQuery->where('created_at', '>', $lastReadAt);
-            }
-
-            $unreadCount = $unreadQuery->count();
-
-            // Thread display metadata
-            $title = $thread->title;
-            $subtitle = $thread->description;
-            $avatar = 'JM';
-            $color = '#C52523';
-            $otherUser = null;
-
-            if ($thread->type === 'direct') {
-                $otherParticipant = $thread->participants->firstWhere('user_id', '!=', $user->id);
-                if ($otherParticipant && $otherParticipant->user) {
-                    $otherUser = $otherParticipant->user;
-                    $title = $otherUser->name;
-                    $subtitle = $otherUser->title ?? $otherUser->role;
-                    $avatar = $otherUser->initials ?? substr($otherUser->name, 0, 2);
-                    $color = $otherUser->color ?? '#C52523';
+                if ($lastReadAt) {
+                    $unreadQuery->where('created_at', '>', $lastReadAt);
                 }
-            }
 
-            return [
-                'id' => $thread->id,
-                'type' => $thread->type,
-                'title' => $title,
-                'subtitle' => $subtitle,
-                'avatar' => $avatar,
-                'color' => $color,
-                'unread_count' => $unreadCount,
-                'last_message' => $thread->lastMessage ? [
-                    'message' => $thread->lastMessage->message,
-                    'sender_name' => $thread->lastMessage->sender ? $thread->lastMessage->sender->name : 'Team',
-                    'created_at' => $thread->lastMessage->created_at->toIso8601String(),
-                    'time_formatted' => $thread->lastMessage->created_at->diffForHumans(null, true, true),
-                ] : null,
-                'other_user' => $otherUser ? [
-                    'id' => $otherUser->id,
-                    'name' => $otherUser->name,
-                    'email' => $otherUser->email,
-                    'role' => $otherUser->role,
-                    'title' => $otherUser->title,
-                    'initials' => $otherUser->initials,
-                    'color' => $otherUser->color,
-                ] : null,
-                'updated_at' => $thread->updated_at,
-            ];
-        })
-        ->sortByDesc(function ($t) {
-            return $t['last_message']['created_at'] ?? $t['updated_at'];
-        })
-        ->values();
+                $unreadCount = $unreadQuery->count();
+
+                // Thread display metadata
+                $title = $thread->title;
+                $subtitle = $thread->description;
+                $avatar = 'JM';
+                $color = '#C52523';
+                $otherUser = null;
+
+                if ($thread->type === 'direct') {
+                    $otherParticipant = $thread->participants->firstWhere('user_id', '!=', $user->id);
+                    if ($otherParticipant && $otherParticipant->user) {
+                        $otherUser = $otherParticipant->user;
+                        $title = $otherUser->name;
+                        $subtitle = $otherUser->title ?? $otherUser->role;
+                        $avatar = $otherUser->initials ?? substr($otherUser->name, 0, 2);
+                        $color = $otherUser->color ?? '#C52523';
+                    }
+                }
+
+                return [
+                    'id' => $thread->id,
+                    'type' => $thread->type,
+                    'title' => $title,
+                    'subtitle' => $subtitle,
+                    'avatar' => $avatar,
+                    'color' => $color,
+                    'unread_count' => $unreadCount,
+                    'last_message' => $thread->lastMessage ? [
+                        'message' => $thread->lastMessage->message,
+                        'sender_name' => $thread->lastMessage->sender ? $thread->lastMessage->sender->name : 'Team',
+                        'created_at' => $thread->lastMessage->created_at->toIso8601String(),
+                        'time_formatted' => $thread->lastMessage->created_at->diffForHumans(null, true, true),
+                    ] : null,
+                    'other_user' => $otherUser ? [
+                        'id' => $otherUser->id,
+                        'name' => $otherUser->name,
+                        'email' => $otherUser->email,
+                        'role' => $otherUser->role,
+                        'title' => $otherUser->title,
+                        'initials' => $otherUser->initials,
+                        'color' => $otherUser->color,
+                    ] : null,
+                    'updated_at' => $thread->updated_at,
+                ];
+            })
+            ->sortByDesc(function ($t) {
+                return $t['last_message']['created_at'] ?? $t['updated_at'];
+            })
+            ->values();
 
         // Team directory list for direct messaging
         $allUsers = User::all()->map(function ($u) use ($user) {
@@ -160,7 +163,7 @@ class ChatController extends Controller
         ]);
 
         $user = $this->resolveUser($request);
-        $recipientId = (int)$validated['recipient_id'];
+        $recipientId = (int) $validated['recipient_id'];
 
         if ($user->id === $recipientId) {
             return response()->json([
@@ -179,7 +182,7 @@ class ChatController extends Controller
             })
             ->first();
 
-        if (!$thread) {
+        if (! $thread) {
             $thread = ChatThread::create([
                 'type' => 'direct',
                 'created_by' => $user->id,
@@ -221,8 +224,8 @@ class ChatController extends Controller
         $user = $this->resolveUser($request);
 
         $channelName = trim($validated['title']);
-        if (!str_starts_with($channelName, '#')) {
-            $channelName = '#' . ltrim($channelName, '#');
+        if (! str_starts_with($channelName, '#')) {
+            $channelName = '#'.ltrim($channelName, '#');
         }
 
         $thread = ChatThread::create([
@@ -233,7 +236,7 @@ class ChatController extends Controller
         ]);
 
         // Default to all users if no specific participants selected
-        $participantIds = !empty($validated['participant_ids']) 
+        $participantIds = ! empty($validated['participant_ids'])
             ? array_unique(array_merge([$user->id], $validated['participant_ids']))
             : User::pluck('id')->toArray();
 
@@ -254,11 +257,26 @@ class ChatController extends Controller
     }
 
     /**
+    /**
      * Get message history for a specific thread.
      */
-    public function getMessages(ChatThread $thread, Request $request)
+    public function getMessages(ChatThread $thread, Request $request): JsonResponse
     {
         $user = $this->resolveUser($request);
+
+        // Direct messages are strictly restricted to involved participants
+        if ($thread->type === 'direct') {
+            $isParticipant = ChatParticipant::where('thread_id', $thread->id)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (! $isParticipant) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. Direct messages are private to involved participants.',
+                ], 403);
+            }
+        }
 
         // Auto join user if thread is a group channel
         $participant = ChatParticipant::firstOrCreate(
@@ -303,17 +321,45 @@ class ChatController extends Controller
     }
 
     /**
-     * Send a new message and trigger email notifications for first-time contacts.
+     * Send a new message and trigger email & in-app notifications.
      */
-    public function sendMessage(ChatThread $thread, Request $request)
+    public function sendMessage(ChatThread $thread, Request $request): JsonResponse
     {
+        $user = $this->resolveUser($request);
+
+        // Direct messages are strictly restricted to involved participants
+        if ($thread->type === 'direct') {
+            $isParticipant = ChatParticipant::where('thread_id', $thread->id)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (! $isParticipant) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. Direct messages are private to involved participants.',
+                ], 403);
+            }
+        }
+
         $validated = $request->validate([
-            'message' => 'required|string',
+            'message' => 'nullable|string',
             'attachment_name' => 'nullable|string|max:255',
             'attachment_url' => 'nullable|string|max:500',
         ]);
 
-        $user = $this->resolveUser($request);
+        $messageText = trim($validated['message'] ?? '');
+        if ($messageText === '' && empty($validated['attachment_url'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Message text or attachment is required.',
+            ], 422);
+        }
+
+        if ($messageText === '') {
+            $ext = pathinfo($validated['attachment_url'] ?? '', PATHINFO_EXTENSION);
+            $isImg = in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+            $messageText = $isImg ? '📷 Photo' : '📎 '.($validated['attachment_name'] ?? 'Attachment');
+        }
 
         // Ensure user is participant
         ChatParticipant::firstOrCreate(
@@ -324,7 +370,7 @@ class ChatController extends Controller
         $chatMsg = ChatMessage::create([
             'thread_id' => $thread->id,
             'sender_id' => $user->id,
-            'message' => $validated['message'],
+            'message' => $messageText,
             'attachment_name' => $validated['attachment_name'] ?? null,
             'attachment_url' => $validated['attachment_url'] ?? null,
         ]);
@@ -337,29 +383,41 @@ class ChatController extends Controller
             ->where('user_id', $user->id)
             ->update(['last_read_at' => now()]);
 
-        // Initial Chat Email Notifications
-        // Send email to participants who have not yet received an initial chat notification for this thread
+        // Seamless In-App & Email Notifications for Recipients
         $recipients = ChatParticipant::where('thread_id', $thread->id)
             ->where('user_id', '!=', $user->id)
             ->with('user')
             ->get();
 
         foreach ($recipients as $recipientPart) {
-            if (!$recipientPart->notified_initial_email && $recipientPart->user && $recipientPart->user->email) {
+            if ($recipientPart->user) {
                 $recipientUser = $recipientPart->user;
                 $threadTitle = $thread->type === 'direct' ? "1-on-1 Direct Chat with {$user->name}" : ($thread->title ?? 'Team Channel');
+                $notifTitle = $thread->type === 'direct' ? "Message from {$user->name}" : "{$user->name} in {$thread->title}";
 
-                NotificationService::sendNewChatMessage([
-                    'recipientName' => $recipientUser->name,
-                    'senderName' => $user->name,
-                    'senderRole' => $user->title ?? $user->role,
-                    'threadTitle' => $threadTitle,
-                    'isDirect' => $thread->type === 'direct',
-                    'messageText' => $validated['message'],
-                    'sentAt' => now()->format('M j, Y H:i'),
-                ], $recipientUser->email);
+                // 1. In-app notification record
+                AppNotification::create([
+                    'user_id' => $recipientUser->id,
+                    'type' => 'chat',
+                    'title' => $notifTitle,
+                    'message' => Str::limit($chatMsg->message, 85),
+                    'link' => 'chat',
+                ]);
 
-                $recipientPart->update(['notified_initial_email' => true]);
+                // 2. Initial email notification for first-time contacts
+                if (! $recipientPart->notified_initial_email && $recipientUser->email) {
+                    NotificationService::sendNewChatMessage([
+                        'recipientName' => $recipientUser->name,
+                        'senderName' => $user->name,
+                        'senderRole' => $user->title ?? $user->role,
+                        'threadTitle' => $threadTitle,
+                        'isDirect' => $thread->type === 'direct',
+                        'messageText' => $chatMsg->message,
+                        'sentAt' => now()->format('M j, Y H:i'),
+                    ], $recipientUser->email);
+
+                    $recipientPart->update(['notified_initial_email' => true]);
+                }
             }
         }
 
@@ -384,11 +442,59 @@ class ChatController extends Controller
     }
 
     /**
+     * Upload an attachment file (documents, images, or camera snapshots).
+     */
+    public function uploadAttachment(Request $request): JsonResponse
+    {
+        $request->validate([
+            'file' => 'required|file|max:25600', // 25MB max
+        ]);
+
+        $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mime = $file->getMimeType();
+
+        $isImage = str_starts_with($mime, 'image/') || in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
+
+        $uploadDir = public_path('uploads/chat');
+        if (! is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $safeName = uniqid('chat_', true).'.'.($extension ?: 'bin');
+        $file->move($uploadDir, $safeName);
+
+        $url = asset('uploads/chat/'.$safeName);
+
+        return response()->json([
+            'status' => 'success',
+            'attachment_name' => $originalName,
+            'attachment_url' => $url,
+            'is_image' => $isImage,
+            'size' => $file->getSize() ?: 0,
+        ], 201);
+    }
+
+    /**
      * Mark thread as read.
      */
-    public function markRead(ChatThread $thread, Request $request)
+    public function markRead(ChatThread $thread, Request $request): JsonResponse
     {
         $user = $this->resolveUser($request);
+
+        if ($thread->type === 'direct') {
+            $isParticipant = ChatParticipant::where('thread_id', $thread->id)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (! $isParticipant) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized.',
+                ], 403);
+            }
+        }
 
         ChatParticipant::where('thread_id', $thread->id)
             ->where('user_id', $user->id)

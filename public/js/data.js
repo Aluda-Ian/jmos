@@ -129,6 +129,30 @@ const JMOS_API = {
     return this.req(endpoint, { method: 'DELETE' });
   },
 
+  upload(endpoint, formData) {
+    const headers = { 'Accept': 'application/json' };
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+    if (JMOS_STATE.apiToken) headers['Authorization'] = 'Bearer ' + JMOS_STATE.apiToken;
+
+    const url = endpoint.startsWith('http') ? endpoint : (this.baseUrl + (endpoint.startsWith('/') ? '' : '/') + endpoint);
+    return fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData
+    }).then(async (res) => {
+      let json = null;
+      try {
+        json = await res.json();
+      } catch (_) {}
+      if (!res.ok) {
+        let errMsg = (json && json.message) || ('Upload failed (' + res.status + ')');
+        throw new Error(errMsg);
+      }
+      return json;
+    });
+  },
+
   // Pull all database records in parallel
   async fetchAll() {
     try {
@@ -168,6 +192,14 @@ const JMOS_API = {
       if (finance && finance.status === 'success') {
         JMOS_STATE.finance = finance;
         JMOS_STATE.broughtForward = finance.brought_forward;
+      }
+
+      if (typeof fetchNotifications === 'function') {
+        fetchNotifications();
+      }
+
+      if (typeof fetchCalendarEvents === 'function') {
+        await fetchCalendarEvents();
       }
 
       return true;

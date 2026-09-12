@@ -42,6 +42,9 @@ class AuthController extends Controller
                 'pay' => $user->pay,
                 'color' => $user->color,
                 'initials' => $user->initials,
+                'google_calendar_email' => $user->google_calendar_email,
+                'google_calendar_status' => $user->google_calendar_status,
+                'google_calendar_synced_at' => $user->google_calendar_synced_at?->toIso8601String(),
             ],
         ]);
     }
@@ -62,6 +65,9 @@ class AuthController extends Controller
                 'pay' => $user->pay,
                 'color' => $user->color,
                 'initials' => $user->initials,
+                'google_calendar_email' => $user->google_calendar_email,
+                'google_calendar_status' => $user->google_calendar_status,
+                'google_calendar_synced_at' => $user->google_calendar_synced_at?->toIso8601String(),
             ],
         ]);
     }

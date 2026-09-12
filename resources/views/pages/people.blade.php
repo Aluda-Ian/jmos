@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: People (Team & Access Management)
      ========================================================================== -->
-<section class="view" data-view="people" hidden data-perm="owner finance">
+<section class="view" data-view="people" hidden data-perm="owner finance manager">
   <div class="page-head">
     <div>
       <h1 class="pt">People</h1>

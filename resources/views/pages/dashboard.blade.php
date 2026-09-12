@@ -1,3 +1,19 @@
+@php
+  $hour = (int) now()->format('H');
+  if ($hour >= 4 && $hour < 12) {
+      $greeting = 'Good morning';
+      $briefTag = 'Your morning brief';
+  } elseif ($hour >= 12 && $hour < 17) {
+      $greeting = 'Good afternoon';
+      $briefTag = 'Your afternoon brief';
+  } elseif ($hour >= 17 && $hour < 22) {
+      $greeting = 'Good evening';
+      $briefTag = 'Your evening brief';
+  } else {
+      $greeting = 'Good evening';
+      $briefTag = 'Your late-night brief';
+  }
+@endphp
 <!-- ==========================================================================
      JMOS — View: Dashboard
      ========================================================================== -->
@@ -5,7 +21,7 @@
   <!-- Page Header -->
   <div class="page-head">
     <div>
-      <h1 class="pt" id="greetName">Good morning.</h1>
+      <h1 class="pt" id="greetName">{{ $greeting }}.</h1>
       <p id="dashSubtitle">Here's where Jeota stands today.</p>
     </div>
     <div class="head-actions">
@@ -15,9 +31,9 @@
     </div>
   </div>
 
-  <!-- Morning Brief Hero -->
+  <!-- Operations Brief Hero -->
   <div class="brief">
-    <div class="tag"><span class="d"></span>Your morning brief</div>
+    <div class="tag" id="dashBriefTag"><span class="d"></span><span id="briefTagText">{{ $briefTag }}</span></div>
     <h2 id="briefHeadline">Live system status &amp; operations</h2>
     <p id="briefBody">Loading your operations brief…</p>
     <div class="drip" style="left:56px;height:15px"></div>
@@ -121,17 +137,17 @@
     <!-- Operations & Schedule Calendar Widget -->
     <div class="card" style="align-self:start">
       <div class="card-h">
-        <div style="display:flex;align-items:center;gap:10px">
-          <h3 style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600">Operations Calendar</h3>
-          <span class="badge" style="background:var(--amber-soft);color:var(--amber);font-size:10.5px">Google Calendar</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h3 style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;white-space:nowrap;margin:0">Operations Calendar</h3>
+          <span class="badge" style="background:var(--amber-soft);color:var(--amber);font-size:11px;white-space:nowrap;flex-shrink:0">Google Calendar</span>
         </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <div class="cal-nav-group" style="display:flex;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px 6px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="cal-nav-group" style="display:flex;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px 6px;white-space:nowrap;flex-shrink:0">
             <button type="button" class="icon-btn-sm" id="calPrevBtn" title="Previous Month" style="padding:3px 6px;cursor:pointer">&lsaquo;</button>
-            <span id="calMonthLabel" style="font-size:12px;font-weight:600;padding:0 6px;min-width:110px;text-align:center">September 2026</span>
+            <span id="calMonthLabel" style="font-size:12px;font-weight:600;padding:0 6px;min-width:110px;text-align:center;white-space:nowrap">September 2026</span>
             <button type="button" class="icon-btn-sm" id="calNextBtn" title="Next Month" style="padding:3px 6px;cursor:pointer">&rsaquo;</button>
           </div>
-          <button type="button" class="btn primary" id="dashScheduleEventBtn" onclick="openModal('eventModal')" data-modal-open="eventModal" style="padding:6px 11px;font-size:12px">
+          <button type="button" class="btn primary" id="dashScheduleEventBtn" onclick="openModal('eventModal')" data-modal-open="eventModal" style="padding:6px 13px;font-size:12px;white-space:nowrap;flex-shrink:0">
             <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Book Event
           </button>
         </div>

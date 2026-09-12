@@ -66,6 +66,54 @@
     </div>
   </div>
 
+  <!-- Connect Gava: KRA Tax, Direct Expenses & Income Tracking Card -->
+  <div class="card" style="margin-top:17px;padding:20px;border-left:4px solid var(--red)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(197,37,35,0.1);color:var(--red);display:grid;place-items:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 10v11M9 10v11M15 10v11M19 10v11M12 2L2 7h20L12 2z"/></svg>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h3 style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;margin:0">Connect Gava · KRA eTIMS &amp; Tax Compliance</h3>
+            <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:10.5px">PIN: P051782390X (Active)</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Live KRA tracking: direct expenses ETR deductions vs invoice income output VAT.</p>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" class="btn" onclick="openKraTaxReconciliation()" style="font-size:11.5px;padding:6px 12px">
+          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Audit Sync with Gava
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 Tax Metric KPIs -->
+    <div class="kpis" style="grid-template-columns:repeat(4, 1fr);gap:12px">
+      <div class="kpi" style="padding:14px">
+        <div class="lbl">Gross Invoiced Income</div>
+        <div class="val" id="kraGrossInvoiced" style="font-size:17px">KES 0</div>
+        <div class="sub">100% recorded to eTIMS</div>
+      </div>
+      <div class="kpi" style="padding:14px">
+        <div class="lbl">Output VAT (16%)</div>
+        <div class="val" id="kraOutputVat" style="color:var(--amber);font-size:17px">KES 0</div>
+        <div class="sub">Collected from clients</div>
+      </div>
+      <div class="kpi" style="padding:14px">
+        <div class="lbl">Direct Expenses (ETR Verified)</div>
+        <div class="val" id="kraDirectExpenses" style="color:var(--ink);font-size:17px">KES 0</div>
+        <div class="sub" id="kraInputVatClaim">Claimable VAT: KES 0</div>
+      </div>
+      <div class="kpi" style="padding:14px">
+        <div class="lbl">Net Tax Obligation</div>
+        <div class="val" id="kraNetTax" style="color:var(--green);font-size:17px">KES 0</div>
+        <div class="sub">VAT Output − Input Claim</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Recent Activity / Ledger Table -->
   <div class="tablecard">
     <div class="card-h">

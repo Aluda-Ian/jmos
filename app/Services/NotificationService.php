@@ -13,21 +13,33 @@ use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
-    public static function applySmtpSettings(): void
+    /**
+     * Apply runtime SMTP configuration from system settings or explicit overrides.
+     *
+     * @param  array<string, mixed>|null  $overrides
+     */
+    public static function applySmtpSettings(?array $overrides = null): void
     {
-        $host = SystemSetting::getVal('mail_host');
-        $port = SystemSetting::getVal('mail_port');
-        $username = SystemSetting::getVal('mail_username');
-        $password = SystemSetting::getVal('mail_password');
-        $encryption = SystemSetting::getVal('mail_encryption');
-        $fromAddress = SystemSetting::getVal('mail_from_address');
-        $fromName = SystemSetting::getVal('mail_from_name');
+        $host = $overrides['mail_host'] ?? SystemSetting::getVal('mail_host', config('mail.mailers.smtp.host'));
+        $port = $overrides['mail_port'] ?? SystemSetting::getVal('mail_port', config('mail.mailers.smtp.port', 587));
+        $username = $overrides['mail_username'] ?? SystemSetting::getVal('mail_username', config('mail.mailers.smtp.username'));
+
+        $password = null;
+        if (isset($overrides['mail_password']) && $overrides['mail_password'] !== '' && $overrides['mail_password'] !== '••••••••') {
+            $password = $overrides['mail_password'];
+        } else {
+            $password = SystemSetting::getVal('mail_password', config('mail.mailers.smtp.password'));
+        }
+
+        $encryption = $overrides['mail_encryption'] ?? SystemSetting::getVal('mail_encryption', config('mail.mailers.smtp.encryption', 'tls'));
+        $fromAddress = $overrides['mail_from_address'] ?? SystemSetting::getVal('mail_from_address', config('mail.from.address'));
+        $fromName = $overrides['mail_from_name'] ?? SystemSetting::getVal('mail_from_name', config('mail.from.name'));
 
         if ($host) {
             Config::set('mail.mailers.smtp.host', $host);
         }
         if ($port) {
-            Config::set('mail.mailers.smtp.port', $port);
+            Config::set('mail.mailers.smtp.port', (int) $port);
         }
         if ($username) {
             Config::set('mail.mailers.smtp.username', $username);
@@ -37,9 +49,14 @@ class NotificationService
         }
         if ($encryption) {
             Config::set('mail.mailers.smtp.encryption', $encryption === 'none' ? null : $encryption);
+            Config::set('mail.mailers.smtp.scheme', $encryption === 'ssl' ? 'smtps' : null);
         }
         if ($fromAddress) {
             Config::set('mail.from.address', $fromAddress);
+            if (str_contains($fromAddress, '@')) {
+                $ehloDomain = substr(strrchr($fromAddress, '@'), 1);
+                Config::set('mail.mailers.smtp.local_domain', $ehloDomain);
+            }
         }
         if ($fromName) {
             Config::set('mail.from.name', $fromName);

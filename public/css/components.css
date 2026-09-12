@@ -12,10 +12,28 @@
   font-weight: 500;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: border-color .15s, background .15s, color .15s;
   cursor: pointer;
   text-decoration: none;
+}
+
+/* Generic Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .btn svg {
@@ -174,6 +192,19 @@
   gap: 17px;
 }
 
+/* When only one card is visible or displayed */
+.cols > .card:only-child,
+.cols:has(> .card[style*="display: none"]:nth-child(2)) > .card:first-child,
+.cols:has(> .card[style*="display: none"]:first-child) > .card:nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .cols {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -187,6 +218,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 15px 17px 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .card-h h3 {
@@ -518,6 +551,10 @@ tr:last-child td {
 
 tbody tr:hover {
   background: #FCFBFA;
+}
+
+[data-theme="dark"] tbody tr:hover {
+  background: var(--panel-2);
 }
 
 td .cn {

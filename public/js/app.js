@@ -10,7 +10,19 @@ function renderDashboard() {
   const tasks = JMOS_STATE.tasks || [];
   const users = JMOS_STATE.users || [];
 
-  // Morning Brief
+  // Time-Bound Greeting and Operations Brief
+  const greetName = document.getElementById('greetName');
+  if (greetName && JMOS_STATE.currentUser) {
+    const greeting = typeof getTimeBoundGreeting === 'function' ? getTimeBoundGreeting() : 'Good day';
+    const firstName = JMOS_STATE.currentUser.name ? JMOS_STATE.currentUser.name.split(' ')[0] : 'there';
+    greetName.textContent = `${greeting}, ${firstName}.`;
+  }
+
+  const briefTagText = document.getElementById('briefTagText');
+  if (briefTagText && typeof getTimeBoundBriefTag === 'function') {
+    briefTagText.textContent = getTimeBoundBriefTag();
+  }
+
   const overdueInvs = invs.filter(v => (v.status || '').toLowerCase() === 'overdue');
   const openDeals = pipe.filter(d => d.stage !== 'won');
   const briefHeadline = document.getElementById('briefHeadline');
@@ -88,11 +100,17 @@ function renderDashboard() {
     if (dashProjectsCount) dashProjectsCount.textContent = pList.length;
     if (pList.length) {
       dashProjectsList.innerHTML = pList.slice(0, 4).map(p => {
-        const pct = p.progress_pct || 60;
-        const isGreen = (p.status || '').toLowerCase().includes('track') || (p.status || '').toLowerCase().includes('delivering');
-        const colorVar = isGreen ? 'var(--green)' : 'var(--amber)';
+        const pTasks = (p.tasks && Array.isArray(p.tasks) && p.tasks.length)
+          ? p.tasks
+          : ((JMOS_STATE.tasks && Array.isArray(JMOS_STATE.tasks)) ? JMOS_STATE.tasks.filter(t => t.project_id === p.id) : []);
+        const totalTasks = pTasks.length;
+        const doneTasks = pTasks.filter(t => t.stage === 'done').length;
+        const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : (Number(p.progress_pct) || 0);
+
+        const isGreen = pct === 100 || (p.status || '').toLowerCase().includes('track') || (p.status || '').toLowerCase().includes('delivering');
+        const colorVar = isGreen ? 'var(--green)' : (pct > 0 ? 'var(--amber)' : 'var(--muted)');
         return `
-          <div class="prow">
+          <div class="prow" onclick="window.openProjectWorkspace && window.openProjectWorkspace(${p.id})" style="cursor:pointer" title="Open project workspace">
             <div class="top"><span class="name">${escHtml(p.project_name)}</span><span class="due">due ${escHtml(p.deadline || 'Soon')}</span></div>
             <div class="meta">
               <div class="bar"><i style="width:${pct}%;background:${colorVar}"></i></div>
@@ -195,10 +213,11 @@ function renderPipeline() {
       const winBtn = st.key !== 'won' ? `<button class="linkbtn" style="font-size:11px;margin-top:6px" data-win-deal-id="${d.id}">Win deal →</button>` : '';
 
       return `
-        <div class="tcard" ${style}>
+        <div class="tcard" ${style} data-deal-id="${d.id}" title="Click to view & move stage">
           <div class="tn">${escHtml(d.title)}</div>
-          <div class="tf">
+          <div class="tf" style="display:flex;align-items:center;justify-content:space-between">
             <span class="mono" ${valStyle}>${fmt(d.value)}</span>
+            ${d.client_name ? `<span style="font-size:10px;color:var(--muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(d.client_name)}</span>` : ''}
           </div>
           ${winBtn}
         </div>
@@ -241,8 +260,12 @@ function renderTasks() {
       else if (st.key === 'in_progress') nextStageBtn = `<button class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="review_internal">Submit review →</button>`;
       else if (st.key === 'review_internal') nextStageBtn = `<button class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="done">Mark done ✓</button>`;
 
+      const proj = t.project || (t.project_id && JMOS_STATE.projects ? JMOS_STATE.projects.find(p => p.id === t.project_id) : null);
+      const projBadge = proj ? `<div style="margin-bottom:6px"><span class="badge" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(197,37,35,0.08);color:var(--red);font-weight:600;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Attached to ${escHtml(proj.project_name)}">${escHtml(proj.project_name)}</span></div>` : '';
+
       return `
         <div class="tcard">
+          ${projBadge}
           <div class="tn">${escHtml(t.title)}</div>
           <div class="tf">
             <span class="av" style="background:${color}">${escHtml(ini)}</span>
@@ -358,6 +381,160 @@ document.addEventListener('click', async (e) => {
 
   if (e.target.closest('#dashQuickActionBtn') || e.target.closest('#quickAddDeal')) {
     openModal('dealModal');
+  }
+
+  // Pipeline Kanban card click -> open deal detail modal
+  const dealCard = e.target.closest('.tcard[data-deal-id]');
+  if (dealCard && !e.target.closest('[data-win-deal-id]')) {
+    const dealId = dealCard.getAttribute('data-deal-id');
+    window.openDealDetailModal(dealId);
+  }
+
+  // Pipeline stage stepper click in dealDetailModal -> immediate stage move
+  const stageStepBtn = e.target.closest('#ddStageStepper .stage-step-btn');
+  if (stageStepBtn) {
+    const newStage = stageStepBtn.getAttribute('data-stage');
+    const dealId = document.getElementById('ddDealId')?.value;
+    if (!dealId || !newStage) return;
+
+    if (newStage === 'won') {
+      closeModal('dealDetailModal');
+      triggerWinDeal(dealId);
+      return;
+    }
+
+    try {
+      stageStepBtn.disabled = true;
+      await JMOS_API.put(`/deals/${dealId}`, { stage: newStage });
+      document.getElementById('ddActiveStage').value = newStage;
+      const stageBadge = document.getElementById('ddCurrentStageBadge');
+      if (stageBadge) stageBadge.textContent = 'Stage: ' + newStage.toUpperCase();
+      window.updateDealStepperActiveState(newStage);
+
+      showToast('Stage Updated', `Moved deal to ${newStage.charAt(0).toUpperCase() + newStage.slice(1)}`);
+      
+      // Update local state and re-render board
+      const deal = (JMOS_STATE.pipeline || []).find(d => String(d.id) === String(dealId));
+      if (deal) deal.stage = newStage;
+      renderPipeline();
+    } catch (err) {
+      showToast('Error', err.message, true);
+    } finally {
+      stageStepBtn.disabled = false;
+    }
+  }
+});
+
+// Deal Detail Modal Controller
+window.openDealDetailModal = function(dealId) {
+  const deals = JMOS_STATE.pipeline || [];
+  const deal = deals.find(d => String(d.id) === String(dealId));
+  if (!deal) return;
+
+  const idEl = document.getElementById('ddDealId');
+  const stageEl = document.getElementById('ddActiveStage');
+  const titleEl = document.getElementById('ddTitle');
+  const clientEl = document.getElementById('ddClient');
+  const valEl = document.getElementById('ddValue');
+  const notesEl = document.getElementById('ddNotes');
+  const titleHeader = document.getElementById('dealDetailTitle');
+  const valBadge = document.getElementById('ddValueBadge');
+  const stageBadge = document.getElementById('ddCurrentStageBadge');
+
+  if (idEl) idEl.value = deal.id;
+  if (stageEl) stageEl.value = deal.stage || 'lead';
+  if (titleEl) titleEl.value = deal.title || '';
+  if (clientEl) clientEl.value = deal.client_name || '';
+  if (valEl) valEl.value = deal.value || '';
+  if (notesEl) notesEl.value = deal.meta_text || '';
+
+  if (titleHeader) titleHeader.textContent = deal.title || 'Deal Details';
+  if (valBadge) valBadge.textContent = fmt(deal.value);
+  if (stageBadge) stageBadge.textContent = 'Stage: ' + (deal.stage || 'lead').toUpperCase();
+
+  window.updateDealStepperActiveState(deal.stage || 'lead');
+  openModal('dealDetailModal');
+};
+
+window.updateDealStepperActiveState = function(activeStage) {
+  document.querySelectorAll('#ddStageStepper .stage-step-btn').forEach(btn => {
+    if (btn.getAttribute('data-stage') === activeStage) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+};
+
+// Save Deal Changes from Modal
+document.getElementById('ddSaveBtn')?.addEventListener('click', async () => {
+  const dealId = document.getElementById('ddDealId')?.value;
+  const title = document.getElementById('ddTitle')?.value.trim();
+  const client_name = document.getElementById('ddClient')?.value.trim();
+  const value = parseFloat(document.getElementById('ddValue')?.value) || 0;
+  const meta_text = document.getElementById('ddNotes')?.value.trim();
+
+  if (!title || !client_name) {
+    showToast('Validation Error', 'Deal Title and Client are required', true);
+    return;
+  }
+
+  try {
+    const saveBtn = document.getElementById('ddSaveBtn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    await JMOS_API.put(`/deals/${dealId}`, {
+      title,
+      client_name,
+      value,
+      meta_text
+    });
+
+    showToast('Deal Updated', 'Changes saved to pipeline');
+    closeModal('dealDetailModal');
+
+    // Refresh state and pipeline
+    const deals = await JMOS_API.get('/deals');
+    if (Array.isArray(deals)) {
+      JMOS_STATE.pipeline = deals;
+      renderPipeline();
+    }
+  } catch (err) {
+    showToast('Error', err.message, true);
+  } finally {
+    const saveBtn = document.getElementById('ddSaveBtn');
+    if (saveBtn) saveBtn.disabled = false;
+  }
+});
+
+// Delete Deal from Pipeline
+document.getElementById('ddDeleteBtn')?.addEventListener('click', async () => {
+  const dealId = document.getElementById('ddDealId')?.value;
+  const title = document.getElementById('ddTitle')?.value || 'this deal';
+
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'Delete Pipeline Deal?',
+        message: `Are you sure you want to delete deal <b>${title}</b>? This action cannot be undone.`,
+        confirmText: 'Delete Deal',
+        isDanger: true
+      })
+    : confirm(`Delete deal "${title}"?`);
+
+  if (confirmed) {
+    try {
+      await JMOS_API.delete(`/deals/${dealId}`);
+      showToast('Deal Deleted', `"${title}" removed from pipeline`);
+      closeModal('dealDetailModal');
+
+      const deals = await JMOS_API.get('/deals');
+      if (Array.isArray(deals)) {
+        JMOS_STATE.pipeline = deals;
+        renderPipeline();
+      }
+    } catch (err) {
+      showToast('Error', err.message, true);
+    }
   }
 });
 

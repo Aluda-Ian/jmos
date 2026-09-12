@@ -63,6 +63,8 @@ class SettingsController extends Controller
             SystemSetting::setVal($key, $val, $group, $isSecret);
         }
 
+        NotificationService::applySmtpSettings();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Settings saved successfully.',
@@ -71,10 +73,43 @@ class SettingsController extends Controller
 
     public function testEmail(Request $request): JsonResponse
     {
-        $recipient = $request->input('recipient', 'jmos@jeotamedia.co.ke');
+        $recipient = trim((string) $request->input('recipient', 'jmos@jeotamedia.co.ke'));
+        if (empty($recipient) || ! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            $recipient = 'jmos@jeotamedia.co.ke';
+        }
+
         $template = $request->input('template', 'general'); // general, task, meeting, invoice, deal
 
-        NotificationService::applySmtpSettings();
+        // Live test overrides from form if submitted
+        $overrides = [];
+        if ($request->filled('mail_host')) {
+            $overrides['mail_host'] = trim((string) $request->input('mail_host'));
+        }
+        if ($request->filled('mail_port')) {
+            $overrides['mail_port'] = (int) $request->input('mail_port');
+        }
+        if ($request->filled('mail_username')) {
+            $overrides['mail_username'] = trim((string) $request->input('mail_username'));
+        }
+        if ($request->filled('mail_password') && $request->input('mail_password') !== '••••••••') {
+            $overrides['mail_password'] = (string) $request->input('mail_password');
+        }
+        if ($request->filled('mail_encryption')) {
+            $overrides['mail_encryption'] = trim((string) $request->input('mail_encryption'));
+        }
+        if ($request->filled('mail_from_address')) {
+            $overrides['mail_from_address'] = trim((string) $request->input('mail_from_address'));
+        }
+        if ($request->filled('mail_from_name')) {
+            $overrides['mail_from_name'] = trim((string) $request->input('mail_from_name'));
+        }
+
+        NotificationService::applySmtpSettings($overrides);
+
+        $host = config('mail.mailers.smtp.host');
+        $port = config('mail.mailers.smtp.port');
+        $fromAddress = config('mail.from.address');
+        $fromName = config('mail.from.name');
 
         try {
             if ($template === 'task') {
@@ -86,7 +121,7 @@ class SettingsController extends Controller
                     'deadline' => 'Sep 25, 2026',
                     'assignedBy' => 'Barny Kiome (Lead Producer)',
                 ]));
-                $msg = "Branded Task Assignment email sent to {$recipient}.";
+                $msg = "Branded Task Assignment email successfully delivered to {$recipient} via {$host}:{$port}.";
             } elseif ($template === 'meeting') {
                 Mail::to($recipient)->send(new MeetingReminderMail([
                     'recipientName' => 'Production Team & Client',
@@ -97,7 +132,7 @@ class SettingsController extends Controller
                     'attendees' => 'Amos Muthama, Barny Kiome, Client Crew',
                     'description' => 'Main camera setup (4K ProRes) + drone aerial coverage. Call time 09:00 AM.',
                 ]));
-                $msg = "Branded Calendar / Meeting Reminder email sent to {$recipient}.";
+                $msg = "Branded Calendar / Meeting Reminder email successfully delivered to {$recipient} via {$host}:{$port}.";
             } elseif ($template === 'invoice') {
                 Mail::to($recipient)->send(new InvoiceReminderMail([
                     'clientName' => 'Acre Insights Ltd',
@@ -106,21 +141,16 @@ class SettingsController extends Controller
                     'amount' => 192000,
                     'dueDate' => 'Sep 30, 2026',
                 ]));
-                $msg = "Branded Invoice & Payment Statement email sent to {$recipient}.";
+                $msg = "Branded Invoice & Payment Statement email successfully delivered to {$recipient} via {$host}:{$port}.";
             } elseif ($template === 'deal') {
                 Mail::to($recipient)->send(new DealWonAlertMail([
                     'dealTitle' => 'Moyo Honey · Q4 Retainer & Brand Film',
                     'clientName' => 'Moyo Honey Limited',
                     'value' => 380000,
                 ]));
-                $msg = "Branded Deal-Won Cascade Notification email sent to {$recipient}.";
+                $msg = "Branded Deal-Won Notification email successfully delivered to {$recipient} via {$host}:{$port}.";
             } else {
-                $host = SystemSetting::getVal('mail_host', config('mail.mailers.smtp.host'));
-                $port = SystemSetting::getVal('mail_port', config('mail.mailers.smtp.port'));
-                $fromAddress = SystemSetting::getVal('mail_from_address', config('mail.from.address'));
-                $fromName = SystemSetting::getVal('mail_from_name', config('mail.from.name'));
-
-                Mail::raw("Hello from JMOS!\n\nThis is a test notification confirming that your SMTP email server ($host:$port) is connected and operating properly.\n\nSent at: ".now()->toDateTimeString(), function ($message) use ($recipient, $fromAddress, $fromName) {
+                Mail::raw("Hello from JMOS!\n\nThis is a live test notification confirming that your SMTP email gateway ({$host}:{$port}) is connected, authenticated, and operating properly.\n\nFrom: {$fromName} <{$fromAddress}>\nRecipient: {$recipient}\nTimestamp: ".now()->toDateTimeString(), function ($message) use ($recipient, $fromAddress, $fromName) {
                     $message->to($recipient)
                         ->subject('JMOS — SMTP Connection Test Successful')
                         ->from($fromAddress, $fromName);
@@ -131,11 +161,23 @@ class SettingsController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => $msg,
+                'gateway' => [
+                    'host' => $host,
+                    'port' => $port,
+                    'from' => "{$fromName} <{$fromAddress}>",
+                    'recipient' => $recipient,
+                ],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'SMTP Delivery Notice: '.$e->getMessage(),
+                'message' => 'SMTP Delivery Error: '.$e->getMessage(),
+                'gateway' => [
+                    'host' => $host,
+                    'port' => $port,
+                    'from' => "{$fromName} <{$fromAddress}>",
+                    'recipient' => $recipient,
+                ],
             ], 422);
         }
     }

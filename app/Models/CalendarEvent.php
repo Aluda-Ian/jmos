@@ -17,6 +17,7 @@ class CalendarEvent extends Model
         'end_time',
         'all_day',
         'location',
+        'meet_link',
         'attendees',
         'google_event_id',
         'status',

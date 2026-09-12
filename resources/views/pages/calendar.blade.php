@@ -24,7 +24,7 @@
     <button type="button" class="cal-pill" data-cal-filter="meeting"><span class="dot-indicator" style="background:var(--red)"></span>Client Meetings</button>
     <button type="button" class="cal-pill" data-cal-filter="shoot"><span class="dot-indicator" style="background:var(--amber)"></span>Production Shoots</button>
     <button type="button" class="cal-pill" data-cal-filter="deadline"><span class="dot-indicator" style="background:var(--green)"></span>Project Deliveries</button>
-    <button type="button" class="cal-pill" data-cal-filter="invoice"><span class="dot-indicator" style="background:var(--blue, #2B6E8A)"></span>Invoice Due Dates</button>
+    <button type="button" class="cal-pill" data-cal-filter="invoice" data-perm="owner finance"><span class="dot-indicator" style="background:var(--blue, #2B6E8A)"></span>Invoice Due Dates</button>
   </div>
 
   <!-- 2-Column Calendar & Operations Workspace -->
@@ -78,17 +78,23 @@
 
       <!-- Google Calendar Sync Status Card -->
       <div class="card" style="padding:16px;background:var(--paper)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-          <div style="width:28px;height:28px;border-radius:6px;background:var(--amber-soft);color:var(--amber);display:grid;place-items:center">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:28px;height:28px;border-radius:6px;background:var(--amber-soft);color:var(--amber);display:grid;place-items:center">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <div>
+              <b style="font-size:12.5px;color:var(--ink)">Personal Google Calendar</b>
+              <p style="font-size:11px;color:var(--muted);margin:0;font-weight:600" id="googleSyncAccountLabel">Checking sync status…</p>
+            </div>
           </div>
-          <div>
-            <b style="font-size:12.5px;color:var(--ink)">Google Calendar Sync</b>
-            <p style="font-size:11px;color:var(--muted);margin:0">Connected &amp; Active</p>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button type="button" class="btn" id="googleSyncActionBtn" onclick="syncCalendarWithGoogle()" style="font-size:10.5px;padding:3px 8px" title="Sync with your personal Google account">Connect</button>
+            <button type="button" class="btn" id="googleDisconnectBtn" onclick="disconnectPersonalGoogleCalendar()" style="display:none;font-size:10.5px;padding:3px 8px;color:var(--red)" title="Disconnect personal Google Calendar">Disconnect</button>
           </div>
         </div>
         <p style="font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4">
-          All client meetings, shoot locations, and task deadlines created in JMOS are automatically reflected in your team Google Calendar.
+          Connect your personal Google Calendar to automatically mirror your scheduled shoots, client meetings, and generated Google Meet rooms.
         </p>
       </div>
     </div>

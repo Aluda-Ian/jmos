@@ -32,7 +32,7 @@ class DealController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Deal added to pipeline.',
-            'data' => $deal
+            'data' => $deal,
         ], 201);
     }
 
@@ -51,7 +51,7 @@ class DealController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Deal updated.',
-            'data' => $deal
+            'data' => $deal,
         ]);
     }
 
@@ -62,7 +62,7 @@ class DealController extends Controller
     {
         $deal->update([
             'stage' => 'won',
-            'is_won' => true
+            'is_won' => true,
         ]);
 
         // 1. Create live project
@@ -108,8 +108,8 @@ class DealController extends Controller
                 }
             }
         }
-        $nextNo = 'JM-0' . ($maxNum + 1);
-        
+        $nextNo = 'JM-0'.($maxNum + 1);
+
         $depositInvoice = Invoice::create([
             'invoice_no' => $nextNo,
             'client' => $deal->client_name,
@@ -126,6 +126,16 @@ class DealController extends Controller
             'message' => 'Deal won! Project created, 8 tasks generated, and invoice drafted.',
             'project' => $project,
             'invoice' => $depositInvoice,
+        ]);
+    }
+
+    public function destroy(Deal $deal): JsonResponse
+    {
+        $deal->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Deal removed from pipeline.',
         ]);
     }
 }

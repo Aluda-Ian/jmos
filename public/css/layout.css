@@ -177,6 +177,11 @@
   display: flex;
   align-items: center;
   gap: 14px;
+  transition: background .3s ease;
+}
+
+[data-theme="dark"] .topbar {
+  background: rgba(20, 17, 16, .85);
 }
 
 .menu-btn {
@@ -262,6 +267,28 @@
   border-radius: 50%;
   background: var(--red);
   box-shadow: 0 0 0 2px var(--paper);
+}
+
+.icon-btn .notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  line-height: 1;
+  border: 2px solid var(--paper);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transition: transform .2s ease, opacity .2s ease;
 }
 
 .btn.signout {
@@ -385,4 +412,17 @@ h1.pt {
   .scroll {
     padding: 16px;
   }
+}
+
+/* Dark mode: sidebar nav link color */
+[data-theme="dark"] .nav a.item {
+  color: #B3AAA5;
+}
+
+[data-theme="dark"] .nav a.item:hover {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .nav a.item.active {
+  color: var(--red);
 }

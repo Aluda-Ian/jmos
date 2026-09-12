@@ -21,6 +21,9 @@ class User extends Authenticatable
         'pay',
         'color',
         'initials',
+        'google_calendar_email',
+        'google_calendar_status',
+        'google_calendar_synced_at',
     ];
 
     protected $hidden = [
@@ -32,6 +35,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'google_calendar_synced_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

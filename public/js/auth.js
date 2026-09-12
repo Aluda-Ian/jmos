@@ -147,6 +147,25 @@ async function performLogout(reason = 'user') {
   }
 }
 
+// Time-bound greeting helpers
+function getTimeBoundGreeting(date = new Date()) {
+  const hour = date.getHours();
+  if (hour >= 4 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function getTimeBoundBriefTag(date = new Date()) {
+  const hour = date.getHours();
+  if (hour >= 4 && hour < 12) return 'Your morning brief';
+  if (hour >= 12 && hour < 17) return 'Your afternoon brief';
+  if (hour >= 17 && hour < 22) return 'Your evening brief';
+  return 'Your late-night brief';
+}
+
+window.getTimeBoundGreeting = getTimeBoundGreeting;
+window.getTimeBoundBriefTag = getTimeBoundBriefTag;
+
 // 3. User Interface Binding for Authenticated Session
 function applyAuthenticatedUI(user) {
   const loginScreen = document.getElementById('loginScreen');
@@ -173,7 +192,16 @@ function applyAuthenticatedUI(user) {
   }
   if (userNm) userNm.textContent = user.name;
   if (userRl) userRl.textContent = (JMOS_STATE.roleLabel && JMOS_STATE.roleLabel[user.role]) || user.role;
-  if (greetName) greetName.textContent = 'Good morning, ' + (user.name ? user.name.split(' ')[0] : 'there') + '.';
+  if (greetName) {
+    const greeting = getTimeBoundGreeting();
+    greetName.textContent = greeting + ', ' + (user.name ? user.name.split(' ')[0] : 'there') + '.';
+  }
+
+  // Also refresh the brief tag if on dashboard
+  const briefTagText = document.getElementById('briefTagText');
+  if (briefTagText) {
+    briefTagText.textContent = getTimeBoundBriefTag();
+  }
 
   if (typeof applyRole === 'function') {
     applyRole(user.role);

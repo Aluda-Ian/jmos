@@ -712,6 +712,17 @@
   gap: 4px;
   font-weight: 500;
   line-height: 1.3;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.full-cal-event-pill:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+[data-open-detail] {
+  cursor: pointer;
 }
 
 .full-cal-event-pill.meeting {
@@ -1103,6 +1114,232 @@
   padding: 14px 18px;
   border-top: 1px solid var(--line);
   background: var(--surface);
+  position: relative;
+}
+
+.chat-composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.chat-tool-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 16px;
+}
+
+.chat-tool-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.chat-tool-btn:hover,
+.chat-tool-btn.active {
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
+  border-color: var(--line-strong, #473833);
+  color: var(--ink);
+}
+
+/* Attachment Staging Area */
+.chat-staging-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--paper);
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.chat-staging-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+.chat-staging-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-staging-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-staging-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-staging-size {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.chat-staging-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(197, 37, 35, 0.12);
+  color: var(--red);
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.chat-staging-remove:hover {
+  background: var(--red);
+  color: #fff;
+}
+
+/* Floating Emoji Picker */
+.chat-emoji-picker {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 18px;
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 14px 38px -8px rgba(0, 0, 0, 0.35);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.chat-emoji-header {
+  padding: 8px 12px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.02));
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.chat-emoji-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chat-emoji-grid {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.emoji-btn:hover {
+  background: var(--surface-2, rgba(255, 255, 255, 0.1));
+  transform: scale(1.15);
+}
+
+/* Image & File Attachments in Message Bubble */
+.chat-img-attachment {
+  display: block;
+  margin-top: 6px;
+  max-width: 280px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.chat-img-attachment img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.chat-img-attachment:hover img {
+  transform: scale(1.02);
+}
+
+.chat-file-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12px;
+}
+
+.chat-file-attachment svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  flex-shrink: 0;
+}
+
+.chat-file-attachment a.download-link {
+  color: #4285f4;
+  text-decoration: underline;
+  font-size: 11px;
+  margin-top: 2px;
+  display: inline-block;
 }
 
 .chat-composer-inner {
@@ -1163,5 +1400,437 @@
   }
 }
 
+/* ==========================================================================
+   Attendee Picker (Team Members, Clients & Guests) in Event Modal
+   ========================================================================== */
+.attendee-chips-wrap {
+  min-height: 44px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  transition: border-color .15s ease;
+}
 
+.attendee-chips-wrap:focus-within {
+  border-color: var(--red);
+}
 
+.attendee-chips-empty {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 4px 6px;
+  font-style: italic;
+}
+
+.attendee-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  animation: chipPopIn .15s ease-out;
+}
+
+@keyframes chipPopIn {
+  from { opacity: 0; transform: scale(.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.attendee-chip-av {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.attendee-chip-tag {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.attendee-chip-tag.team {
+  background: rgba(37,99,235,0.15);
+  color: #3b82f6;
+}
+
+.attendee-chip-tag.client {
+  background: rgba(245,158,11,0.15);
+  color: #f59e0b;
+}
+
+.attendee-chip-tag.guest {
+  background: rgba(16,185,129,0.15);
+  color: #10b981;
+}
+
+.attendee-chip-del {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: color .15s;
+}
+
+.attendee-chip-del:hover {
+  color: var(--red);
+}
+
+.attendee-team-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 115px;
+  overflow-y: auto;
+  padding: 3px 0;
+}
+
+.attendee-team-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--muted-strong, #cfc6c3);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all .15s ease;
+  user-select: none;
+}
+
+.attendee-team-pill:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+  background: var(--surface);
+}
+
+.attendee-team-pill.selected {
+  background: rgba(197, 37, 35, 0.12);
+  border-color: var(--red);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.attendee-team-pill-av {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.attendee-team-pill-check {
+  font-size: 11px;
+  color: var(--red);
+  font-weight: 700;
+  display: none;
+}
+
+.attendee-team-pill.selected .attendee-team-pill-check {
+  display: inline;
+}
+
+/* ==========================================================================
+   Quick Action Cards & Table Actions (Add, Delete, Manage)
+   ========================================================================== */
+.action-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.action-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all .18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  text-decoration: none;
+}
+
+.action-card:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.action-card:active {
+  transform: translateY(0);
+}
+
+.action-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.action-card-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.action-card-icon.tint-red {
+  background: rgba(197, 37, 35, 0.15);
+  color: var(--red);
+}
+
+.action-card-icon.tint-blue {
+  background: rgba(43, 110, 138, 0.15);
+  color: #2B6E8A;
+}
+
+.action-card-icon.tint-green {
+  background: rgba(28, 122, 78, 0.15);
+  color: var(--green);
+}
+
+.action-card-icon.tint-amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.action-card-icon.tint-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.action-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.action-card-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-card-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-card-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+}
+
+.action-card-arr {
+  color: var(--muted);
+  font-size: 15px;
+  transition: transform .18s ease, color .18s ease;
+  flex-shrink: 0;
+}
+
+.action-card:hover .action-card-arr {
+  color: var(--ink);
+  transform: translateX(3px);
+}
+
+/* Row Action Buttons in Tables */
+.row-actions-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.row-action-btn {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--muted-strong, #cfc6c3);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all .15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.row-action-btn:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.row-action-btn.danger {
+  color: var(--red);
+  border-color: rgba(197, 37, 35, 0.25);
+  background: rgba(197, 37, 35, 0.05);
+}
+
+.row-action-btn.danger:hover {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+}
+
+.row-action-btn svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* Pipeline Deal Modal Stage Stepper */
+.deal-stage-stepper {
+  display: flex;
+  align-items: center;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  gap: 4px;
+  margin: 10px 0 18px;
+  overflow-x: auto;
+}
+.stage-step-btn {
+  flex: 1;
+  min-width: 85px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+.stage-step-btn:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.stage-step-btn.active {
+  background: var(--surface);
+  color: var(--red);
+  border-color: var(--line-strong);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.stage-step-btn.won.active {
+  background: var(--red-soft);
+  color: var(--red-deep);
+  border-color: var(--red);
+}
+
+/* Kanban Deal Card Pointer */
+.tcard {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.tcard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+/* ---------- Dark Mode View Overrides ---------- */
+[data-theme="dark"] .search input {
+  color: var(--ink);
+}
+
+[data-theme="dark"] .search input::placeholder {
+  color: var(--faint);
+}
+
+[data-theme="dark"] .rolebanner {
+  background: rgba(251,191,36,.08);
+  border-color: rgba(251,191,36,.2);
+  color: var(--amber);
+}
+
+[data-theme="dark"] .settings-grid {
+  gap: 18px;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+[data-theme="dark"] input::placeholder {
+  color: var(--faint);
+}
+
+[data-theme="dark"] .mbg {
+  background: rgba(0, 0, 0, .7);
+}
+
+[data-theme="dark"] .mbox {
+  background: var(--surface);
+}
+
+[data-theme="dark"] ::selection {
+  background: rgba(224,66,64,.3);
+}

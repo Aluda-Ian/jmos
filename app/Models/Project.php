@@ -22,10 +22,41 @@ class Project extends Model
         'budget',
         'progress_pct',
         'waiting_on',
+        'drive_link',
+        'brief_link',
+        'treatment_link',
+        'playbook_link',
+        'notes',
+        'files',
+        'comments',
+    ];
+
+    protected $casts = [
+        'files' => 'array',
+        'comments' => 'array',
+        'budget' => 'float',
+        'progress_pct' => 'integer',
     ];
 
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function recalculateProgress(): int
+    {
+        $total = $this->tasks()->count();
+        if ($total === 0) {
+            $this->update(['progress_pct' => 0]);
+
+            return 0;
+        }
+
+        $done = $this->tasks()->where('stage', 'done')->count();
+        $pct = (int) round(($done / $total) * 100);
+
+        $this->update(['progress_pct' => $pct]);
+
+        return $pct;
     }
 }

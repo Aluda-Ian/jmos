@@ -20,6 +20,7 @@
   /* Surfaces & Borders */
   --paper: #FAF7F6;
   --surface: #FFFFFF;
+  --panel-2: #F5F1EF;
   --line: #ECE6E4;
   --line-strong: #DCD4D1;
 
@@ -34,6 +35,39 @@
   --shadow: 0 1px 2px rgba(28,22,20,.04), 0 6px 20px -12px rgba(28,22,20,.16);
   --shadow-lg: 0 24px 60px -22px rgba(28,22,20,.34);
   --nav-w: 232px;
+}
+
+/* ---------- Dark Mode ---------- */
+:root[data-theme="dark"] {
+  /* Brand Crimson — slightly brightened for contrast on dark */
+  --red: #E04240;
+  --red-bright: #F05452;
+  --red-deep: #FF6B6B;
+  --red-soft: rgba(224,66,64,.12);
+  --red-line: rgba(224,66,64,.22);
+
+  /* Typography & Ink — inverted to light tones */
+  --ink: #E8E4E2;
+  --ink-2: #D4CFC8;
+  --muted: #9A928E;
+  --faint: #6E6763;
+
+  /* Surfaces & Borders — dark charcoal palette */
+  --paper: #141110;
+  --surface: #1C1916;
+  --panel-2: #231F1C;
+  --line: #2E2926;
+  --line-strong: #3D3734;
+
+  /* Status Colors — slightly brighter for dark backgrounds */
+  --green: #34D399;
+  --green-soft: rgba(52,211,153,.12);
+  --amber: #FBBF24;
+  --amber-soft: rgba(251,191,36,.12);
+
+  /* Depth — stronger shadows for dark context */
+  --shadow: 0 1px 3px rgba(0,0,0,.24), 0 6px 20px -12px rgba(0,0,0,.4);
+  --shadow-lg: 0 24px 60px -22px rgba(0,0,0,.6);
 }
 
 /* Base Reset */
@@ -54,6 +88,7 @@ body {
   -webkit-font-smoothing: antialiased;
   font-size: 14px;
   line-height: 1.5;
+  transition: background .3s ease, color .3s ease;
 }
 
 .mono {

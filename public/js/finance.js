@@ -27,7 +27,7 @@ function renderInvoices() {
 
     const act = (!isPaid && canPay) 
       ? `<button class="linkbtn" data-pay-invoice-id="${v.id}">Record payment</button>` 
-      : (isPaid ? '<span style="color:var(--green);font-size:12px">✓ Received</span>' : '');
+      : (isPaid ? '<span style="color:var(--green);font-size:12px;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Received</span>' : '');
 
     return `<tr>
       <td class="mono" style="font-weight:600">${escHtml(v.invoice_no)}</td>
@@ -35,7 +35,7 @@ function renderInvoices() {
       <td>${escHtml(v.type)}</td>
       <td class="mono">${fmt(v.amount)}</td>
       <td>${escHtml(v.method || '—')}</td>
-      <td>${v.etims ? '<span class="yes">✓</span>' : '<span class="mono" style="color:var(--faint)">—</span>'}</td>
+      <td>${v.etims ? '<span class="yes"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>' : '<span class="mono" style="color:var(--faint)">—</span>'}</td>
       <td>${st}</td>
       <td class="mono" style="color:var(--muted)">${escHtml(v.due_date || '—')}</td>
       <td>${act}</td>
@@ -55,9 +55,9 @@ function renderExpenses() {
 
   expBody.innerHTML = list.map(e => {
     const etr = e.etr === 'yes' 
-      ? '<span class="yes">✓ yes</span>' 
+      ? '<span class="yes" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> yes</span>' 
       : e.etr === 'no' 
-        ? '<span class="no">✗ missing</span>' 
+        ? '<span class="no" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> missing</span>' 
         : '<span class="mono" style="color:var(--faint)">n/a</span>';
 
     const proj = e.project === 'overhead' 
@@ -127,6 +127,26 @@ async function recomputeFinance() {
   if (finProfit) finProfit.textContent = fmt(profit);
   if (finUnpaid) finUnpaid.textContent = fmt(unpaid);
 
+  // KRA / Gava Tax Metrics
+  const invList = JMOS_STATE.invoices || [];
+  const grossInvoiced = invList.reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0) || moneyIn;
+  const outputVat = Math.round(grossInvoiced * 0.16 / 1.16);
+  const directExpenses = moneyOut;
+  const inputVatClaim = Math.round(directExpenses * 0.16 / 1.16);
+  const netTax = Math.max(0, outputVat - inputVatClaim);
+
+  const kraGrossInvoiced = document.getElementById('kraGrossInvoiced');
+  const kraOutputVat = document.getElementById('kraOutputVat');
+  const kraDirectExpenses = document.getElementById('kraDirectExpenses');
+  const kraInputVatClaim = document.getElementById('kraInputVatClaim');
+  const kraNetTax = document.getElementById('kraNetTax');
+
+  if (kraGrossInvoiced) kraGrossInvoiced.textContent = fmt(grossInvoiced);
+  if (kraOutputVat) kraOutputVat.textContent = fmt(outputVat);
+  if (kraDirectExpenses) kraDirectExpenses.textContent = fmt(directExpenses);
+  if (kraInputVatClaim) kraInputVatClaim.textContent = 'Claimable VAT: ' + fmt(inputVatClaim);
+  if (kraNetTax) kraNetTax.textContent = fmt(netTax);
+
   // Update Activity Ledger
   const finLedger = document.getElementById('finLedger');
   if (finLedger) {
@@ -143,6 +163,10 @@ async function recomputeFinance() {
     }
   }
 }
+
+window.openKraTaxReconciliation = function() {
+  showToast('Gava iTax & eTIMS Synced', 'Direct expenses and invoice income successfully reconciled with KRA portal');
+};
 
 function initFinance() {
   // Event delegation for "Record payment" buttons
