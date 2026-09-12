@@ -1,0 +1,179 @@
+/* ==========================================================================
+   JMOS — Core Data & Unified API Client
+   ========================================================================== */
+
+const JMOS_COLORS = [
+  '#C52523', '#2B6E8A', '#8A5A2B', '#5A7A2B',
+  '#6E2B8A', '#2B8A5A', '#B4780F', '#7A2B5A'
+];
+
+function getInitials(name) {
+  return (name || '').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
+}
+
+function fmt(n) {
+  return 'KES ' + (Number(n) || 0).toLocaleString('en-US');
+}
+
+function fmtK(n) {
+  n = Number(n) || 0;
+  if (n >= 1e6) return 'KES ' + (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return 'KES ' + Math.round(n / 1e3) + 'K';
+  return 'KES ' + n.toLocaleString();
+}
+
+function escHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// App State
+const JMOS_STATE = {
+  currentUser: null,
+  apiToken: localStorage.getItem('jmos_api_token') || null,
+  users: [],
+  clients: [],
+  projects: [],
+  pipeline: [],
+  tasks: [],
+  invoices: [],
+  expenses: [],
+  services: [],
+  finance: {
+    brought_forward: 0,
+    money_in: 0,
+    money_out: 0,
+    current_balance: 0,
+    profit: 0,
+    unpaid_total: 0,
+    overdue_count: 0,
+    ledger: []
+  },
+  roleLabel: {
+    owner: 'Owner · full access',
+    finance: 'Finance access',
+    sales: 'Sales access',
+    team: 'Team member'
+  },
+  accessPill: {
+    owner: 'tint-red',
+    finance: 'tint-amber',
+    sales: 'tint-green',
+    team: ''
+  }
+};
+
+// Unified Central API Client
+const JMOS_API = {
+  baseUrl: '/api',
+
+  getHeaders() {
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    };
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+    if (JMOS_STATE.apiToken) {
+      headers['Authorization'] = 'Bearer ' + JMOS_STATE.apiToken;
+    }
+    return headers;
+  },
+
+  async req(endpoint, options = {}) {
+    const url = endpoint.startsWith('http') ? endpoint : (this.baseUrl + (endpoint.startsWith('/') ? '' : '/') + endpoint);
+    const config = {
+      headers: this.getHeaders(),
+      ...options
+    };
+    const res = await fetch(url, config);
+    if (!res.ok) {
+      if (res.status === 401 && !endpoint.includes('auth/login')) {
+        if (typeof performLogout === 'function') {
+          performLogout('server_expired');
+        }
+      }
+      let errMsg = 'API error (' + res.status + ')';
+      try {
+        const errJson = await res.json();
+        if (errJson.message) errMsg = errJson.message;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+    return res.json();
+  },
+
+  get(endpoint) {
+    return this.req(endpoint, { method: 'GET' });
+  },
+
+  post(endpoint, data) {
+    return this.req(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  put(endpoint, data) {
+    return this.req(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  delete(endpoint) {
+    return this.req(endpoint, { method: 'DELETE' });
+  },
+
+  // Pull all database records in parallel
+  async fetchAll() {
+    try {
+      const [users, clients, projects, pipeline, tasks, invoices, expenses, finance, services] = await Promise.all([
+        this.get('/users').catch(() => []),
+        this.get('/clients').catch(() => []),
+        this.get('/projects').catch(() => []),
+        this.get('/pipeline').catch(() => []),
+        this.get('/tasks').catch(() => []),
+        this.get('/invoices').catch(() => []),
+        this.get('/expenses').catch(() => []),
+        this.get('/finance/overview').catch(() => null),
+        this.get('/services').catch(() => [])
+      ]);
+
+      if (Array.isArray(users) && users.length) {
+        JMOS_STATE.users = users.map((u, i) => ({
+          id: u.id,
+          name: u.name,
+          title: u.title || 'Team',
+          email: u.email,
+          role: u.role || 'team',
+          type: u.type || 'Full-time',
+          pay: u.pay || '—',
+          color: u.color || JMOS_COLORS[i % JMOS_COLORS.length],
+          ini: u.initials || getInitials(u.name)
+        }));
+      }
+
+      if (Array.isArray(clients)) JMOS_STATE.clients = clients;
+      if (Array.isArray(projects)) JMOS_STATE.projects = projects;
+      if (Array.isArray(pipeline)) JMOS_STATE.pipeline = pipeline;
+      if (Array.isArray(tasks)) JMOS_STATE.tasks = tasks;
+      if (Array.isArray(invoices)) JMOS_STATE.invoices = invoices;
+      if (Array.isArray(expenses)) JMOS_STATE.expenses = expenses;
+      if (Array.isArray(services)) JMOS_STATE.services = services;
+      if (finance && finance.status === 'success') {
+        JMOS_STATE.finance = finance;
+        JMOS_STATE.broughtForward = finance.brought_forward;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Failed to sync state from database:', err);
+      return false;
+    }
+  }
+};

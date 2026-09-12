@@ -1,0 +1,274 @@
+/* ==========================================================================
+   JMOS — Login Screen Styles
+   ========================================================================== */
+
+.login {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  background: var(--paper);
+}
+
+.login.hidden {
+  display: none !important;
+}
+
+/* Instant display toggle on page refresh when session is valid */
+html.jmos-authenticated #loginScreen {
+  display: none !important;
+}
+
+html.jmos-authenticated #appRoot {
+  display: grid !important;
+}
+
+/* Left Gradient Branding Hero */
+.brandside {
+  flex: 1;
+  background: linear-gradient(150deg, var(--red-bright), var(--red-deep));
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 46px;
+  position: relative;
+  overflow: hidden;
+}
+
+.brandside .lg {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  position: relative;
+  z-index: 2;
+}
+
+.brandside .lg img {
+  width: 48px;
+  height: 48px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 4px;
+  object-fit: contain;
+}
+
+.brandside .lg b {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: .03em;
+}
+
+.brandside .mid {
+  position: relative;
+  z-index: 2;
+}
+
+.brandside h1 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.12;
+  max-width: 430px;
+}
+
+.brandside .mid p {
+  color: #FFE6E3;
+  max-width: 420px;
+  margin-top: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.brandside .foot {
+  font-size: 12px;
+  color: #FFD2CE;
+  position: relative;
+  z-index: 2;
+}
+
+.bdrip {
+  position: absolute;
+  top: 0;
+  background: var(--red-deep);
+  width: 9px;
+  border-radius: 0 0 8px 8px;
+  opacity: .6;
+}
+
+.bdrip::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--red-deep);
+}
+
+/* Right Form Side */
+.formside {
+  width: 470px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+}
+
+.formcard {
+  width: 340px;
+  max-width: 100%;
+}
+
+.formcard .mlogo {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.formcard .mlogo img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.formcard .mlogo b {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.formcard h2 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 23px;
+}
+
+.formcard .sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 5px 0 22px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4A4340;
+  margin-bottom: 6px;
+}
+
+.field input, .field select {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--surface);
+  outline: none;
+  transition: border-color .15s;
+}
+
+.field input:focus, .field select:focus {
+  border-color: var(--red);
+}
+
+.notice {
+  background: #FFF8E6;
+  border: 1px solid #FFE08A;
+  color: #8C5B00;
+  font-size: 12.5px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  margin-bottom: 12px;
+  display: none;
+  line-height: 1.45;
+}
+
+.notice.show {
+  display: block;
+}
+
+.err {
+  background: var(--red-soft);
+  border: 1px solid var(--red-line);
+  color: var(--red-deep);
+  font-size: 12.5px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.err.show {
+  display: block;
+}
+
+.signin {
+  width: 100%;
+  background: var(--red);
+  color: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 4px;
+  transition: background .15s;
+}
+
+.signin:hover {
+  background: var(--red-deep);
+}
+
+/* Demo Role Accounts Helper */
+.demohint {
+  margin-top: 20px;
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.demohint .accts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.acct {
+  font-size: 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  padding: 4px 9px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color .15s, color .15s;
+}
+
+.acct:hover {
+  border-color: var(--red);
+  color: var(--red-deep);
+}
+
+@media (max-width: 820px) {
+  .brandside {
+    display: none;
+  }
+  .formside {
+    width: 100%;
+  }
+  .formcard .mlogo {
+    display: flex;
+  }
+}

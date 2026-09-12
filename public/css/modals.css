@@ -1,0 +1,362 @@
+/* ==========================================================================
+   JMOS — Modals, Cascade Deal-Won Flow & Toast Notifications
+   ========================================================================== */
+
+/* Standard Modal Overlay & Dialog */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal.on {
+  display: flex !important;
+}
+
+.mbg {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 22, 20, .65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.mbox {
+  position: relative;
+  background: var(--surface, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px -22px rgba(28, 22, 20, .36);
+  width: 500px;
+  max-width: 100%;
+  padding: 28px;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 2;
+  animation: modalPop .22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.mclose {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--muted, #6E6763);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.mclose:hover {
+  background: var(--paper, #FAF7F6);
+  color: var(--ink, #1C1614);
+}
+
+.mbox h3 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 19px;
+  margin-bottom: 4px;
+  padding-right: 32px;
+  color: var(--ink, #1C1614);
+}
+
+.mbox .msub {
+  color: var(--muted, #6E6763);
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+/* Modal Form Fields */
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4A4340;
+  margin-bottom: 6px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid var(--line-strong, #DCD4D1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13.5px;
+  background: var(--surface, #ffffff);
+  color: var(--ink, #1C1614);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+
+.field select {
+  cursor: pointer;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--red, #C52523);
+  box-shadow: 0 0 0 3px var(--red-soft, #FBEAE8);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--faint, #9A928E);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+.mfoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line, #ECE6E4);
+}
+
+/* Deal-Won Cascade Sequence Modal */
+.cascade {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cascade.on {
+  display: flex !important;
+}
+
+.cbg {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 22, 20, .65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.cbox {
+  position: relative;
+  background: var(--surface, #ffffff);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px -22px rgba(28, 22, 20, .36);
+  width: 450px;
+  max-width: 100%;
+  padding: 26px;
+  overflow: hidden;
+  animation: modalPop .22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cbox::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--red-bright, #E23A2E), var(--red-deep, #9E1B21));
+}
+
+.cbox h3 {
+  font-family: 'Poppins', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink, #1C1614);
+}
+
+.cbox .lede {
+  color: var(--muted, #6E6763);
+  font-size: 13px;
+  margin: 6px 0 18px;
+}
+
+.cbox .lede b {
+  color: var(--red, #C52523);
+  font-weight: 600;
+}
+
+.cstep {
+  display: flex;
+  gap: 13px;
+  padding: 10px 0;
+  align-items: center;
+  opacity: .35;
+  transform: translateY(4px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+
+.cstep.done {
+  opacity: 1;
+  transform: none;
+}
+
+.cstep .ck {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--paper, #FAF7F6);
+  border: 1px solid var(--line, #ECE6E4);
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: background .3s, border-color .3s;
+}
+
+.cstep.done .ck {
+  background: var(--green, #1C7A4E);
+  border-color: var(--green, #1C7A4E);
+}
+
+.cstep .ck svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--faint, #9A928E);
+  stroke-width: 2.4;
+  fill: none;
+  transition: stroke .3s;
+}
+
+.cstep.done .ck svg {
+  stroke: #fff;
+}
+
+.cstep .ct {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink, #1C1614);
+}
+
+.cstep .ct small {
+  display: block;
+  color: var(--muted, #6E6763);
+  font-weight: 400;
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+.cfoot {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Toast Alerts */
+.toasts {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  width: max-content;
+  max-width: 92vw;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--ink, #1C1614);
+  color: #F5EFED;
+  border-radius: 12px;
+  padding: 13px 18px;
+  box-shadow: 0 12px 36px -10px rgba(0, 0, 0, .4);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 280px;
+  pointer-events: auto;
+  animation: rise .35s cubic-bezier(.2, .7, .3, 1);
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.toast .tk {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--green, #1C7A4E);
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-top: 1px;
+}
+
+.toast .tk svg {
+  width: 13px;
+  height: 13px;
+  stroke: #fff;
+  stroke-width: 2.4;
+  fill: none;
+}
+
+.toast .tk.red {
+  background: var(--red, #C52523);
+}
+
+.toast b {
+  font-size: 13px;
+  font-weight: 600;
+  display: block;
+}
+
+.toast small {
+  font-size: 12px;
+  color: #B9AFAC;
+  display: block;
+  margin-top: 1px;
+}

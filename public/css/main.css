@@ -1,0 +1,92 @@
+/* ==========================================================================
+   JMOS — JEOTA MEDIA OPERATING SYSTEM
+   Main Stylesheet: Design Tokens, Variables & Base Reset
+   ========================================================================== */
+
+:root {
+  /* Brand Crimson & Accents */
+  --red: #C52523;
+  --red-bright: #E23A2E;
+  --red-deep: #9E1B21;
+  --red-soft: #FBEAE8;
+  --red-line: #F1CFCB;
+
+  /* Typography & Ink */
+  --ink: #1C1614;
+  --ink-2: #2A211E;
+  --muted: #6E6763;
+  --faint: #9A928E;
+
+  /* Surfaces & Borders */
+  --paper: #FAF7F6;
+  --surface: #FFFFFF;
+  --line: #ECE6E4;
+  --line-strong: #DCD4D1;
+
+  /* Status Colors */
+  --green: #1C7A4E;
+  --green-soft: #E4F1EA;
+  --amber: #B4780F;
+  --amber-soft: #FAEDD3;
+
+  /* Layout & Depth */
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(28,22,20,.04), 0 6px 20px -12px rgba(28,22,20,.16);
+  --shadow-lg: 0 24px 60px -22px rgba(28,22,20,.34);
+  --nav-w: 232px;
+}
+
+/* Base Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-feature-settings: "tnum";
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+::selection {
+  background: var(--red-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
