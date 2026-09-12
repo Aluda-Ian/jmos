@@ -36,6 +36,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'secondary_email' => $user->secondary_email,
                 'title' => $user->title,
                 'role' => $user->role,
                 'type' => $user->type,
@@ -59,6 +60,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'secondary_email' => $user->secondary_email,
                 'title' => $user->title,
                 'role' => $user->role,
                 'type' => $user->type,
@@ -79,6 +81,23 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Signed out successfully.',
+        ]);
+    }
+
+    public function updateSecondaryEmail(Request $request): JsonResponse
+    {
+        $request->validate([
+            'secondary_email' => 'nullable|email|max:255',
+        ]);
+
+        $user = $request->user();
+        $user->secondary_email = $request->secondary_email ?: null;
+        $user->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Secondary notification email updated.',
+            'secondary_email' => $user->secondary_email,
         ]);
     }
 }

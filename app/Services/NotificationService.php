@@ -65,11 +65,26 @@ class NotificationService
         Mail::purge('smtp');
     }
 
+    /**
+     * Resolve a user's secondary notification email from their primary email.
+     */
+    public static function resolveSecondaryEmail(string $primaryEmail): ?string
+    {
+        $user = \App\Models\User::where('email', $primaryEmail)->first();
+
+        return $user?->secondary_email;
+    }
+
     public static function sendTaskAssigned(array $data, string $recipientEmail): bool
     {
         self::applySmtpSettings();
         try {
-            Mail::to($recipientEmail)->send(new TaskAssignedMail($data));
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new TaskAssignedMail($data));
 
             return true;
         } catch (\Exception $e) {
@@ -83,7 +98,12 @@ class NotificationService
     {
         self::applySmtpSettings();
         try {
-            Mail::to($recipientEmail)->send(new MeetingReminderMail($data));
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new MeetingReminderMail($data));
 
             return true;
         } catch (\Exception $e) {
@@ -97,7 +117,12 @@ class NotificationService
     {
         self::applySmtpSettings();
         try {
-            Mail::to($recipientEmail)->send(new InvoiceReminderMail($data));
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new InvoiceReminderMail($data));
 
             return true;
         } catch (\Exception $e) {
@@ -111,7 +136,12 @@ class NotificationService
     {
         self::applySmtpSettings();
         try {
-            Mail::to($recipientEmail)->send(new DealWonAlertMail($data));
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new DealWonAlertMail($data));
 
             return true;
         } catch (\Exception $e) {
@@ -125,7 +155,12 @@ class NotificationService
     {
         self::applySmtpSettings();
         try {
-            Mail::to($recipientEmail)->send(new NewChatMessageMail($data));
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new NewChatMessageMail($data));
 
             return true;
         } catch (\Exception $e) {

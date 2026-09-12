@@ -48,16 +48,42 @@
           </div>
           <div style="font-size:11px;font-weight:600;color:#1C1614">Light</div>
         </button>
-        <button type="button" class="theme-preview-tile" data-set-theme="dark" onclick="applyThemeFromSettings('dark')" style="flex:1;border:2px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;background:#141110;transition:border-color .2s">
+        <button type="button" class="theme-preview-tile" data-set-theme="dark" onclick="applyThemeFromSettings('dark')" style="flex:1;border:2px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;background:#000000;transition:border-color .2s">
           <div style="display:flex;gap:6px;margin-bottom:8px">
-            <div style="width:18px;height:18px;border-radius:4px;background:#1C1916;border:1px solid #2E2926"></div>
-            <div style="width:18px;height:18px;border-radius:4px;background:#2E2926"></div>
-            <div style="width:18px;height:18px;border-radius:4px;background:#E04240"></div>
+            <div style="width:18px;height:18px;border-radius:4px;background:#0A0A0A;border:1px solid #1E1E1E"></div>
+            <div style="width:18px;height:18px;border-radius:4px;background:#1E1E1E"></div>
+            <div style="width:18px;height:18px;border-radius:4px;background:#C52523"></div>
           </div>
           <div style="font-size:11px;font-weight:600;color:#E8E4E2">Dark</div>
         </button>
       </div>
     </div>
+  </div>
+
+  <!-- Notification Preferences (All Users) -->
+  <div class="card" style="padding:24px;margin-bottom:20px" id="notifPrefsCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--green-soft);color:var(--green);display:grid;place-items:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+        </div>
+        <div>
+          <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">Notification Email</h3>
+          <p style="font-size:12px;color:var(--muted)">Add a secondary email to receive copies of all system notifications.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;align-items:flex-end">
+      <div class="field" style="flex:1;margin:0">
+        <label for="cfg_secondary_email">Secondary Email Address</label>
+        <input id="cfg_secondary_email" type="email" placeholder="e.g. personal@gmail.com" autocomplete="off">
+      </div>
+      <button type="button" class="btn primary" id="saveSecondaryEmailBtn" style="height:40px" onclick="saveSecondaryEmail()">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save
+      </button>
+    </div>
+    <div id="secondaryEmailResult" style="margin-top:10px;font-size:12px;display:none;padding:8px 12px;border-radius:8px"></div>
   </div>
 
   <div data-perm="owner manager">

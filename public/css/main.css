@@ -39,12 +39,12 @@
 
 /* ---------- Dark Mode ---------- */
 :root[data-theme="dark"] {
-  /* Brand Crimson — slightly brightened for contrast on dark */
-  --red: #E04240;
-  --red-bright: #F05452;
-  --red-deep: #FF6B6B;
-  --red-soft: rgba(224,66,64,.12);
-  --red-line: rgba(224,66,64,.22);
+  /* Brand Crimson — same as light mode */
+  --red: #C52523;
+  --red-bright: #E23A2E;
+  --red-deep: #9E1B21;
+  --red-soft: rgba(197,37,35,.12);
+  --red-line: rgba(197,37,35,.22);
 
   /* Typography & Ink — inverted to light tones */
   --ink: #E8E4E2;
@@ -52,12 +52,12 @@
   --muted: #9A928E;
   --faint: #6E6763;
 
-  /* Surfaces & Borders — dark charcoal palette */
-  --paper: #141110;
-  --surface: #1C1916;
-  --panel-2: #231F1C;
-  --line: #2E2926;
-  --line-strong: #3D3734;
+  /* Surfaces & Borders — true black palette */
+  --paper: #000000;
+  --surface: #0A0A0A;
+  --panel-2: #111111;
+  --line: #1E1E1E;
+  --line-strong: #2A2A2A;
 
   /* Status Colors — slightly brighter for dark backgrounds */
   --green: #34D399;

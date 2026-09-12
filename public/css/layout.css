@@ -181,7 +181,7 @@
 }
 
 [data-theme="dark"] .topbar {
-  background: rgba(20, 17, 16, .85);
+  background: rgba(0, 0, 0, .85);
 }
 
 .menu-btn {
