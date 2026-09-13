@@ -27,7 +27,7 @@
             <th>eTIMS</th>
             <th>Status</th>
             <th>Due</th>
-            <th></th>
+            <th style="text-align:right">Actions</th>
           </tr>
         </thead>
         <tbody id="invBody">

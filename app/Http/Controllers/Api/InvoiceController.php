@@ -14,10 +14,18 @@ class InvoiceController extends Controller
         return response()->json(Invoice::latest()->get());
     }
 
+    public function nextNumber(): JsonResponse
+    {
+        return response()->json([
+            'status' => 'success',
+            'invoice_no' => Invoice::nextInvoiceNo(),
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'invoice_no' => 'required|string|unique:invoices,invoice_no',
+            'invoice_no' => 'nullable|string|unique:invoices,invoice_no',
             'client' => 'required|string',
             'type' => 'required|string',
             'amount' => 'required|numeric',
@@ -27,21 +35,34 @@ class InvoiceController extends Controller
             'due_date' => 'nullable|string',
         ]);
 
+        if (empty($validated['invoice_no'])) {
+            $validated['invoice_no'] = Invoice::nextInvoiceNo();
+        }
+
         $invoice = Invoice::create($validated);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Invoice created.',
-            'data' => $invoice
+            'data' => $invoice,
         ], 201);
+    }
+
+    public function show(Invoice $invoice): JsonResponse
+    {
+        return response()->json([
+            'status' => 'success',
+            'data' => $invoice,
+        ]);
     }
 
     public function update(Request $request, Invoice $invoice): JsonResponse
     {
         $validated = $request->validate([
+            'invoice_no' => 'sometimes|required|string|unique:invoices,invoice_no,'.$invoice->id,
             'client' => 'sometimes|required|string',
             'type' => 'nullable|string',
-            'amount' => 'nullable|numeric',
+            'amount' => 'sometimes|required|numeric',
             'method' => 'nullable|string',
             'etims' => 'nullable|boolean',
             'status' => 'nullable|in:Sent,Paid,Overdue',
@@ -52,8 +73,19 @@ class InvoiceController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Invoice updated.',
-            'data' => $invoice
+            'message' => 'Invoice '.$invoice->invoice_no.' updated.',
+            'data' => $invoice,
+        ]);
+    }
+
+    public function destroy(Invoice $invoice): JsonResponse
+    {
+        $invoiceNo = $invoice->invoice_no;
+        $invoice->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Invoice '.$invoiceNo.' deleted.',
         ]);
     }
 
@@ -70,8 +102,8 @@ class InvoiceController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Payment recorded for ' . $invoice->invoice_no,
-            'data' => $invoice
+            'message' => 'Payment recorded for '.$invoice->invoice_no,
+            'data' => $invoice,
         ]);
     }
 }

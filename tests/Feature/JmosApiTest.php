@@ -173,6 +173,70 @@ class JmosApiTest extends TestCase
             ->assertJsonPath('data.status', 'Paid');
     }
 
+    public function test_invoice_update_endpoint(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        $invoice = Invoice::create([
+            'invoice_no' => 'JM-0146',
+            'client' => 'Pankaj Productions',
+            'type' => 'Deposit 60%',
+            'amount' => 150000,
+            'method' => null,
+            'etims' => false,
+            'status' => 'Sent',
+            'due_date' => 'Sep 25',
+        ]);
+
+        $updateResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->putJson("/api/invoices/{$invoice->id}", [
+                'invoice_no' => 'JM-0146-REV',
+                'client' => 'Pankaj Films International',
+                'amount' => 175000,
+                'status' => 'Paid',
+                'method' => 'Bank Transfer',
+                'etims' => true,
+            ]);
+
+        $updateResponse->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.invoice_no', 'JM-0146-REV')
+            ->assertJsonPath('data.client', 'Pankaj Films International')
+            ->assertJsonPath('data.status', 'Paid')
+            ->assertJsonPath('data.method', 'Bank Transfer');
+
+        $this->assertDatabaseHas('invoices', [
+            'id' => $invoice->id,
+            'invoice_no' => 'JM-0146-REV',
+            'client' => 'Pankaj Films International',
+        ]);
+    }
+
+    public function test_invoice_delete_endpoint(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        $invoice = Invoice::create([
+            'invoice_no' => 'JM-0147',
+            'client' => 'Old Client',
+            'type' => 'Balance 40%',
+            'amount' => 85000,
+            'status' => 'Sent',
+        ]);
+
+        $deleteResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->deleteJson("/api/invoices/{$invoice->id}");
+
+        $deleteResponse->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+
+        $this->assertDatabaseMissing('invoices', [
+            'id' => $invoice->id,
+        ]);
+    }
+
     public function test_finance_overview(): void
     {
         $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
@@ -193,6 +257,53 @@ class JmosApiTest extends TestCase
                 'overdue_count',
                 'ledger',
             ]);
+    }
+
+    public function test_invoice_numbers_are_assigned_automatically_ascending(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        // Invoice 1 created without explicit invoice_no -> should be JM-0146
+        $res1 = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/invoices', [
+                'client' => 'Client Alpha',
+                'type' => 'Deposit 60%',
+                'amount' => 100000,
+            ]);
+        $res1->assertStatus(201)
+            ->assertJsonPath('data.invoice_no', 'JM-0146');
+
+        // Invoice 2 created without explicit invoice_no -> should be JM-0147
+        $res2 = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/invoices', [
+                'client' => 'Client Beta',
+                'type' => 'Deposit 60%',
+                'amount' => 120000,
+            ]);
+        $res2->assertStatus(201)
+            ->assertJsonPath('data.invoice_no', 'JM-0147');
+
+        // Delete Invoice 2
+        $inv2Id = $res2->json('data.id');
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->deleteJson("/api/invoices/{$inv2Id}")
+            ->assertStatus(200);
+
+        // Next number endpoint should still return JM-0147 (or ascending based on highest number)
+        $nextRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/invoices/next-number');
+        $nextRes->assertStatus(200);
+
+        // Invoice 3 created without explicit invoice_no -> ascending sequentially
+        $res3 = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/invoices', [
+                'client' => 'Client Gamma',
+                'type' => 'Full 100%',
+                'amount' => 50000,
+            ]);
+        $res3->assertStatus(201);
+        $this->assertNotEmpty($res3->json('data.invoice_no'));
     }
 
     public function test_web_routes_render_jmos_app(): void

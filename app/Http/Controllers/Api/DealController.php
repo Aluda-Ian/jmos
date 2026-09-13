@@ -98,20 +98,8 @@ class DealController extends Controller
         }
 
         // 3. Draft deposit invoice (60%)
-        $maxNum = 145;
-        $allInvoices = Invoice::pluck('invoice_no');
-        foreach ($allInvoices as $no) {
-            if (preg_match('/(\d+)/', $no, $m)) {
-                $n = (int) $m[1];
-                if ($n > $maxNum) {
-                    $maxNum = $n;
-                }
-            }
-        }
-        $nextNo = 'JM-0'.($maxNum + 1);
-
         $depositInvoice = Invoice::create([
-            'invoice_no' => $nextNo,
+            'invoice_no' => Invoice::nextInvoiceNo(),
             'client' => $deal->client_name,
             'type' => 'Deposit 60%',
             'amount' => $deal->value * 0.60,

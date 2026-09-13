@@ -44,6 +44,7 @@ Route::post('deals/{deal}/win', [DealController::class, 'win']);
 
 Route::apiResource('tasks', TaskController::class);
 
+Route::get('invoices/next-number', [InvoiceController::class, 'nextNumber']);
 Route::apiResource('invoices', InvoiceController::class);
 Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay']);
 

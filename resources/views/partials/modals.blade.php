@@ -533,11 +533,12 @@
   <div class="mbox">
     <button class="mclose" data-close="invoiceModal" title="Close" aria-label="Close modal">&times;</button>
     <h3 id="invoiceModalTitle">Issue new invoice</h3>
-    <p class="msub">Record an outgoing client invoice in JMOS.</p>
+    <p class="msub" id="invoiceModalSub">Record an outgoing client invoice in JMOS.</p>
+    <input type="hidden" id="editInvoiceId" value="">
     <div class="grid2">
       <div class="field">
-        <label for="niNo">Invoice No *</label>
-        <input id="niNo" placeholder="e.g. JM-0146" required autocomplete="off">
+        <label for="niNo">Invoice No <span style="font-size:11px;color:var(--muted);font-weight:normal">(Auto-assigned ascending)</span></label>
+        <input id="niNo" placeholder="Auto-assigned (e.g. JM-0146)" autocomplete="off">
       </div>
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
@@ -589,9 +590,30 @@
         </select>
       </div>
     </div>
-    <div class="mfoot">
-      <button type="button" class="btn" data-close="invoiceModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveInvoiceBtn">Issue invoice</button>
+    <div class="grid2" id="invoiceStatusFields">
+      <div class="field">
+        <label for="niStatus">Invoice Status</label>
+        <select id="niStatus">
+          <option value="Sent">Sent</option>
+          <option value="Paid">Paid</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="niMethod">Payment Method</label>
+        <input id="niMethod" placeholder="e.g. M-Pesa, Bank Transfer, Cheque" autocomplete="off">
+      </div>
+    </div>
+    <div class="mfoot" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <button type="button" class="btn danger" id="deleteInvoiceModalBtn" style="display:none;align-items:center;gap:4px">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete
+        </button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn" data-close="invoiceModal">Cancel</button>
+        <button type="button" class="btn primary" id="saveInvoiceBtn">Issue invoice</button>
+      </div>
     </div>
   </div>
 </div>

@@ -12,7 +12,7 @@ function renderInvoices() {
     return;
   }
 
-  const canPay = JMOS_STATE.currentUser && 
+  const canManage = JMOS_STATE.currentUser && 
     (JMOS_STATE.currentUser.role === 'owner' || JMOS_STATE.currentUser.role === 'finance');
 
   invBody.innerHTML = list.map(v => {
@@ -25,9 +25,30 @@ function renderInvoices() {
         ? '<span class="pill tint-red">Overdue</span>' 
         : '<span class="pill tint-amber">Sent</span>';
 
-    const act = (!isPaid && canPay) 
-      ? `<button class="linkbtn" data-pay-invoice-id="${v.id}">Record payment</button>` 
-      : (isPaid ? '<span style="color:var(--green);font-size:12px;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Received</span>' : '');
+    const actionButtons = [];
+
+    if (!isPaid && canManage) {
+      actionButtons.push(`
+        <button type="button" class="row-action-btn" data-pay-invoice-id="${v.id}" title="Record payment for ${escHtml(v.invoice_no)}">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Pay
+        </button>
+      `);
+    }
+
+    if (canManage) {
+      actionButtons.push(`
+        <button type="button" class="row-action-btn" data-edit-invoice-id="${v.id}" title="Edit invoice ${escHtml(v.invoice_no)}">
+          <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit
+        </button>
+        <button type="button" class="row-action-btn danger" data-del-invoice-id="${v.id}" data-invoice-no="${escHtml(v.invoice_no)}" title="Delete invoice ${escHtml(v.invoice_no)}">
+          <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete
+        </button>
+      `);
+    } else if (isPaid) {
+      actionButtons.push(`<span style="color:var(--green);font-size:12px;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Received</span>`);
+    }
+
+    const act = `<div class="row-actions-wrap">${actionButtons.join('')}</div>`;
 
     return `<tr>
       <td class="mono" style="font-weight:600">${escHtml(v.invoice_no)}</td>
@@ -38,7 +59,7 @@ function renderInvoices() {
       <td>${v.etims ? '<span class="yes"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>' : '<span class="mono" style="color:var(--faint)">—</span>'}</td>
       <td>${st}</td>
       <td class="mono" style="color:var(--muted)">${escHtml(v.due_date || '—')}</td>
-      <td>${act}</td>
+      <td style="text-align:right">${act}</td>
     </tr>`;
   }).join('');
 }
@@ -196,6 +217,28 @@ function initFinance() {
         payBtn.disabled = false;
         payBtn.textContent = 'Record payment';
       }
+    }
+  });
+
+  // Event delegation for invoice Edit & Delete actions
+  document.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('[data-edit-invoice-id]');
+    if (editBtn) {
+      const invId = editBtn.getAttribute('data-edit-invoice-id');
+      if (typeof window.openEditInvoiceModal === 'function') {
+        window.openEditInvoiceModal(invId);
+      }
+      return;
+    }
+
+    const delBtn = e.target.closest('[data-del-invoice-id]');
+    if (delBtn) {
+      const invId = delBtn.getAttribute('data-del-invoice-id');
+      const invNo = delBtn.getAttribute('data-invoice-no');
+      if (typeof window.deleteInvoice === 'function') {
+        window.deleteInvoice(invId, invNo);
+      }
+      return;
     }
   });
 }

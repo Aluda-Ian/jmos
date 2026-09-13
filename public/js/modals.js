@@ -153,6 +153,25 @@ function resolveModalClient(selectId, wrapId, inputId, hiddenId) {
   return '';
 }
 
+// Automatically assign next ascending invoice number (e.g. JM-0146, JM-0147)
+window.getNextInvoiceNo = function() {
+  const list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
+  let maxNum = 145;
+  list.forEach(inv => {
+    if (inv && inv.invoice_no) {
+      const m = String(inv.invoice_no).match(/(\d+)/);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (!isNaN(n) && n > maxNum) {
+          maxNum = n;
+        }
+      }
+    }
+  });
+  const next = maxNum + 1;
+  return 'JM-' + String(next).padStart(4, '0');
+};
+
 // Global Modal Open & Close Functions
 window.openModal = function(id) {
   const m = typeof id === 'string' ? document.getElementById(id) : id;
@@ -223,16 +242,29 @@ window.openModal = function(id) {
       }
     }
   } else if (modalId === 'invoiceModal') {
-    const maxNo = (window.JMOS_STATE && JMOS_STATE.invoices && JMOS_STATE.invoices.length)
-      ? (145 + JMOS_STATE.invoices.length) 
-      : 146;
-    const niNo = document.getElementById('niNo');
-    if (niNo) niNo.value = 'JM-0' + maxNo;
-    ['niAmount', 'niDue'].forEach(fid => {
-      const el = document.getElementById(fid);
-      if (el) el.value = '';
-    });
-    setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
+    const editId = document.getElementById('editInvoiceId')?.value;
+    if (!editId) {
+      const titleEl = document.getElementById('invoiceModalTitle');
+      if (titleEl) titleEl.textContent = 'Issue new invoice';
+      const subEl = document.getElementById('invoiceModalSub');
+      if (subEl) subEl.textContent = 'Record an outgoing client invoice in JMOS.';
+      const saveBtn = document.getElementById('saveInvoiceBtn');
+      if (saveBtn) saveBtn.textContent = 'Issue invoice';
+      const delBtn = document.getElementById('deleteInvoiceModalBtn');
+      if (delBtn) delBtn.style.display = 'none';
+
+      const niNo = document.getElementById('niNo');
+      if (niNo) niNo.value = window.getNextInvoiceNo();
+      ['niAmount', 'niDue', 'niMethod'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (el) el.value = '';
+      });
+      const st = document.getElementById('niStatus');
+      if (st) st.value = 'Sent';
+      const etims = document.getElementById('niEtims');
+      if (etims) etims.value = '1';
+      setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
+    }
   } else if (modalId === 'expenseModal') {
     ['neName', 'neProject', 'neAmount'].forEach(fid => {
       const el = document.getElementById(fid);
@@ -272,6 +304,12 @@ window.closeModal = function(id) {
   if (m) {
     m.classList.remove('on');
     m.style.display = 'none';
+    if (m.id === 'invoiceModal') {
+      const editId = document.getElementById('editInvoiceId');
+      if (editId) editId.value = '';
+      const delBtn = document.getElementById('deleteInvoiceModalBtn');
+      if (delBtn) delBtn.style.display = 'none';
+    }
   }
   if (!document.querySelector('.modal.on') && !document.querySelector('.cascade.on')) {
     document.body.style.overflow = '';
@@ -390,6 +428,8 @@ function initModals() {
 
     if (e.target.closest('#addInvoiceBtn')) {
       e.preventDefault();
+      const editId = document.getElementById('editInvoiceId');
+      if (editId) editId.value = '';
       openModal('invoiceModal');
       return;
     }
@@ -565,36 +605,64 @@ function initModals() {
       return;
     }
 
-    // 4.5 Submit: Add Invoice
+    // 4.5 Submit: Add / Edit Invoice
     if (e.target.closest('#saveInvoiceBtn')) {
       const btn = e.target.closest('#saveInvoiceBtn');
-      const no = document.getElementById('niNo')?.value.trim();
+      const editId = document.getElementById('editInvoiceId')?.value;
+      const isEdit = Boolean(editId);
+
+      let no = document.getElementById('niNo')?.value.trim();
+      if (!no && !isEdit) {
+        no = window.getNextInvoiceNo();
+      }
       const client = resolveModalClient('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient');
       const amt = Number(document.getElementById('niAmount')?.value) || 0;
-      if (!no || !client || !amt) return showToast('Invoice details required', 'Enter invoice number, client and amount', true);
+      if (!client || !amt) return showToast('Invoice details required', 'Enter client and amount', true);
 
       btn.disabled = true;
-      btn.textContent = 'Issuing…';
+      btn.textContent = isEdit ? 'Updating…' : 'Issuing…';
       try {
-        await JMOS_API.post('/invoices', {
+        const payload = {
           invoice_no: no,
           client: client,
           type: document.getElementById('niType')?.value || 'Deposit 60%',
           amount: amt,
-          method: null,
+          method: document.getElementById('niMethod')?.value.trim() || null,
           etims: document.getElementById('niEtims')?.value === '1',
-          status: 'Sent',
+          status: document.getElementById('niStatus')?.value || 'Sent',
           due_date: document.getElementById('niDue')?.value.trim() || 'Sep 30'
-        });
+        };
+
+        if (isEdit) {
+          await JMOS_API.put(`/invoices/${editId}`, payload);
+          showToast('Invoice updated', `${no} for ${client} (${fmt(amt)})`);
+        } else {
+          await JMOS_API.post('/invoices', payload);
+          showToast('Invoice issued', `${no} for ${client} (${fmt(amt)})`);
+        }
+
         closeModal('invoiceModal');
-        showToast('Invoice issued', `${no} for ${client} (${fmt(amt)})`);
         await JMOS_API.fetchAll();
         renderAllViews();
+        if (typeof recomputeFinance === 'function') {
+          await recomputeFinance();
+        }
       } catch (err) {
-        showToast('Failed to issue invoice', err.message, true);
+        showToast(isEdit ? 'Failed to update invoice' : 'Failed to issue invoice', err.message, true);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Issue invoice';
+        btn.textContent = isEdit ? 'Save Changes' : 'Issue invoice';
+      }
+      return;
+    }
+
+    // 4.5b Modal Delete Invoice Button
+    if (e.target.closest('#deleteInvoiceModalBtn')) {
+      const delBtn = e.target.closest('#deleteInvoiceModalBtn');
+      const invId = delBtn.getAttribute('data-del-invoice-id') || document.getElementById('editInvoiceId')?.value;
+      const invNo = delBtn.getAttribute('data-invoice-no') || document.getElementById('niNo')?.value;
+      if (invId && typeof window.deleteInvoice === 'function') {
+        window.deleteInvoice(invId, invNo);
       }
       return;
     }
@@ -864,4 +932,104 @@ window.triggerCleanupClients = async function() {
     confirmText: 'Got it',
     isDanger: false
   });
+};
+
+// 9. Invoice Edit & Delete Handlers
+window.openEditInvoiceModal = function(invoiceId) {
+  const list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
+  const inv = list.find(x => String(x.id) === String(invoiceId));
+  if (!inv) {
+    showToast('Invoice not found', 'Unable to locate invoice in database', true);
+    return;
+  }
+
+  const editId = document.getElementById('editInvoiceId');
+  if (editId) editId.value = inv.id;
+
+  const titleEl = document.getElementById('invoiceModalTitle');
+  if (titleEl) titleEl.textContent = `Edit Invoice — ${inv.invoice_no}`;
+  const subEl = document.getElementById('invoiceModalSub');
+  if (subEl) subEl.textContent = `Update invoice details, status, or billing info.`;
+  const saveBtn = document.getElementById('saveInvoiceBtn');
+  if (saveBtn) saveBtn.textContent = 'Save Changes';
+  const delBtn = document.getElementById('deleteInvoiceModalBtn');
+  if (delBtn) {
+    delBtn.style.display = 'inline-flex';
+    delBtn.setAttribute('data-del-invoice-id', inv.id);
+    delBtn.setAttribute('data-invoice-no', inv.invoice_no);
+  }
+
+  const niNo = document.getElementById('niNo');
+  if (niNo) niNo.value = inv.invoice_no || '';
+
+  const niAmount = document.getElementById('niAmount');
+  if (niAmount) niAmount.value = inv.amount != null ? inv.amount : '';
+
+  const niType = document.getElementById('niType');
+  if (niType) niType.value = inv.type || 'Deposit 60%';
+
+  const niDue = document.getElementById('niDue');
+  if (niDue) niDue.value = inv.due_date || '';
+
+  const niEtims = document.getElementById('niEtims');
+  if (niEtims) niEtims.value = inv.etims ? '1' : '0';
+
+  const niStatus = document.getElementById('niStatus');
+  if (niStatus) niStatus.value = inv.status || 'Sent';
+
+  const niMethod = document.getElementById('niMethod');
+  if (niMethod) niMethod.value = inv.method || '';
+
+  setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
+  const sel = document.getElementById('niClientSelect');
+  const hid = document.getElementById('niClient');
+  if (sel && inv.client) {
+    let exists = false;
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value.toLowerCase() === inv.client.toLowerCase()) {
+        sel.selectedIndex = i;
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = inv.client;
+      opt.textContent = inv.client;
+      sel.insertBefore(opt, sel.options[1] || null);
+      sel.value = inv.client;
+    }
+    if (hid) hid.value = inv.client;
+  }
+
+  openModal('invoiceModal');
+};
+
+window.deleteInvoice = async function(id, invoiceNo) {
+  const list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
+  const inv = list.find(x => String(x.id) === String(id));
+  const no = invoiceNo || (inv ? inv.invoice_no : 'this invoice');
+  const details = inv ? ` (${inv.client} — ${fmt(inv.amount)})` : '';
+
+  const confirmed = await window.showConfirmDialog({
+    title: 'Delete Invoice?',
+    message: `Are you sure you want to permanently delete invoice <b>${escHtml(no)}</b>${escHtml(details)} from the database? This will recalculate revenue and finance metrics.`,
+    confirmText: 'Delete Invoice',
+    isDanger: true
+  });
+
+  if (!confirmed) return;
+
+  try {
+    await JMOS_API.delete(`/invoices/${id}`);
+    closeModal('invoiceModal');
+    showToast('Invoice deleted', `Invoice ${no} removed from database`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+    if (typeof recomputeFinance === 'function') {
+      await recomputeFinance();
+    }
+  } catch (err) {
+    showToast('Delete failed', err.message, true);
+  }
 };
