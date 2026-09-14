@@ -174,6 +174,7 @@ const JMOS_API = {
           name: u.name,
           title: u.title || 'Team',
           email: u.email,
+          secondary_email: u.secondary_email || null,
           role: u.role || 'team',
           type: u.type || 'Full-time',
           pay: u.pay || '—',

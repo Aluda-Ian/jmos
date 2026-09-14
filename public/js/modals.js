@@ -228,18 +228,29 @@ window.openModal = function(id) {
     const st = document.getElementById('ntStage');
     if (st) st.value = 'todo';
 
-    // Populate projects dropdown
-    const pSel = document.getElementById('ntProject');
-    if (pSel) {
-      const pList = (window.JMOS_STATE && JMOS_STATE.projects) ? JMOS_STATE.projects : [];
-      let opts = '<option value="">— Select a project —</option>';
-      opts += pList.map(p => `<option value="${p.id}">${escHtml(p.project_name)} (${escHtml(p.client || 'Client')})</option>`).join('');
-      pSel.innerHTML = opts;
+    // Reset searchable project picker
+    const searchInput = document.getElementById('taskProjectSearchInput');
+    if (searchInput) searchInput.value = '';
+    const searchClear = document.getElementById('taskProjectSearchClear');
+    if (searchClear) searchClear.style.display = 'none';
+    const dropdown = document.getElementById('taskProjectDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    const trigger = document.getElementById('taskProjectTrigger');
+    if (trigger) trigger.classList.remove('active');
 
-      if (window._preselectedProjectId) {
-        pSel.value = String(window._preselectedProjectId);
-        delete window._preselectedProjectId;
+    if (window._preselectedProjectId) {
+      if (typeof window.selectTaskProject === 'function') {
+        window.selectTaskProject(window._preselectedProjectId);
       }
+      delete window._preselectedProjectId;
+    } else {
+      if (typeof window.selectTaskProject === 'function') {
+        window.selectTaskProject(null);
+      }
+    }
+
+    if (typeof window.ensureProjectsLoadedForTask === 'function') {
+      window.ensureProjectsLoadedForTask();
     }
   } else if (modalId === 'invoiceModal') {
     const editId = document.getElementById('editInvoiceId')?.value;
@@ -342,18 +353,279 @@ window.showToast = function(title, subtitle, isRed = false) {
   }, 3400);
 };
 
+/* ==========================================================================
+   Task Modal Searchable Project Picker Controller
+   ========================================================================== */
+
+window.populateTaskProjectOptions = function(filterText = '') {
+  const listEl = document.getElementById('taskProjectOptionsList');
+  if (!listEl) return;
+
+  const projects = (window.JMOS_STATE && Array.isArray(JMOS_STATE.projects)) ? JMOS_STATE.projects : [];
+  const currentVal = document.getElementById('ntProject')?.value || '';
+  const term = (filterText || '').trim().toLowerCase();
+
+  const filtered = term
+    ? projects.filter(p => {
+        const name = (p.project_name || p.name || '').toLowerCase();
+        const client = (p.client || '').toLowerCase();
+        const type = (p.project_type || '').toLowerCase();
+        return name.includes(term) || client.includes(term) || type.includes(term);
+      })
+    : projects;
+
+  let html = '';
+
+  // Standalone option (No project)
+  const isNoneSelected = !currentVal;
+  html += `
+    <div class="searchable-select-item ${isNoneSelected ? 'selected' : ''}" data-project-id="" role="option" aria-selected="${isNoneSelected}">
+      <div class="searchable-select-item-title">
+        <span style="color:var(--muted)">— None (Standalone task) —</span>
+      </div>
+    </div>
+  `;
+
+  if (!projects.length) {
+    html += `
+      <div class="searchable-select-empty">
+        No active projects found in database.<br>
+        <span style="font-size:11px;opacity:0.8">You can proceed without a project or create one first.</span>
+      </div>
+    `;
+  } else if (!filtered.length) {
+    html += `
+      <div class="searchable-select-empty">
+        No projects match "<b>${escHtml(filterText)}</b>"
+      </div>
+    `;
+  } else {
+    html += filtered.map(p => {
+      const isSelected = String(p.id) === String(currentVal);
+      const name = p.project_name || p.name || ('Project #' + p.id);
+      const client = p.client || 'Client';
+      const stage = p.stage ? p.stage.replace(/_/g, ' ') : '';
+      return `
+        <div class="searchable-select-item ${isSelected ? 'selected' : ''}" data-project-id="${p.id}" role="option" aria-selected="${isSelected}">
+          <div class="searchable-select-item-title">
+            <span style="font-weight:600">${escHtml(name)}</span>
+          </div>
+          <div class="searchable-select-item-meta">
+            <span class="searchable-select-badge">${escHtml(client)}</span>
+            ${stage ? `<span style="font-size:10.5px;text-transform:capitalize;opacity:0.75">${escHtml(stage)}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  listEl.innerHTML = html;
+};
+
+window.selectTaskProject = function(projectId) {
+  const hiddenInput = document.getElementById('ntProject');
+  const labelEl = document.getElementById('taskProjectSelectedLabel');
+  const clearBtn = document.getElementById('taskProjectClearBtn');
+
+  const val = (projectId != null && projectId !== '') ? String(projectId) : '';
+  if (hiddenInput) hiddenInput.value = val;
+
+  const projects = (window.JMOS_STATE && Array.isArray(JMOS_STATE.projects)) ? JMOS_STATE.projects : [];
+  const project = val ? projects.find(p => String(p.id) === val) : null;
+
+  if (labelEl) {
+    if (project) {
+      const name = project.project_name || project.name || ('Project #' + project.id);
+      const client = project.client || 'Client';
+      labelEl.innerHTML = `
+        <span style="font-weight:600;color:var(--ink)">${escHtml(name)}</span>
+        <span class="searchable-select-badge" style="margin-left:4px">${escHtml(client)}</span>
+      `;
+    } else {
+      labelEl.innerHTML = `<span style="color:var(--muted)">— Select a project —</span>`;
+    }
+  }
+
+  if (clearBtn) {
+    clearBtn.style.display = project ? 'grid' : 'none';
+  }
+
+  // Update selected class in dropdown
+  const listEl = document.getElementById('taskProjectOptionsList');
+  if (listEl) {
+    listEl.querySelectorAll('.searchable-select-item').forEach(item => {
+      const itemId = item.getAttribute('data-project-id');
+      const isSelected = (itemId === '' && !val) || (itemId === val);
+      item.classList.toggle('selected', isSelected);
+      item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    });
+  }
+};
+
+window.ensureProjectsLoadedForTask = async function() {
+  const listEl = document.getElementById('taskProjectOptionsList');
+  const hasProjects = window.JMOS_STATE && Array.isArray(JMOS_STATE.projects) && JMOS_STATE.projects.length > 0;
+
+  if (!hasProjects) {
+    if (listEl) {
+      listEl.innerHTML = `
+        <div class="searchable-select-loading">
+          <svg viewBox="0 0 24 24" width="16" height="16" class="spin" style="display:inline-block;vertical-align:middle;margin-right:6px;animation:spin 1s linear infinite"><path d="M23 4v6h-6M1 20v-6h6"/></svg>
+          Loading projects from database…
+        </div>
+      `;
+    }
+    try {
+      const res = await JMOS_API.get('/projects');
+      if (Array.isArray(res)) {
+        JMOS_STATE.projects = res;
+      }
+    } catch (err) {
+      console.warn('Could not load projects for task selector:', err);
+    }
+  }
+
+  const searchInput = document.getElementById('taskProjectSearchInput');
+  window.populateTaskProjectOptions(searchInput ? searchInput.value : '');
+
+  if (window._preselectedProjectId) {
+    window.selectTaskProject(window._preselectedProjectId);
+    delete window._preselectedProjectId;
+  }
+};
+
+window.initTaskProjectPicker = function() {
+  const wrap = document.getElementById('taskProjectSelectWrap');
+  const trigger = document.getElementById('taskProjectTrigger');
+  const dropdown = document.getElementById('taskProjectDropdown');
+  const searchInput = document.getElementById('taskProjectSearchInput');
+  const searchClear = document.getElementById('taskProjectSearchClear');
+  const clearBtn = document.getElementById('taskProjectClearBtn');
+  const listEl = document.getElementById('taskProjectOptionsList');
+
+  if (!wrap || wrap.dataset.initialized === 'true') return;
+  wrap.dataset.initialized = 'true';
+
+  function openDropdown() {
+    dropdown.style.display = 'block';
+    trigger.classList.add('active');
+    trigger.setAttribute('aria-expanded', 'true');
+    window.ensureProjectsLoadedForTask();
+    setTimeout(() => searchInput?.focus(), 40);
+  }
+
+  function closeDropdown() {
+    dropdown.style.display = 'none';
+    trigger.classList.remove('active');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleDropdown() {
+    if (dropdown.style.display === 'none' || !dropdown.style.display) {
+      openDropdown();
+    } else {
+      closeDropdown();
+    }
+  }
+
+  trigger.addEventListener('click', (e) => {
+    if (e.target.closest('#taskProjectClearBtn')) return;
+    toggleDropdown();
+  });
+
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      openDropdown();
+    }
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.selectTaskProject(null);
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const val = searchInput.value;
+      if (searchClear) searchClear.style.display = val ? 'inline-block' : 'none';
+      window.populateTaskProjectOptions(val);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDropdown();
+        trigger.focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const firstItem = listEl?.querySelector('.searchable-select-item');
+        if (firstItem) {
+          const id = firstItem.getAttribute('data-project-id');
+          window.selectTaskProject(id);
+          closeDropdown();
+          trigger.focus();
+        }
+      }
+    });
+  }
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+      window.populateTaskProjectOptions('');
+      searchInput.focus();
+    });
+  }
+
+  if (listEl) {
+    listEl.addEventListener('click', (e) => {
+      const item = e.target.closest('.searchable-select-item');
+      if (!item) return;
+      const id = item.getAttribute('data-project-id');
+      window.selectTaskProject(id);
+      closeDropdown();
+      trigger.focus();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target) && dropdown.style.display !== 'none') {
+      closeDropdown();
+    }
+  });
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.initTaskProjectPicker === 'function') {
+      window.initTaskProjectPicker();
+    }
+  });
+} else {
+  if (typeof window.initTaskProjectPicker === 'function') {
+    window.initTaskProjectPicker();
+  }
+}
+
 window.openTaskModal = function(projectId) {
   if (projectId) {
     window._preselectedProjectId = projectId;
   }
   openModal('taskModal');
-  if (projectId) {
-    const pSel = document.getElementById('ntProject');
-    if (pSel) pSel.value = String(projectId);
+  if (projectId && typeof window.selectTaskProject === 'function') {
+    window.selectTaskProject(projectId);
   }
 };
 
 function initModals() {
+  if (typeof window.initTaskProjectPicker === 'function') {
+    window.initTaskProjectPicker();
+  }
+
   const cascade = document.getElementById('cascade');
   const cascadeDone = document.getElementById('cascadeDone');
   const cascadeBg = document.getElementById('cascadeBg');

@@ -26,6 +26,10 @@ function showView(view) {
   // Trigger on-demand API fetches / iframe loaders
   if (view === 'clients') ensureClients();
   if (view === 'projects') ensureProjects();
+  if (view === 'tasks') {
+    if (typeof ensureProjects === 'function') ensureProjects();
+    if (typeof renderTasks === 'function') renderTasks();
+  }
   if (view === 'calendar') {
     if (window.renderFullCalendar) window.renderFullCalendar();
     if (typeof window.loadCalendarSyncStatus === 'function') window.loadCalendarSyncStatus();

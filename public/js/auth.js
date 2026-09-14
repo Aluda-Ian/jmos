@@ -233,9 +233,36 @@ async function setAuthenticatedSession(user, token, isRestore = false) {
     const savedView = localStorage.getItem('jmos_active_view') || 'dashboard';
     if (typeof showView === 'function') showView(savedView);
 
-    // Verify token with backend in background
+    // Fetch fresh database state in background and re-render views
+    JMOS_API.fetchAll().then(() => {
+      if (typeof renderAllViews === 'function') renderAllViews();
+      if (typeof window.populateTaskProjectOptions === 'function') {
+        window.populateTaskProjectOptions();
+      }
+    }).catch(console.warn);
+
+    // Verify token with backend in background and synchronize fresh user profile
     if (token && token !== 'demo_token') {
-      JMOS_API.get('/auth/me').catch(err => {
+      JMOS_API.get('/auth/me').then(res => {
+        if (res.status === 'success' && res.user) {
+          const freshUser = {
+            ...JMOS_STATE.currentUser,
+            ...res.user,
+            color: res.user.color || JMOS_STATE.currentUser?.color || '#C52523',
+            ini: res.user.initials || res.user.ini || getInitials(res.user.name)
+          };
+          JMOS_STATE.currentUser = freshUser;
+          try {
+            localStorage.setItem('jmos_user', JSON.stringify(freshUser));
+          } catch (_) {}
+
+          // Refresh secondary email field if settings view is open
+          const secEmailInput = document.getElementById('cfg_secondary_email');
+          if (secEmailInput && !secEmailInput.matches(':focus')) {
+            secEmailInput.value = freshUser.secondary_email || '';
+          }
+        }
+      }).catch(err => {
         if (err.message && err.message.includes('401')) {
           console.warn('Session expired on backend:', err.message);
           performLogout('server_expired');
@@ -304,6 +331,7 @@ function initAuth() {
           name: u.name,
           title: u.title || 'Team',
           email: u.email,
+          secondary_email: u.secondary_email || null,
           role: u.role || 'team',
           type: u.type || 'Full-time',
           pay: u.pay || '—',
@@ -350,6 +378,8 @@ function initAuth() {
           name: res.user.name,
           title: res.user.title,
           email: res.user.email,
+          secondary_email: res.user.secondary_email || null,
+          google_calendar_email: res.user.google_calendar_email || null,
           role: res.user.role,
           type: res.user.type,
           pay: res.user.pay,

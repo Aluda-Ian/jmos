@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AppNotification;
 use App\Models\User;
+use App\Services\NotificationService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -130,5 +131,70 @@ class NotificationTest extends TestCase
             ]);
 
         $this->assertDatabaseMissing('notifications', ['id' => $notification->id]);
+    }
+
+    public function test_user_can_update_secondary_notification_email(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/auth/secondary-email', [
+                'secondary_email' => 'ian.personal@gmail.com',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'secondary_email' => 'ian.personal@gmail.com',
+            ]);
+
+        $user->refresh();
+        $this->assertEquals('ian.personal@gmail.com', $user->secondary_email);
+        $this->assertEquals('ian.personal@gmail.com', NotificationService::resolveSecondaryEmail($user->email));
+    }
+
+    public function test_user_can_remove_secondary_notification_email(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $user->update(['secondary_email' => 'old.personal@gmail.com']);
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/auth/secondary-email', [
+                'secondary_email' => null,
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'secondary_email' => null,
+            ]);
+
+        $user->refresh();
+        $this->assertNull($user->secondary_email);
+    }
+
+    public function test_cannot_set_invalid_secondary_email_format(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/auth/secondary-email', [
+                'secondary_email' => 'invalid-email-address',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['secondary_email']);
+    }
+
+    public function test_unauthenticated_cannot_update_secondary_email(): void
+    {
+        $response = $this->postJson('/api/auth/secondary-email', [
+            'secondary_email' => 'ian.personal@gmail.com',
+        ]);
+
+        $response->assertStatus(401);
     }
 }

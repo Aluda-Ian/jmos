@@ -183,4 +183,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Home Screen Footnote -->
+  <footer class="dash-footnote" style="margin-top:28px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--muted);flex-wrap:wrap;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span>JMOS &middot; Jeota Media Operating System</span>
+      <span style="display:inline-block;width:3px;height:3px;border-radius:50%;background:var(--muted)"></span>
+      <span>All systems operational</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.4.2') }}</span>
+      <span>&copy; {{ date('Y') }} Jeota Media Ltd</span>
+    </div>
+  </footer>
 </section>

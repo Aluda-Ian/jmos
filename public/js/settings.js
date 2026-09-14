@@ -4,6 +4,12 @@
 
 async function loadSettings() {
   try {
+    // Populate user's secondary notification email if available in current session
+    const secondaryEmailInput = document.getElementById('cfg_secondary_email');
+    if (secondaryEmailInput && !secondaryEmailInput.matches(':focus')) {
+      secondaryEmailInput.value = (JMOS_STATE.currentUser && JMOS_STATE.currentUser.secondary_email) || '';
+    }
+
     const res = await JMOS_API.get('/settings');
     if (res.status === 'success' && res.data) {
       const data = res.data;
@@ -54,6 +60,12 @@ async function saveAllSettings() {
   if (saveBtn) {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
+  }
+
+  // Also save secondary notification email if present in the form
+  const secondaryEmailInput = document.getElementById('cfg_secondary_email');
+  if (secondaryEmailInput) {
+    saveSecondaryEmail();
   }
 
   const payload = [
@@ -277,9 +289,127 @@ function initSettings() {
     }
   });
 
+  // Secondary notification email handlers
+  const saveSecBtn = document.getElementById('saveSecondaryEmailBtn');
+  if (saveSecBtn) {
+    saveSecBtn.onclick = saveSecondaryEmail;
+  }
+  const secEmailInput = document.getElementById('cfg_secondary_email');
+  if (secEmailInput) {
+    secEmailInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveSecondaryEmail();
+      }
+    });
+  }
+
   initSystemUpgrade();
   loadSettings();
 }
+
+/* ==========================================================================
+   Secondary / Personal Notification Email Preferences
+   ========================================================================== */
+
+async function saveSecondaryEmail() {
+  const input = document.getElementById('cfg_secondary_email');
+  const btn = document.getElementById('saveSecondaryEmailBtn');
+  const resultBox = document.getElementById('secondaryEmailResult');
+  const email = input ? input.value.trim() : '';
+
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = 'var(--red-soft)';
+      resultBox.style.color = 'var(--red)';
+      resultBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      resultBox.textContent = 'Please enter a valid email address.';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Invalid Email', 'Please enter a valid email address', true);
+    }
+    return false;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" class="spin" style="animation:spin 1s linear infinite"><path d="M23 4v6h-6M1 20v-6h6"/></svg> Saving…';
+  }
+  if (resultBox) resultBox.style.display = 'none';
+
+  try {
+    const res = await JMOS_API.post('/auth/secondary-email', { secondary_email: email });
+    const savedEmail = res.secondary_email !== undefined ? res.secondary_email : (email || null);
+
+    if (JMOS_STATE.currentUser) {
+      JMOS_STATE.currentUser.secondary_email = savedEmail;
+      try {
+        localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+      } catch (_) {}
+    }
+
+    if (Array.isArray(JMOS_STATE.users) && JMOS_STATE.currentUser) {
+      const idx = JMOS_STATE.users.findIndex(u => u.id === JMOS_STATE.currentUser.id || u.email === JMOS_STATE.currentUser.email);
+      if (idx !== -1) {
+        JMOS_STATE.users[idx].secondary_email = savedEmail;
+      }
+    }
+
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = 'var(--green-soft)';
+      resultBox.style.color = 'var(--green)';
+      resultBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+      resultBox.innerHTML = savedEmail
+        ? `✓ Notification email saved: <b>${escHtml(savedEmail)}</b> will receive copies of all updates &amp; alerts.`
+        : '✓ Secondary notification email removed.';
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('Preferences Saved', savedEmail ? 'Notification copy email updated' : 'Notification email cleared');
+    }
+    return true;
+  } catch (err) {
+    if (JMOS_STATE.apiToken === 'demo_token' && JMOS_STATE.currentUser) {
+      JMOS_STATE.currentUser.secondary_email = email || null;
+      try {
+        localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+      } catch (_) {}
+      if (resultBox) {
+        resultBox.style.display = 'block';
+        resultBox.style.background = 'var(--green-soft)';
+        resultBox.style.color = 'var(--green)';
+        resultBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        resultBox.innerHTML = email
+          ? `✓ Notification email saved locally: <b>${escHtml(email)}</b>`
+          : '✓ Secondary notification email removed.';
+      }
+      if (typeof showToast === 'function') {
+        showToast('Preferences Saved', 'Notification copy email updated');
+      }
+      return true;
+    }
+
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = 'var(--red-soft)';
+      resultBox.style.color = 'var(--red)';
+      resultBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      resultBox.textContent = err.message || 'Failed to save notification email.';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Save Failed', err.message, true);
+    }
+    return false;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save';
+    }
+  }
+}
+window.saveSecondaryEmail = saveSecondaryEmail;
 
 /* ==========================================================================
    JMOS — System Software Upgrade & IT Maintenance Handlers

@@ -486,11 +486,31 @@
     <button class="mclose" data-close="taskModal" title="Close" aria-label="Close modal">&times;</button>
     <h3 id="taskModalTitle">Create a task</h3>
     <p class="msub">Assign a task to team members across project workflows.</p>
-    <div class="field">
-      <label for="ntProject">Attach to Project</label>
-      <select id="ntProject">
-        <option value="">— Select a project —</option>
-      </select>
+    <div class="field" id="taskProjectPickerField">
+      <label for="taskProjectTrigger">Attach to Project</label>
+      <input type="hidden" id="ntProject" name="project_id" value="">
+      <div class="searchable-select-wrap" id="taskProjectSelectWrap">
+        <div class="searchable-select-trigger" id="taskProjectTrigger" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+          <span class="searchable-select-label" id="taskProjectSelectedLabel">
+            <span style="color:var(--muted)">— Select a project —</span>
+          </span>
+          <div class="searchable-select-trigger-actions">
+            <button type="button" class="searchable-select-clear" id="taskProjectClearBtn" title="Clear project selection" style="display:none" aria-label="Clear project selection">&times;</button>
+            <svg class="searchable-select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <div class="searchable-select-dropdown" id="taskProjectDropdown" style="display:none">
+          <div class="searchable-select-search-wrap">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="taskProjectSearchInput" placeholder="Search projects by name or client…" autocomplete="off">
+            <button type="button" class="searchable-select-input-clear" id="taskProjectSearchClear" style="display:none" title="Clear search">&times;</button>
+          </div>
+          <div class="searchable-select-list" id="taskProjectOptionsList" role="listbox">
+            <!-- Populated dynamically with search options -->
+          </div>
+        </div>
+      </div>
     </div>
     <div class="field">
       <label for="ntTitle">Task title *</label>
