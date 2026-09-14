@@ -1022,3 +1022,152 @@
   color: var(--muted, #948885);
 }
 
+/* ==========================================================================
+   Expense Receipt & eTIMS Support Documents Styling
+   ========================================================================== */
+.expense-upload-box {
+  border: 2px dashed var(--line, #e2dcd7);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+  background: var(--panel, #faf8f6);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+
+.expense-upload-box:hover,
+.expense-upload-box.dragover {
+  border-color: var(--red, #C52523);
+  background: var(--red-soft, rgba(197, 37, 35, 0.04));
+}
+
+.expense-upload-box input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.expense-upload-icon {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 6px;
+  color: var(--muted, #8a7a75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expense-upload-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.expense-upload-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink, #1f1d1b);
+}
+
+.expense-upload-hint {
+  font-size: 11px;
+  color: var(--muted, #8a7a75);
+  margin-top: 2px;
+}
+
+.expense-receipt-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid var(--line, #e2dcd7);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.expense-receipt-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.expense-receipt-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--red-soft, rgba(197, 37, 35, 0.08));
+  color: var(--red, #C52523);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.expense-receipt-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink, #1f1d1b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+
+.expense-receipt-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(43, 110, 138, 0.1);
+  color: #2B6E8A;
+  margin-left: 6px;
+}
+
+.expense-receipt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.receipt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(43, 110, 138, 0.1);
+  color: #2B6E8A;
+  text-decoration: none;
+  transition: background .2s, color .2s;
+}
+
+.receipt-pill:hover {
+  background: #2B6E8A;
+  color: #fff;
+}
+
+.receipt-pill svg {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.no-receipt-pill {
+  font-size: 11px;
+  color: var(--faint, #b0a8a5);
+}
+

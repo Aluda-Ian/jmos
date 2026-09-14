@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class JmosApiTest extends TestCase
@@ -304,6 +305,96 @@ class JmosApiTest extends TestCase
             ]);
         $res3->assertStatus(201);
         $this->assertNotEmpty($res3->json('data.invoice_no'));
+    }
+
+    public function test_can_log_update_and_delete_expense_with_etims_and_notes(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        // 1. Log an expense with eTIMS CU number
+        $createResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/expenses', [
+                'name' => '4K Drone Gimbal Hire',
+                'category' => 'Equipment',
+                'project' => 'Acre Insights Brand Film',
+                'amount' => 45000,
+                'etr' => 'yes',
+                'etims_number' => 'KRA-ETIMS-008129',
+                'notes' => 'Hired from Skylark Studios for shoot Day 1',
+                'date' => 'Sep 14',
+            ]);
+
+        $createResponse->assertStatus(201)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.name', '4K Drone Gimbal Hire')
+            ->assertJsonPath('data.etims_number', 'KRA-ETIMS-008129');
+
+        $expenseId = $createResponse->json('data.id');
+
+        $this->assertDatabaseHas('expenses', [
+            'id' => $expenseId,
+            'name' => '4K Drone Gimbal Hire',
+            'etims_number' => 'KRA-ETIMS-008129',
+        ]);
+
+        // 2. Update the expense
+        $updateResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->putJson("/api/expenses/{$expenseId}", [
+                'amount' => 42000,
+                'receipt_url' => 'http://localhost/uploads/expenses/exp_sample.pdf',
+                'receipt_name' => 'Skylark_Invoice_KRA.pdf',
+                'notes' => 'Discount applied',
+            ]);
+
+        $updateResponse->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.amount', '42000.00')
+            ->assertJsonPath('data.receipt_name', 'Skylark_Invoice_KRA.pdf');
+
+        $this->assertDatabaseHas('expenses', [
+            'id' => $expenseId,
+            'amount' => 42000,
+            'receipt_name' => 'Skylark_Invoice_KRA.pdf',
+        ]);
+
+        // 3. Delete the expense
+        $deleteResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->deleteJson("/api/expenses/{$expenseId}");
+
+        $deleteResponse->assertStatus(200)
+            ->assertJsonPath('status', 'success');
+
+        $this->assertDatabaseMissing('expenses', [
+            'id' => $expenseId,
+        ]);
+    }
+
+    public function test_expense_receipt_upload_endpoint(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        $fakeFile = UploadedFile::fake()->create('etims_vat_invoice.pdf', 120, 'application/pdf');
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->post('/api/expenses/upload-receipt', [
+                'file' => $fakeFile,
+            ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('receipt_name', 'etims_vat_invoice.pdf');
+
+        $this->assertNotEmpty($response->json('receipt_url'));
+
+        // Cleanup uploaded test file
+        $url = $response->json('receipt_url');
+        $fileName = basename($url);
+        $filePath = public_path('uploads/expenses/'.$fileName);
+        if (file_exists($filePath)) {
+            @unlink($filePath);
+        }
     }
 
     public function test_web_routes_render_jmos_app(): void

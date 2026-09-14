@@ -30,6 +30,10 @@ Route::prefix('auth')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/secondary-email', [AuthController::class, 'updateSecondaryEmail']);
+        Route::post('/profile', [AuthController::class, 'updateProfile']);
+        Route::post('/avatar', [AuthController::class, 'uploadAvatar']);
+        Route::post('/avatar/remove', [AuthController::class, 'removeAvatar']);
+        Route::post('/password', [AuthController::class, 'updatePassword']);
     });
 });
 
@@ -48,10 +52,12 @@ Route::get('invoices/next-number', [InvoiceController::class, 'nextNumber']);
 Route::apiResource('invoices', InvoiceController::class);
 Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay']);
 
+Route::post('expenses/upload-receipt', [ExpenseController::class, 'uploadReceipt']);
 Route::apiResource('expenses', ExpenseController::class);
 
 Route::get('finance/overview', [FinanceController::class, 'overview']);
-Route::apiResource('users', UserController::class)->only(['index', 'store', 'destroy']);
+Route::apiResource('users', UserController::class);
+Route::post('users/{user}', [UserController::class, 'update']);
 Route::apiResource('services', ServiceController::class)->only(['index', 'store', 'destroy']);
 
 // System Settings & SMTP (Super Admin / IT)

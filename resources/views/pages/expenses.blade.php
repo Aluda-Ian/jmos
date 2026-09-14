@@ -23,14 +23,15 @@
             <th>Category</th>
             <th>Project</th>
             <th>Amount</th>
-            <th>ETR received?</th>
+            <th>ETR / eTIMS</th>
+            <th>Document</th>
             <th>Date</th>
-            <th></th>
+            <th style="text-align:right">Actions</th>
           </tr>
         </thead>
         <tbody id="expBody">
           <tr>
-            <td colspan="7" style="padding:26px;text-align:center;color:var(--muted)">Loading expenses from database…</td>
+            <td colspan="8" style="padding:26px;text-align:center;color:var(--muted)">Loading expenses from database…</td>
           </tr>
         </tbody>
       </table>

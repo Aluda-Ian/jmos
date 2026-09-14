@@ -21,6 +21,7 @@ class InvoiceReminderMail extends Mailable
     {
         $invNo = $this->data['invoiceNo'] ?? 'Invoice';
         $client = $this->data['clientName'] ?? 'Client';
+
         return $this->subject("Jeota Media Invoice {$invNo} for {$client}")
             ->view('emails.invoice-reminder')
             ->with($this->data);

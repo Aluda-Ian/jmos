@@ -8,6 +8,7 @@ use App\Mail\MeetingReminderMail;
 use App\Mail\NewChatMessageMail;
 use App\Mail\TaskAssignedMail;
 use App\Models\SystemSetting;
+use App\Models\User;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Mail;
 
@@ -70,7 +71,7 @@ class NotificationService
      */
     public static function resolveSecondaryEmail(string $primaryEmail): ?string
     {
-        $user = \App\Models\User::where('email', $primaryEmail)->first();
+        $user = User::where('email', $primaryEmail)->first();
 
         return $user?->secondary_email;
     }

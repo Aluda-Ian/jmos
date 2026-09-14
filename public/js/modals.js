@@ -238,19 +238,21 @@ window.openModal = function(id) {
     const trigger = document.getElementById('taskProjectTrigger');
     if (trigger) trigger.classList.remove('active');
 
-    if (window._preselectedProjectId) {
+    const preselect = window._preselectedProjectId;
+    if (preselect) {
       if (typeof window.selectTaskProject === 'function') {
-        window.selectTaskProject(window._preselectedProjectId);
+        window.selectTaskProject(preselect);
       }
-      delete window._preselectedProjectId;
+      if (typeof window.ensureProjectsLoadedForTask === 'function') {
+        window.ensureProjectsLoadedForTask(preselect);
+      }
     } else {
       if (typeof window.selectTaskProject === 'function') {
         window.selectTaskProject(null);
       }
-    }
-
-    if (typeof window.ensureProjectsLoadedForTask === 'function') {
-      window.ensureProjectsLoadedForTask();
+      if (typeof window.ensureProjectsLoadedForTask === 'function') {
+        window.ensureProjectsLoadedForTask();
+      }
     }
   } else if (modalId === 'invoiceModal') {
     const editId = document.getElementById('editInvoiceId')?.value;
@@ -277,12 +279,42 @@ window.openModal = function(id) {
       setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
     }
   } else if (modalId === 'expenseModal') {
-    ['neName', 'neProject', 'neAmount'].forEach(fid => {
-      const el = document.getElementById(fid);
-      if (el) el.value = '';
-    });
-    const neDate = document.getElementById('neDate');
-    if (neDate) neDate.value = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const editId = document.getElementById('editExpenseId')?.value;
+    if (!editId) {
+      const titleEl = document.getElementById('expenseModalTitle');
+      if (titleEl) titleEl.textContent = 'Log an expense';
+      const subEl = document.getElementById('expenseModalSub');
+      if (subEl) subEl.textContent = 'Track project costs and operational expenses with ETR & eTIMS compliance.';
+      const saveBtn = document.getElementById('saveExpenseBtn');
+      if (saveBtn) saveBtn.textContent = 'Log expense';
+      const delBtn = document.getElementById('deleteExpenseModalBtn');
+      if (delBtn) delBtn.style.display = 'none';
+
+      ['neName', 'neAmount', 'neEtimsNumber', 'neNotes', 'neReceiptUrl', 'neReceiptName'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (el) el.value = '';
+      });
+      const neCat = document.getElementById('neCat');
+      if (neCat) neCat.value = 'Equipment';
+      const neEtr = document.getElementById('neEtr');
+      if (neEtr) neEtr.value = 'no';
+      const neDate = document.getElementById('neDate');
+      if (neDate) neDate.value = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const preview = document.getElementById('neReceiptPreview');
+      if (preview) preview.style.display = 'none';
+      const fileInput = document.getElementById('neReceiptFile');
+      if (fileInput) fileInput.value = '';
+
+      if (typeof window.selectExpenseProject === 'function') {
+        window.selectExpenseProject('overhead');
+      }
+    }
+    if (typeof window.initExpenseProjectPicker === 'function') {
+      window.initExpenseProjectPicker();
+    }
+    if (typeof window.ensureProjectsLoadedForExpense === 'function') {
+      window.ensureProjectsLoadedForExpense();
+    }
   } else if (modalId === 'userModal') {
     ['nuName', 'nuTitle', 'nuEmail', 'nuPay'].forEach(fid => {
       const el = document.getElementById(fid);
@@ -357,11 +389,20 @@ window.showToast = function(title, subtitle, isRed = false) {
    Task Modal Searchable Project Picker Controller
    ========================================================================== */
 
+function getSafeProjectsList() {
+  if (!window.JMOS_STATE) return [];
+  const p = window.JMOS_STATE.projects;
+  if (Array.isArray(p)) return p;
+  if (p && Array.isArray(p.data)) return p.data;
+  if (p && Array.isArray(p.projects)) return p.projects;
+  return [];
+}
+
 window.populateTaskProjectOptions = function(filterText = '') {
   const listEl = document.getElementById('taskProjectOptionsList');
   if (!listEl) return;
 
-  const projects = (window.JMOS_STATE && Array.isArray(JMOS_STATE.projects)) ? JMOS_STATE.projects : [];
+  const projects = getSafeProjectsList();
   const currentVal = document.getElementById('ntProject')?.value || '';
   const term = (filterText || '').trim().toLowerCase();
 
@@ -430,7 +471,7 @@ window.selectTaskProject = function(projectId) {
   const val = (projectId != null && projectId !== '') ? String(projectId) : '';
   if (hiddenInput) hiddenInput.value = val;
 
-  const projects = (window.JMOS_STATE && Array.isArray(JMOS_STATE.projects)) ? JMOS_STATE.projects : [];
+  const projects = getSafeProjectsList();
   const project = val ? projects.find(p => String(p.id) === val) : null;
 
   if (labelEl) {
@@ -441,13 +482,15 @@ window.selectTaskProject = function(projectId) {
         <span style="font-weight:600;color:var(--ink)">${escHtml(name)}</span>
         <span class="searchable-select-badge" style="margin-left:4px">${escHtml(client)}</span>
       `;
+    } else if (val) {
+      labelEl.innerHTML = `<span style="font-weight:600;color:var(--ink)">Project #${escHtml(val)}</span>`;
     } else {
       labelEl.innerHTML = `<span style="color:var(--muted)">— Select a project —</span>`;
     }
   }
 
   if (clearBtn) {
-    clearBtn.style.display = project ? 'grid' : 'none';
+    clearBtn.style.display = (project || val) ? 'grid' : 'none';
   }
 
   // Update selected class in dropdown
@@ -462,9 +505,21 @@ window.selectTaskProject = function(projectId) {
   }
 };
 
-window.ensureProjectsLoadedForTask = async function() {
+window.ensureProjectsLoadedForTask = async function(preselectId = null) {
   const listEl = document.getElementById('taskProjectOptionsList');
-  const hasProjects = window.JMOS_STATE && Array.isArray(JMOS_STATE.projects) && JMOS_STATE.projects.length > 0;
+  if (preselectId) {
+    window._preselectedProjectId = preselectId;
+  }
+
+  function extractProjects(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.projects)) return data.projects;
+    return null;
+  }
+
+  let projects = extractProjects(window.JMOS_STATE?.projects);
+  const hasProjects = projects && projects.length > 0;
 
   if (!hasProjects) {
     if (listEl) {
@@ -477,8 +532,10 @@ window.ensureProjectsLoadedForTask = async function() {
     }
     try {
       const res = await JMOS_API.get('/projects');
-      if (Array.isArray(res)) {
-        JMOS_STATE.projects = res;
+      const pList = extractProjects(res);
+      if (pList) {
+        JMOS_STATE.projects = pList;
+        projects = pList;
       }
     } catch (err) {
       console.warn('Could not load projects for task selector:', err);
@@ -488,9 +545,463 @@ window.ensureProjectsLoadedForTask = async function() {
   const searchInput = document.getElementById('taskProjectSearchInput');
   window.populateTaskProjectOptions(searchInput ? searchInput.value : '');
 
-  if (window._preselectedProjectId) {
-    window.selectTaskProject(window._preselectedProjectId);
-    delete window._preselectedProjectId;
+  const targetId = window._preselectedProjectId || document.getElementById('ntProject')?.value;
+  if (targetId) {
+    window.selectTaskProject(targetId);
+  }
+};
+
+/* ==========================================================================
+   Expense Modal Searchable Project Picker Controller
+   ========================================================================== */
+
+function getActiveProjectsForExpense() {
+  const projects = getSafeProjectsList();
+  if (!projects.length) return [];
+
+  // Filter for active projects: exclude completed or archived projects
+  const active = projects.filter(p => {
+    const status = String(p.status || '').toLowerCase();
+    const stage = String(p.stage || '').toLowerCase();
+    return status !== 'completed' && status !== 'archived' && status !== 'cancelled' && stage !== 'archived' && stage !== 'cancelled';
+  });
+
+  return active.length ? active : projects;
+}
+
+window.populateExpenseProjectOptions = function(filterText = '') {
+  const listEl = document.getElementById('expenseProjectOptionsList');
+  if (!listEl) return;
+
+  const projects = getActiveProjectsForExpense();
+  const currentVal = document.getElementById('neProject')?.value || 'overhead';
+  const term = (filterText || '').trim().toLowerCase();
+
+  const filtered = term
+    ? projects.filter(p => {
+        const name = (p.project_name || p.name || '').toLowerCase();
+        const client = (p.client || '').toLowerCase();
+        const type = (p.project_type || '').toLowerCase();
+        return name.includes(term) || client.includes(term) || type.includes(term);
+      })
+    : projects;
+
+  let html = '';
+
+  // Default Overhead / General Operations option
+  const isOverheadSelected = !currentVal || currentVal.toLowerCase() === 'overhead' || currentVal === '—';
+  html += `
+    <div class="searchable-select-item ${isOverheadSelected ? 'selected' : ''}" data-project-value="overhead" role="option" aria-selected="${isOverheadSelected}">
+      <div class="searchable-select-item-title">
+        <span style="font-weight:600;color:var(--ink)">🏢 General Overhead / Operations</span>
+      </div>
+      <div class="searchable-select-item-meta">
+        <span class="searchable-select-badge" style="background:var(--paper);border:1px solid var(--line);color:var(--muted)">Internal / Unallocated</span>
+      </div>
+    </div>
+  `;
+
+  if (!projects.length) {
+    html += `
+      <div class="searchable-select-empty">
+        No active projects found in database.<br>
+        <span style="font-size:11px;opacity:0.8">Expenses will be allocated to general overhead.</span>
+      </div>
+    `;
+  } else if (!filtered.length) {
+    html += `
+      <div class="searchable-select-empty">
+        No active projects match "<b>${escHtml(filterText)}</b>"
+      </div>
+    `;
+  } else {
+    html += filtered.map(p => {
+      const projName = p.project_name || p.name || ('Project #' + p.id);
+      const isSelected = String(currentVal).toLowerCase() === String(projName).toLowerCase() || String(currentVal) === String(p.id);
+      const client = p.client || 'Client';
+      const stage = p.stage ? p.stage.replace(/_/g, ' ') : (p.status || 'Active');
+      return `
+        <div class="searchable-select-item ${isSelected ? 'selected' : ''}" data-project-value="${escHtml(projName)}" data-project-id="${p.id}" role="option" aria-selected="${isSelected}">
+          <div class="searchable-select-item-title">
+            <span style="font-weight:600">${escHtml(projName)}</span>
+          </div>
+          <div class="searchable-select-item-meta">
+            <span class="searchable-select-badge">${escHtml(client)}</span>
+            <span style="font-size:10.5px;text-transform:capitalize;color:var(--green);font-weight:500">● ${escHtml(stage)}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  listEl.innerHTML = html;
+};
+
+window.selectExpenseProject = function(projectValue, explicitLabel = '') {
+  const hiddenInput = document.getElementById('neProject');
+  const labelEl = document.getElementById('expenseProjectSelectedLabel');
+  const clearBtn = document.getElementById('expenseProjectClearBtn');
+
+  const val = (projectValue != null && projectValue !== '') ? String(projectValue).trim() : 'overhead';
+  if (hiddenInput) hiddenInput.value = val;
+
+  const isOverhead = !val || val.toLowerCase() === 'overhead' || val === '—';
+
+  if (labelEl) {
+    if (isOverhead) {
+      labelEl.innerHTML = '<span style="color:var(--muted)">🏢 General Overhead / Operations</span>';
+      if (clearBtn) clearBtn.style.display = 'none';
+    } else {
+      const projects = getSafeProjectsList();
+      const project = projects.find(p => {
+        const name = (p.project_name || p.name || '').toLowerCase();
+        return name === val.toLowerCase() || String(p.id) === val;
+      });
+
+      const name = explicitLabel || (project ? (project.project_name || project.name) : val);
+      const client = project ? (project.client || '') : '';
+
+      labelEl.innerHTML = `
+        <span style="font-weight:600;color:var(--ink)">${escHtml(name)}</span>
+        ${client ? `<span class="searchable-select-badge" style="margin-left:6px;font-size:11px">${escHtml(client)}</span>` : ''}
+      `;
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    }
+  }
+
+  // Update item selection highlight
+  const listEl = document.getElementById('expenseProjectOptionsList');
+  if (listEl) {
+    listEl.querySelectorAll('.searchable-select-item').forEach(item => {
+      const itemVal = item.getAttribute('data-project-value');
+      const itemSelected = (isOverhead && itemVal === 'overhead') || (!isOverhead && itemVal && itemVal.toLowerCase() === val.toLowerCase());
+      item.classList.toggle('selected', Boolean(itemSelected));
+      item.setAttribute('aria-selected', itemSelected ? 'true' : 'false');
+    });
+  }
+};
+
+window.ensureProjectsLoadedForExpense = async function(preselectVal = null) {
+  const listEl = document.getElementById('expenseProjectOptionsList');
+
+  function extractProjects(data) {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.data)) return data.data;
+    if (data && Array.isArray(data.projects)) return data.projects;
+    return null;
+  }
+
+  let projects = extractProjects(window.JMOS_STATE?.projects);
+  const hasProjects = projects && projects.length > 0;
+
+  if (!hasProjects) {
+    if (listEl) {
+      listEl.innerHTML = `
+        <div class="searchable-select-loading">
+          <svg viewBox="0 0 24 24" width="16" height="16" class="spin" style="display:inline-block;vertical-align:middle;margin-right:6px;animation:spin 1s linear infinite"><path d="M23 4v6h-6M1 20v-6h6"/></svg>
+          Loading active projects from database…
+        </div>
+      `;
+    }
+    try {
+      const res = await JMOS_API.get('/projects');
+      const pList = extractProjects(res);
+      if (pList) {
+        JMOS_STATE.projects = pList;
+      }
+    } catch (err) {
+      console.warn('Could not load projects for expense selector:', err);
+    }
+  }
+
+  const searchInput = document.getElementById('expenseProjectSearchInput');
+  window.populateExpenseProjectOptions(searchInput ? searchInput.value : '');
+
+  if (preselectVal !== null) {
+    window.selectExpenseProject(preselectVal);
+  }
+};
+
+window.initExpenseProjectPicker = function() {
+  const wrap = document.getElementById('expenseProjectSelectWrap');
+  const trigger = document.getElementById('expenseProjectTrigger');
+  const dropdown = document.getElementById('expenseProjectDropdown');
+  const searchInput = document.getElementById('expenseProjectSearchInput');
+  const searchClear = document.getElementById('expenseProjectSearchClear');
+  const clearBtn = document.getElementById('expenseProjectClearBtn');
+  const listEl = document.getElementById('expenseProjectOptionsList');
+
+  if (!wrap || wrap.dataset.initialized === 'true') return;
+  wrap.dataset.initialized = 'true';
+
+  function openDropdown() {
+    dropdown.style.display = 'block';
+    trigger.classList.add('active');
+    trigger.setAttribute('aria-expanded', 'true');
+    window.ensureProjectsLoadedForExpense();
+    setTimeout(() => searchInput?.focus(), 40);
+  }
+
+  function closeDropdown() {
+    dropdown.style.display = 'none';
+    trigger.classList.remove('active');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleDropdown() {
+    if (dropdown.style.display === 'none' || !dropdown.style.display) {
+      openDropdown();
+    } else {
+      closeDropdown();
+    }
+  }
+
+  trigger.addEventListener('click', (e) => {
+    if (e.target.closest('#expenseProjectClearBtn')) return;
+    toggleDropdown();
+  });
+
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      openDropdown();
+    }
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.selectExpenseProject('overhead');
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const val = searchInput.value;
+      if (searchClear) searchClear.style.display = val ? 'inline-block' : 'none';
+      window.populateExpenseProjectOptions(val);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDropdown();
+        trigger.focus();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const firstItem = listEl?.querySelector('.searchable-select-item');
+        if (firstItem) {
+          const val = firstItem.getAttribute('data-project-value');
+          window.selectExpenseProject(val);
+          closeDropdown();
+          trigger.focus();
+        }
+      }
+    });
+  }
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      searchInput.value = '';
+      searchClear.style.display = 'none';
+      window.populateExpenseProjectOptions('');
+      searchInput.focus();
+    });
+  }
+
+  if (listEl) {
+    listEl.addEventListener('click', (e) => {
+      const item = e.target.closest('.searchable-select-item');
+      if (!item) return;
+      const val = item.getAttribute('data-project-value');
+      window.selectExpenseProject(val);
+      closeDropdown();
+      trigger.focus();
+    });
+  }
+
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) {
+      closeDropdown();
+    }
+  });
+};
+
+/* ==========================================================================
+   Expense Editing & Document Attachment Controller
+   ========================================================================== */
+
+window.openEditExpenseModal = function(expenseId) {
+  const expenses = (window.JMOS_STATE && Array.isArray(JMOS_STATE.expenses)) ? JMOS_STATE.expenses : [];
+  const exp = expenses.find(e => String(e.id) === String(expenseId));
+  if (!exp) return showToast('Error', 'Expense record not found', true);
+
+  const editId = document.getElementById('editExpenseId');
+  if (editId) editId.value = exp.id;
+
+  const titleEl = document.getElementById('expenseModalTitle');
+  if (titleEl) titleEl.textContent = 'Edit expense';
+  const subEl = document.getElementById('expenseModalSub');
+  if (subEl) subEl.textContent = 'Update expense details, project allocation, or support document.';
+  const saveBtn = document.getElementById('saveExpenseBtn');
+  if (saveBtn) saveBtn.textContent = 'Update expense';
+  const delBtn = document.getElementById('deleteExpenseModalBtn');
+  if (delBtn) delBtn.style.display = 'inline-block';
+
+  if (document.getElementById('neName')) document.getElementById('neName').value = exp.name || '';
+  if (document.getElementById('neCat')) document.getElementById('neCat').value = exp.category || exp.cat || 'Equipment';
+
+  // Setup project picker for edit
+  if (typeof window.initExpenseProjectPicker === 'function') {
+    window.initExpenseProjectPicker();
+  }
+  if (typeof window.selectExpenseProject === 'function') {
+    window.selectExpenseProject(exp.project || 'overhead');
+  }
+  if (typeof window.ensureProjectsLoadedForExpense === 'function') {
+    window.ensureProjectsLoadedForExpense(exp.project || 'overhead');
+  }
+
+  if (document.getElementById('neAmount')) document.getElementById('neAmount').value = exp.amount || '';
+  if (document.getElementById('neEtr')) document.getElementById('neEtr').value = exp.etr || 'no';
+  if (document.getElementById('neEtimsNumber')) document.getElementById('neEtimsNumber').value = exp.etims_number || '';
+  if (document.getElementById('neDate')) document.getElementById('neDate').value = exp.date || '';
+  if (document.getElementById('neNotes')) document.getElementById('neNotes').value = exp.notes || '';
+
+  // Setup receipt document preview
+  const preview = document.getElementById('neReceiptPreview');
+  const nameEl = document.getElementById('neReceiptDisplayName');
+  const viewBtn = document.getElementById('neReceiptViewBtn');
+  const urlHidden = document.getElementById('neReceiptUrl');
+  const nameHidden = document.getElementById('neReceiptName');
+
+  if (exp.receipt_url) {
+    if (urlHidden) urlHidden.value = exp.receipt_url;
+    if (nameHidden) nameHidden.value = exp.receipt_name || 'Attached document';
+    if (nameEl) nameEl.textContent = exp.receipt_name || 'Attached document';
+    if (viewBtn) {
+      viewBtn.href = exp.receipt_url;
+      viewBtn.style.display = 'inline-block';
+    }
+    if (preview) preview.style.display = 'flex';
+  } else {
+    if (urlHidden) urlHidden.value = '';
+    if (nameHidden) nameHidden.value = '';
+    if (preview) preview.style.display = 'none';
+  }
+
+  openModal('expenseModal');
+};
+
+async function uploadExpenseReceipt(file) {
+  if (!file) return;
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const preview = document.getElementById('neReceiptPreview');
+  const nameEl = document.getElementById('neReceiptDisplayName');
+  const viewBtn = document.getElementById('neReceiptViewBtn');
+  const urlHidden = document.getElementById('neReceiptUrl');
+  const nameHidden = document.getElementById('neReceiptName');
+  const dropText = document.getElementById('expenseUploadText');
+
+  if (dropText) dropText.textContent = 'Uploading document…';
+
+  try {
+    const res = await JMOS_API.upload('/expenses/upload-receipt', formData);
+    if (res && res.status === 'success') {
+      if (urlHidden) urlHidden.value = res.receipt_url;
+      if (nameHidden) nameHidden.value = res.receipt_name;
+      if (nameEl) nameEl.textContent = res.receipt_name;
+      if (viewBtn) {
+        viewBtn.href = res.receipt_url;
+        viewBtn.style.display = 'inline-block';
+      }
+      if (preview) preview.style.display = 'flex';
+      showToast('Document attached', res.receipt_name);
+      // Auto-set ETR received if receipt is attached
+      const neEtr = document.getElementById('neEtr');
+      if (neEtr && neEtr.value === 'no') {
+        neEtr.value = 'yes';
+      }
+    }
+  } catch (err) {
+    showToast('Upload failed', err.message, true);
+  } finally {
+    if (dropText) dropText.textContent = 'Click or drag & drop receipt / eTIMS file';
+    const fileInput = document.getElementById('neReceiptFile');
+    if (fileInput) fileInput.value = '';
+  }
+}
+
+function initExpenseUploader() {
+  const fileInput = document.getElementById('neReceiptFile');
+  const dropzone = document.getElementById('expenseDropzone');
+  const removeBtn = document.getElementById('neReceiptRemoveBtn');
+
+  if (fileInput && !fileInput.dataset.initialized) {
+    fileInput.dataset.initialized = 'true';
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) uploadExpenseReceipt(file);
+    });
+  }
+
+  if (dropzone && !dropzone.dataset.initialized) {
+    dropzone.dataset.initialized = 'true';
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropzone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) uploadExpenseReceipt(file);
+    });
+  }
+
+  if (removeBtn && !removeBtn.dataset.initialized) {
+    removeBtn.dataset.initialized = 'true';
+    removeBtn.addEventListener('click', () => {
+      const urlHidden = document.getElementById('neReceiptUrl');
+      const nameHidden = document.getElementById('neReceiptName');
+      const preview = document.getElementById('neReceiptPreview');
+      if (urlHidden) urlHidden.value = '';
+      if (nameHidden) nameHidden.value = '';
+      if (preview) preview.style.display = 'none';
+      showToast('Document removed', 'Attachment detached from expense');
+    });
+  }
+}
+
+window.deleteExpense = async function(expenseId, expenseName = 'this expense') {
+  const confirmed = typeof window.showConfirmDialog === 'function'
+    ? await window.showConfirmDialog({
+        title: 'Delete Expense?',
+        message: `Are you sure you want to permanently remove <b>${escHtml(expenseName)}</b> from expenses and recalculate finances?`,
+        confirmText: 'Delete Expense',
+        isDanger: true
+      })
+    : confirm(`Delete expense "${expenseName}"?`);
+
+  if (!confirmed) return;
+
+  try {
+    await JMOS_API.delete(`/expenses/${expenseId}`);
+    closeModal('expenseModal');
+    showToast('Expense removed', `${expenseName} deleted`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast('Failed to delete expense', err.message, true);
   }
 };
 
@@ -601,29 +1112,39 @@ window.initTaskProjectPicker = function() {
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    if (typeof window.initTaskProjectPicker === 'function') {
-      window.initTaskProjectPicker();
-    }
+    if (typeof window.initTaskProjectPicker === 'function') window.initTaskProjectPicker();
+    if (typeof window.initExpenseProjectPicker === 'function') window.initExpenseProjectPicker();
+    if (typeof window.initExpenseUploader === 'function') window.initExpenseUploader();
   });
 } else {
-  if (typeof window.initTaskProjectPicker === 'function') {
-    window.initTaskProjectPicker();
-  }
+  if (typeof window.initTaskProjectPicker === 'function') window.initTaskProjectPicker();
+  if (typeof window.initExpenseProjectPicker === 'function') window.initExpenseProjectPicker();
+  if (typeof window.initExpenseUploader === 'function') window.initExpenseUploader();
 }
 
 window.openTaskModal = function(projectId) {
-  if (projectId) {
-    window._preselectedProjectId = projectId;
-  }
+  const pId = projectId ? String(projectId) : null;
+  window._preselectedProjectId = pId;
   openModal('taskModal');
-  if (projectId && typeof window.selectTaskProject === 'function') {
-    window.selectTaskProject(projectId);
+  if (pId) {
+    if (typeof window.selectTaskProject === 'function') {
+      window.selectTaskProject(pId);
+    }
+    if (typeof window.ensureProjectsLoadedForTask === 'function') {
+      window.ensureProjectsLoadedForTask(pId);
+    }
   }
 };
 
 function initModals() {
   if (typeof window.initTaskProjectPicker === 'function') {
     window.initTaskProjectPicker();
+  }
+  if (typeof window.initExpenseProjectPicker === 'function') {
+    window.initExpenseProjectPicker();
+  }
+  if (typeof window.initExpenseUploader === 'function') {
+    window.initExpenseUploader();
   }
 
   const cascade = document.getElementById('cascade');
@@ -708,6 +1229,8 @@ function initModals() {
 
     if (e.target.closest('#addExpenseBtn')) {
       e.preventDefault();
+      const editId = document.getElementById('editExpenseId');
+      if (editId) editId.value = '';
       openModal('expenseModal');
       return;
     }
@@ -939,33 +1462,68 @@ function initModals() {
       return;
     }
 
-    // 4.6 Submit: Log Expense
+    // 4.6 Submit: Log / Edit Expense
     if (e.target.closest('#saveExpenseBtn')) {
       const btn = e.target.closest('#saveExpenseBtn');
+      const editId = document.getElementById('editExpenseId')?.value;
+      const isEdit = Boolean(editId);
+
       const name = document.getElementById('neName')?.value.trim();
       const amt = Number(document.getElementById('neAmount')?.value) || 0;
       if (!name || !amt) return showToast('Expense details required', 'Enter name and amount', true);
 
       btn.disabled = true;
-      btn.textContent = 'Logging…';
+      btn.textContent = isEdit ? 'Updating…' : 'Logging…';
+
+      const payload = {
+        name,
+        category: document.getElementById('neCat')?.value || 'Equipment',
+        project: document.getElementById('neProject')?.value.trim() || 'overhead',
+        amount: amt,
+        etr: document.getElementById('neEtr')?.value || 'no',
+        etims_number: document.getElementById('neEtimsNumber')?.value.trim() || null,
+        receipt_url: document.getElementById('neReceiptUrl')?.value || null,
+        receipt_name: document.getElementById('neReceiptName')?.value || null,
+        notes: document.getElementById('neNotes')?.value.trim() || null,
+        date: document.getElementById('neDate')?.value.trim() || 'Today'
+      };
+
       try {
-        await JMOS_API.post('/expenses', {
-          name,
-          category: document.getElementById('neCat')?.value || 'Equipment',
-          project: document.getElementById('neProject')?.value.trim() || 'overhead',
-          amount: amt,
-          etr: document.getElementById('neEtr')?.value || 'no',
-          date: document.getElementById('neDate')?.value.trim() || 'Today'
-        });
+        if (isEdit) {
+          await JMOS_API.put(`/expenses/${editId}`, payload);
+          showToast('Expense updated', `${name} — ${fmt(amt)}`);
+        } else {
+          await JMOS_API.post('/expenses', payload);
+          showToast('Expense recorded', `${name} — ${fmt(amt)}`);
+        }
         closeModal('expenseModal');
-        showToast('Expense recorded', `${name} — ${fmt(amt)}`);
         await JMOS_API.fetchAll();
         renderAllViews();
       } catch (err) {
-        showToast('Failed to log expense', err.message, true);
+        showToast(isEdit ? 'Failed to update expense' : 'Failed to log expense', err.message, true);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Log expense';
+        btn.textContent = isEdit ? 'Update expense' : 'Log expense';
+      }
+      return;
+    }
+
+    // 4.6b Delete Expense Modal Button & Table Row Actions
+    if (e.target.closest('#deleteExpenseModalBtn')) {
+      const editId = document.getElementById('editExpenseId')?.value;
+      const name = document.getElementById('neName')?.value || 'this expense';
+      if (editId && typeof window.deleteExpense === 'function') {
+        window.deleteExpense(editId, name);
+      }
+      return;
+    }
+
+    if (e.target.closest('[data-del-expense]')) {
+      const delBtn = e.target.closest('[data-del-expense]');
+      const expId = delBtn.getAttribute('data-del-expense');
+      const expName = delBtn.getAttribute('data-expense-name') || 'this expense';
+      if (expId && typeof window.deleteExpense === 'function') {
+        window.deleteExpense(expId, expName);
       }
       return;
     }

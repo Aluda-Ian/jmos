@@ -20,6 +20,7 @@ class DealWonAlertMail extends Mailable
     public function build()
     {
         $dealTitle = $this->data['dealTitle'] ?? 'New Project';
+
         return $this->subject("🎉 Deal Won: {$dealTitle} — JMOS Operations Active")
             ->view('emails.deal-won')
             ->with($this->data);

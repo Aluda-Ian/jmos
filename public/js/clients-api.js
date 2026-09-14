@@ -170,10 +170,17 @@ async function ensureProjects() {
     body.innerHTML = '<tr><td colspan="11" style="padding:26px;text-align:center;color:var(--muted)">Loading projects from database…</td></tr>';
   }
   try {
-    const projects = await JMOS_API.get('/projects');
-    if (Array.isArray(projects)) {
-      JMOS_STATE.projects = projects;
+    const res = await JMOS_API.get('/projects');
+    const pList = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : (Array.isArray(res?.projects) ? res.projects : null));
+    if (pList) {
+      JMOS_STATE.projects = pList;
       renderProjectsTable();
+      if (typeof window.populateTaskProjectOptions === 'function') {
+        window.populateTaskProjectOptions();
+      }
+      if (typeof window.populateExpenseProjectOptions === 'function') {
+        window.populateExpenseProjectOptions();
+      }
     }
   } catch (err) {
     console.error('Error fetching projects:', err);

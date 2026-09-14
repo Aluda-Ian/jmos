@@ -32,7 +32,7 @@ class ClientController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Client created successfully.',
-            'data' => $client
+            'data' => $client,
         ], 201);
     }
 
@@ -59,7 +59,7 @@ class ClientController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Client updated successfully.',
-            'data' => $client
+            'data' => $client,
         ]);
     }
 
@@ -69,7 +69,7 @@ class ClientController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Client removed successfully.'
+            'message' => 'Client removed successfully.',
         ]);
     }
 }

@@ -70,29 +70,68 @@ function renderExpenses() {
 
   const list = JMOS_STATE.expenses || [];
   if (!list.length) {
-    expBody.innerHTML = '<tr><td colspan="7" style="padding:26px;text-align:center;color:var(--muted)">No expenses recorded in database.</td></tr>';
+    expBody.innerHTML = '<tr><td colspan="8" style="padding:26px;text-align:center;color:var(--muted)">No expenses recorded in database.</td></tr>';
     return;
   }
 
+  const canDelete = JMOS_STATE.currentUser && (JMOS_STATE.currentUser.role === 'owner' || JMOS_STATE.currentUser.role === 'finance');
+
   expBody.innerHTML = list.map(e => {
-    const etr = e.etr === 'yes' 
+    const etrBadge = e.etr === 'yes' 
       ? '<span class="yes" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> yes</span>' 
       : e.etr === 'no' 
         ? '<span class="no" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> missing</span>' 
         : '<span class="mono" style="color:var(--faint)">n/a</span>';
 
-    const proj = e.project === 'overhead' 
+    const etimsHtml = e.etims_number 
+      ? `<div style="margin-top:3px"><span class="badge" style="font-size:10px;padding:1px 6px;background:rgba(43,110,138,0.1);color:#2B6E8A;font-weight:600" title="eTIMS CU / Invoice Number">CU: ${escHtml(e.etims_number)}</span></div>` 
+      : '';
+
+    const proj = (e.project === 'overhead' || !e.project) 
       ? '<span class="mono" style="color:var(--faint)">overhead</span>' 
-      : escHtml(e.project || '—');
+      : escHtml(e.project);
+
+    // Support document / receipt link
+    let docHtml = '<span class="no-receipt-pill">—</span>';
+    if (e.receipt_url) {
+      const docName = e.receipt_name || 'Receipt';
+      const truncated = docName.length > 14 ? docName.substring(0, 12) + '…' : docName;
+      docHtml = `
+        <a href="${escHtml(e.receipt_url)}" target="_blank" rel="noopener" class="receipt-pill" title="View attached document: ${escHtml(docName)}">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>${escHtml(truncated)}</span>
+        </a>
+      `;
+    }
+
+    const notesHtml = e.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(e.notes)}">${escHtml(e.notes)}</div>` : '';
 
     return `<tr>
-      <td>${escHtml(e.name)}</td>
+      <td>
+        <b style="color:var(--ink)">${escHtml(e.name)}</b>
+        ${notesHtml}
+      </td>
       <td>${escHtml(e.category || e.cat || 'General')}</td>
       <td>${proj}</td>
       <td class="mono">${fmt(e.amount)}</td>
-      <td>${etr}</td>
+      <td>
+        ${etrBadge}
+        ${etimsHtml}
+      </td>
+      <td>${docHtml}</td>
       <td class="mono" style="color:var(--muted)">${escHtml(e.date || '—')}</td>
-      <td></td>
+      <td style="text-align:right">
+        <div class="row-actions-wrap" style="justify-content:flex-end">
+          <button type="button" class="row-action-btn" title="Edit expense details and receipt" onclick="openEditExpenseModal(${e.id})">
+            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit
+          </button>
+          ${canDelete ? `
+            <button type="button" class="row-action-btn danger" title="Delete expense" data-del-expense="${e.id}" data-expense-name="${escHtml(e.name)}">
+              <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete
+            </button>
+          ` : ''}
+        </div>
+      </td>
     </tr>`;
   }).join('');
 }

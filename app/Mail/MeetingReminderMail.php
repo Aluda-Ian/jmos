@@ -20,6 +20,7 @@ class MeetingReminderMail extends Mailable
     public function build()
     {
         $title = $this->data['eventTitle'] ?? 'Upcoming Meeting / Shoot';
+
         return $this->subject("📅 Schedule Reminder: {$title}")
             ->view('emails.meeting-reminder')
             ->with($this->data);

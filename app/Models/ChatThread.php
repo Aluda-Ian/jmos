@@ -24,8 +24,8 @@ class ChatThread extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'chat_participants', 'thread_id', 'user_id')
-                    ->withPivot('last_read_at', 'notified_initial_email')
-                    ->withTimestamps();
+            ->withPivot('last_read_at', 'notified_initial_email')
+            ->withTimestamps();
     }
 
     public function messages()

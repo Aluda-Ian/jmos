@@ -14,6 +14,113 @@
     </div>
   </div>
 
+  <!-- My Profile & Account (All Users) -->
+  <div class="card" style="padding:24px;margin-bottom:20px" id="myProfileCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:8px;background:var(--red-soft);color:var(--red);display:grid;place-items:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">My Profile &amp; Account</h3>
+          <p style="font-size:12px;color:var(--muted)">Manage your personal details, profile picture, and account credentials.</p>
+        </div>
+      </div>
+      <button type="button" class="btn primary" id="saveProfileBtn" onclick="saveMyProfile()">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save Profile
+      </button>
+    </div>
+
+    <!-- Avatar Upload Banner -->
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:22px;padding:16px;background:var(--paper);border:1px solid var(--line);border-radius:12px;flex-wrap:wrap">
+      <div id="profileAvatarCircle" style="width:72px;height:72px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:24px;font-weight:700;overflow:hidden;border:3px solid var(--card);box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0">
+        <span id="profileAvatarInitials">--</span>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px">Profile Picture</div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Upload a high-resolution photo (JPG, PNG, WebP or GIF, up to 10MB). Square aspect ratio looks best.</p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="file" id="profileAvatarInput" accept="image/*" style="display:none" onchange="uploadMyAvatar(this.files[0])">
+          <button type="button" class="btn sm" onclick="document.getElementById('profileAvatarInput').click()">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Change Photo
+          </button>
+          <button type="button" class="btn sm" id="profileAvatarRemoveBtn" onclick="removeMyAvatar()" style="color:var(--red);border-color:rgba(239,68,68,0.3)">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>Remove Photo
+          </button>
+          <span id="profileAvatarStatus" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal & Work Details Grid -->
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="field">
+        <label for="profileName">Full Name *</label>
+        <input id="profileName" placeholder="e.g. Grace Wanjiru" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="profileTitle">Professional Title / Role</label>
+        <input id="profileTitle" placeholder="e.g. Senior Cinematographer" autocomplete="organization-title">
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="field">
+        <label for="profileDepartment">Department</label>
+        <input id="profileDepartment" list="profileDeptSuggestions" placeholder="e.g. Production, Creative, Video" autocomplete="off">
+        <datalist id="profileDeptSuggestions">
+          <option value="Production">
+          <option value="Creative">
+          <option value="Video &amp; Cinematography">
+          <option value="Photography">
+          <option value="Audio &amp; Sound">
+          <option value="Post-Production &amp; 3D">
+          <option value="Sales &amp; Marketing">
+          <option value="Finance &amp; Operations">
+          <option value="Executive &amp; Management">
+        </datalist>
+      </div>
+      <div class="field">
+        <label for="profilePhone">Phone / WhatsApp Number</label>
+        <input id="profilePhone" placeholder="e.g. +254 712 345 678" autocomplete="tel">
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="field">
+        <label for="profileEmail">Primary Login Email (Contact Admin to change)</label>
+        <input id="profileEmail" type="email" readonly disabled style="opacity:0.75;cursor:not-allowed;background:var(--paper)">
+      </div>
+      <div class="field">
+        <label for="profileBio">Bio / Short Note</label>
+        <input id="profileBio" placeholder="e.g. Specializing in anamorphic lenses &amp; color grading" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Password Change (Optional) Accordion / Block -->
+    <div style="margin-top:16px;padding-top:16px;border-top:1px dashed var(--line)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:6px">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Change Account Password <span style="font-weight:400;font-size:11px;color:var(--muted)">(Leave blank if you don't want to change password)</span>
+      </div>
+      <div class="grid3" style="margin-top:10px">
+        <div class="field">
+          <label for="profileCurrentPass">Current Password</label>
+          <input id="profileCurrentPass" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="field">
+          <label for="profileNewPass">New Password</label>
+          <input id="profileNewPass" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label for="profileConfirmPass">Confirm New Password</label>
+          <input id="profileConfirmPass" type="password" placeholder="Re-enter new password" autocomplete="new-password">
+        </div>
+      </div>
+    </div>
+    <div id="profileSaveResult" style="margin-top:12px;font-size:12px;display:none;padding:10px 14px;border-radius:8px"></div>
+  </div>
+
   <!-- Appearance Settings (All Users) -->
   <div class="card" style="padding:24px;margin-bottom:20px" id="appearanceCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
@@ -54,7 +161,7 @@
             <div style="width:18px;height:18px;border-radius:4px;background:#1E1E1E"></div>
             <div style="width:18px;height:18px;border-radius:4px;background:#C52523"></div>
           </div>
-          <div style="font-size:11px;font-weight:600;color:#E8E4E2">Dark</div>
+          <div style="font-size:11px;font-weight:600;color:#F3F4F6">Dark</div>
         </button>
       </div>
     </div>

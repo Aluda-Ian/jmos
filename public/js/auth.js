@@ -187,8 +187,15 @@ function applyAuthenticatedUI(user) {
   const greetName = document.getElementById('greetName');
 
   if (userAv) {
-    userAv.textContent = user.ini || getInitials(user.name);
-    userAv.style.background = user.color || '#C52523';
+    if (user.avatar_url) {
+      userAv.innerHTML = `<img src="${user.avatar_url}" alt="${escHtml(user.name || 'User')}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">`;
+      userAv.style.background = 'transparent';
+      userAv.style.overflow = 'hidden';
+    } else {
+      userAv.textContent = user.ini || getInitials(user.name);
+      userAv.style.background = user.color || '#C52523';
+      userAv.style.overflow = '';
+    }
   }
   if (userNm) userNm.textContent = user.name;
   if (userRl) userRl.textContent = (JMOS_STATE.roleLabel && JMOS_STATE.roleLabel[user.role]) || user.role;
@@ -238,6 +245,9 @@ async function setAuthenticatedSession(user, token, isRestore = false) {
       if (typeof renderAllViews === 'function') renderAllViews();
       if (typeof window.populateTaskProjectOptions === 'function') {
         window.populateTaskProjectOptions();
+      }
+      if (typeof window.populateExpenseProjectOptions === 'function') {
+        window.populateExpenseProjectOptions();
       }
     }).catch(console.warn);
 
@@ -330,8 +340,12 @@ function initAuth() {
           id: u.id,
           name: u.name,
           title: u.title || 'Team',
+          department: u.department || '',
           email: u.email,
+          phone: u.phone || '',
           secondary_email: u.secondary_email || null,
+          avatar_url: u.avatar_url || null,
+          bio: u.bio || '',
           role: u.role || 'team',
           type: u.type || 'Full-time',
           pay: u.pay || '—',

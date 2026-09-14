@@ -15,6 +15,10 @@ class Expense extends Model
         'project',
         'amount',
         'etr',
+        'etims_number',
+        'receipt_url',
+        'receipt_name',
+        'notes',
         'date',
     ];
 

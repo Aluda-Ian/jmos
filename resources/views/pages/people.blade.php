@@ -19,13 +19,14 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Member</th>
             <th>Role</th>
+            <th>Department</th>
             <th>Access</th>
             <th>Type</th>
-            <th>Pay</th>
-            <th>Login</th>
-            <th></th>
+            <th>Pay / Salary</th>
+            <th>Login &amp; Contact</th>
+            <th style="text-align:right">Actions</th>
           </tr>
         </thead>
         <tbody id="peopleBody"></tbody>

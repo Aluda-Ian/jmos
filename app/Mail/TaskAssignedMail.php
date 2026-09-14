@@ -20,6 +20,7 @@ class TaskAssignedMail extends Mailable
     public function build()
     {
         $title = $this->data['taskTitle'] ?? 'New Task Assigned';
+
         return $this->subject("JMOS Task Assignment: {$title}")
             ->view('emails.task-assigned')
             ->with($this->data);

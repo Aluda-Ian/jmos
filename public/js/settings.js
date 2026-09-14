@@ -4,6 +4,10 @@
 
 async function loadSettings() {
   try {
+    if (typeof populateMyProfile === 'function') {
+      populateMyProfile();
+    }
+
     // Populate user's secondary notification email if available in current session
     const secondaryEmailInput = document.getElementById('cfg_secondary_email');
     if (secondaryEmailInput && !secondaryEmailInput.matches(':focus')) {
@@ -410,6 +414,290 @@ async function saveSecondaryEmail() {
   }
 }
 window.saveSecondaryEmail = saveSecondaryEmail;
+
+/* ==========================================================================
+   Self-Service Profile & Avatar Management (All Users)
+   ========================================================================== */
+
+function populateMyProfile() {
+  const u = JMOS_STATE.currentUser;
+  if (!u) return;
+
+  const nameInput = document.getElementById('profileName');
+  const titleInput = document.getElementById('profileTitle');
+  const deptInput = document.getElementById('profileDepartment');
+  const phoneInput = document.getElementById('profilePhone');
+  const emailInput = document.getElementById('profileEmail');
+  const bioInput = document.getElementById('profileBio');
+
+  if (nameInput && !nameInput.matches(':focus')) nameInput.value = u.name || '';
+  if (titleInput && !titleInput.matches(':focus')) titleInput.value = u.title || '';
+  if (deptInput && !deptInput.matches(':focus')) deptInput.value = u.department || '';
+  if (phoneInput && !phoneInput.matches(':focus')) phoneInput.value = u.phone || '';
+  if (emailInput) emailInput.value = u.email || '';
+  if (bioInput && !bioInput.matches(':focus')) bioInput.value = u.bio || '';
+
+  renderProfileAvatarCircle(u);
+}
+
+function renderProfileAvatarCircle(u) {
+  const circle = document.getElementById('profileAvatarCircle');
+  const removeBtn = document.getElementById('profileAvatarRemoveBtn');
+  if (!circle) return;
+
+  if (u && u.avatar_url) {
+    circle.innerHTML = `<img src="${escHtml(u.avatar_url)}" alt="${escHtml(u.name || 'User')}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+    if (removeBtn) removeBtn.style.display = '';
+  } else {
+    circle.innerHTML = `<span id="profileAvatarInitials">${escHtml((u && u.ini) || (u && getInitials(u.name)) || '--')}</span>`;
+    circle.style.background = (u && u.color) || 'var(--red)';
+    if (removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+async function uploadMyAvatar(file) {
+  if (!file) return;
+
+  const statusEl = document.getElementById('profileAvatarStatus');
+  if (statusEl) {
+    statusEl.textContent = 'Uploading picture…';
+    statusEl.style.color = 'var(--muted)';
+  }
+
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  try {
+    const res = await JMOS_API.upload('/auth/avatar', formData);
+    if (res.user && JMOS_STATE.currentUser) {
+      Object.assign(JMOS_STATE.currentUser, res.user);
+    } else if (res.avatar_url && JMOS_STATE.currentUser) {
+      JMOS_STATE.currentUser.avatar_url = res.avatar_url;
+    }
+
+    try {
+      localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+    } catch (_) {}
+
+    renderProfileAvatarCircle(JMOS_STATE.currentUser);
+    if (typeof applyAuthenticatedUI === 'function') {
+      applyAuthenticatedUI(JMOS_STATE.currentUser);
+    }
+
+    // Also update users list if present
+    if (Array.isArray(JMOS_STATE.users) && JMOS_STATE.currentUser) {
+      const idx = JMOS_STATE.users.findIndex(x => x.id === JMOS_STATE.currentUser.id || x.email === JMOS_STATE.currentUser.email);
+      if (idx !== -1) {
+        JMOS_STATE.users[idx].avatar_url = JMOS_STATE.currentUser.avatar_url;
+      }
+    }
+
+    if (statusEl) {
+      statusEl.textContent = '✓ Picture updated';
+      statusEl.style.color = 'var(--green)';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('Avatar Updated', 'Your profile picture has been updated');
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      statusEl.style.color = 'var(--red)';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Upload Failed', err.message, true);
+    }
+  }
+}
+
+async function removeMyAvatar() {
+  const statusEl = document.getElementById('profileAvatarStatus');
+  if (statusEl) {
+    statusEl.textContent = 'Removing picture…';
+    statusEl.style.color = 'var(--muted)';
+  }
+
+  try {
+    await JMOS_API.post('/auth/avatar/remove');
+    if (JMOS_STATE.currentUser) {
+      JMOS_STATE.currentUser.avatar_url = null;
+      try {
+        localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+      } catch (_) {}
+    }
+
+    renderProfileAvatarCircle(JMOS_STATE.currentUser);
+    if (typeof applyAuthenticatedUI === 'function') {
+      applyAuthenticatedUI(JMOS_STATE.currentUser);
+    }
+
+    if (Array.isArray(JMOS_STATE.users) && JMOS_STATE.currentUser) {
+      const idx = JMOS_STATE.users.findIndex(x => x.id === JMOS_STATE.currentUser.id || x.email === JMOS_STATE.currentUser.email);
+      if (idx !== -1) {
+        JMOS_STATE.users[idx].avatar_url = null;
+      }
+    }
+
+    if (statusEl) {
+      statusEl.textContent = '✓ Picture removed';
+      statusEl.style.color = 'var(--green)';
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('Avatar Removed', 'Your profile is now using initial badge');
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = 'Failed: ' + err.message;
+      statusEl.style.color = 'var(--red)';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Remove Failed', err.message, true);
+    }
+  }
+}
+
+async function saveMyProfile() {
+  const btn = document.getElementById('saveProfileBtn');
+  const resultBox = document.getElementById('profileSaveResult');
+  const name = document.getElementById('profileName')?.value.trim();
+  const title = document.getElementById('profileTitle')?.value.trim();
+  const department = document.getElementById('profileDepartment')?.value.trim();
+  const phone = document.getElementById('profilePhone')?.value.trim();
+  const bio = document.getElementById('profileBio')?.value.trim();
+
+  const currentPass = document.getElementById('profileCurrentPass')?.value;
+  const newPass = document.getElementById('profileNewPass')?.value;
+  const confirmPass = document.getElementById('profileConfirmPass')?.value;
+
+  if (!name) {
+    if (typeof showToast === 'function') {
+      showToast('Name Required', 'Please enter your full name', true);
+    }
+    return;
+  }
+
+  if (newPass) {
+    if (!currentPass) {
+      if (typeof showToast === 'function') {
+        showToast('Password Error', 'Enter your current password to set a new password', true);
+      }
+      return;
+    }
+    if (newPass.length < 6) {
+      if (typeof showToast === 'function') {
+        showToast('Password Error', 'New password must be at least 6 characters long', true);
+      }
+      return;
+    }
+    if (newPass !== confirmPass) {
+      if (typeof showToast === 'function') {
+        showToast('Password Mismatch', 'New password and confirmation do not match', true);
+      }
+      return;
+    }
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving Profile…';
+  }
+  if (resultBox) resultBox.style.display = 'none';
+
+  try {
+    // 1. Update Profile Details
+    const res = await JMOS_API.post('/auth/profile', {
+      name,
+      title,
+      department,
+      phone,
+      bio
+    });
+
+    if (res.user && JMOS_STATE.currentUser) {
+      Object.assign(JMOS_STATE.currentUser, res.user);
+    } else if (JMOS_STATE.currentUser) {
+      JMOS_STATE.currentUser.name = name;
+      JMOS_STATE.currentUser.title = title;
+      JMOS_STATE.currentUser.department = department;
+      JMOS_STATE.currentUser.phone = phone;
+      JMOS_STATE.currentUser.bio = bio;
+    }
+
+    // 2. Update Password if provided
+    let passwordUpdated = false;
+    if (newPass) {
+      await JMOS_API.post('/auth/password', {
+        current_password: currentPass,
+        password: newPass,
+        password_confirmation: confirmPass
+      });
+      passwordUpdated = true;
+      if (document.getElementById('profileCurrentPass')) document.getElementById('profileCurrentPass').value = '';
+      if (document.getElementById('profileNewPass')) document.getElementById('profileNewPass').value = '';
+      if (document.getElementById('profileConfirmPass')) document.getElementById('profileConfirmPass').value = '';
+    }
+
+    try {
+      localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+    } catch (_) {}
+
+    if (typeof applyAuthenticatedUI === 'function') {
+      applyAuthenticatedUI(JMOS_STATE.currentUser);
+    }
+
+    // Sync in users list
+    if (Array.isArray(JMOS_STATE.users) && JMOS_STATE.currentUser) {
+      const idx = JMOS_STATE.users.findIndex(x => x.id === JMOS_STATE.currentUser.id || x.email === JMOS_STATE.currentUser.email);
+      if (idx !== -1) {
+        Object.assign(JMOS_STATE.users[idx], {
+          name,
+          title,
+          department,
+          phone,
+          bio
+        });
+      }
+    }
+
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = 'var(--green-soft)';
+      resultBox.style.color = 'var(--green)';
+      resultBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+      resultBox.textContent = '✓ Profile details ' + (passwordUpdated ? 'and password ' : '') + 'saved successfully.';
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('Profile Saved', 'Your account profile has been updated' + (passwordUpdated ? ' (password changed)' : ''));
+    }
+  } catch (err) {
+    if (resultBox) {
+      resultBox.style.display = 'block';
+      resultBox.style.background = 'var(--red-soft)';
+      resultBox.style.color = 'var(--red)';
+      resultBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      resultBox.textContent = err.message || 'Failed to save profile.';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Save Failed', err.message, true);
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save Profile';
+    }
+  }
+}
+
+window.populateMyProfile = populateMyProfile;
+window.saveMyProfile = saveMyProfile;
+window.uploadMyAvatar = uploadMyAvatar;
+window.removeMyAvatar = removeMyAvatar;
+
 
 /* ==========================================================================
    JMOS — System Software Upgrade & IT Maintenance Handlers

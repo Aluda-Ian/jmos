@@ -46,11 +46,11 @@
   --red-soft: rgba(197,37,35,.12);
   --red-line: rgba(197,37,35,.22);
 
-  /* Typography & Ink — inverted to light tones */
-  --ink: #E8E4E2;
-  --ink-2: #D4CFC8;
-  --muted: #9A928E;
-  --faint: #6E6763;
+  /* Typography & Ink — Ash White Palette */
+  --ink: #F3F4F6;        /* Ash White (Crisp primary text) */
+  --ink-2: #E5E7EB;      /* Ash Silver-White (Secondary text & headings) */
+  --muted: #9CA3AF;      /* Ash Gray (Descriptions & labels) */
+  --faint: #6B7280;      /* Subtle Ash Slate (Placeholders & borders) */
 
   /* Surfaces & Borders — true black palette */
   --paper: #000000;
@@ -68,6 +68,30 @@
   /* Depth — stronger shadows for dark context */
   --shadow: 0 1px 3px rgba(0,0,0,.24), 0 6px 20px -12px rgba(0,0,0,.4);
   --shadow-lg: 0 24px 60px -22px rgba(0,0,0,.6);
+}
+
+[data-theme="dark"] {
+  color: var(--ink);
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] .pt,
+[data-theme="dark"] b,
+[data-theme="dark"] strong {
+  color: var(--ink);
+}
+
+[data-theme="dark"] th {
+  color: var(--muted);
+}
+
+[data-theme="dark"] td {
+  color: var(--ink-2);
 }
 
 /* Base Reset */

@@ -416,11 +416,11 @@ h1.pt {
 
 /* Dark mode: sidebar nav link color */
 [data-theme="dark"] .nav a.item {
-  color: #B3AAA5;
+  color: #D1D5DB;
 }
 
 [data-theme="dark"] .nav a.item:hover {
-  color: var(--ink);
+  color: #FFFFFF;
 }
 
 [data-theme="dark"] .nav a.item.active {

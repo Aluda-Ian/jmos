@@ -192,7 +192,7 @@
       <span>All systems operational</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.4.2') }}</span>
+      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.4.3') }}</span>
       <span>&copy; {{ date('Y') }} Jeota Media Ltd</span>
     </div>
   </footer>

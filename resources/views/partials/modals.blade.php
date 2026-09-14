@@ -638,17 +638,22 @@
   </div>
 </div>
 
-<!-- 6. Log Expense Modal -->
+<!-- 6. Log / Edit Expense Modal -->
 <div class="modal" id="expenseModal" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
   <div class="mbg" data-close="expenseModal"></div>
   <div class="mbox">
     <button class="mclose" data-close="expenseModal" title="Close" aria-label="Close modal">&times;</button>
+    <input type="hidden" id="editExpenseId" value="">
+    <input type="hidden" id="neReceiptUrl" value="">
+    <input type="hidden" id="neReceiptName" value="">
     <h3 id="expenseModalTitle">Log an expense</h3>
-    <p class="msub">Track project costs and operational expenses with ETR compliance.</p>
+    <p class="msub" id="expenseModalSub">Track project costs and operational expenses with ETR &amp; eTIMS compliance.</p>
+    
     <div class="field">
       <label for="neName">Expense name / Description *</label>
       <input id="neName" placeholder="e.g. Drone hire for shoot" required autocomplete="off">
     </div>
+
     <div class="grid2">
       <div class="field">
         <label for="neCat">Category</label>
@@ -662,11 +667,34 @@
           <option value="Overhead">Overhead</option>
         </select>
       </div>
-      <div class="field">
-        <label for="neProject">Project / Allocation</label>
-        <input id="neProject" placeholder="e.g. Pankaj Documentary or overhead" autocomplete="off">
+      <div class="field" id="expenseProjectPickerField">
+        <label for="expenseProjectTrigger">Project / Cost Allocation</label>
+        <input type="hidden" id="neProject" name="project" value="overhead">
+        <div class="searchable-select-wrap" id="expenseProjectSelectWrap">
+          <div class="searchable-select-trigger" id="expenseProjectTrigger" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+            <span class="searchable-select-label" id="expenseProjectSelectedLabel">
+              <span style="color:var(--muted)">🏢 General Overhead / Operations</span>
+            </span>
+            <div class="searchable-select-trigger-actions">
+              <button type="button" class="searchable-select-clear" id="expenseProjectClearBtn" title="Reset to overhead" style="display:none" aria-label="Reset to overhead">&times;</button>
+              <svg class="searchable-select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+
+          <div class="searchable-select-dropdown" id="expenseProjectDropdown" style="display:none">
+            <div class="searchable-select-search-wrap">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="expenseProjectSearchInput" placeholder="Search active projects or client…" autocomplete="off">
+              <button type="button" class="searchable-select-input-clear" id="expenseProjectSearchClear" style="display:none" title="Clear search">&times;</button>
+            </div>
+            <div class="searchable-select-list" id="expenseProjectOptionsList" role="listbox">
+              <!-- Dynamically populated from active database projects -->
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
     <div class="grid2">
       <div class="field">
         <label for="neAmount">Amount (KES) *</label>
@@ -681,24 +709,87 @@
         </select>
       </div>
     </div>
-    <div class="field">
-      <label for="neDate">Date</label>
-      <input id="neDate" placeholder="e.g. Aug 15" autocomplete="off">
+
+    <div class="grid2">
+      <div class="field">
+        <label for="neEtimsNumber">eTIMS / KRA CU Invoice No.</label>
+        <input id="neEtimsNumber" placeholder="e.g. KRA-ETIMS-002194 or CU01-08123" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="neDate">Expense Date</label>
+        <input id="neDate" placeholder="e.g. Aug 15 or 2026-09-14" autocomplete="off">
+      </div>
     </div>
-    <div class="mfoot">
-      <button type="button" class="btn" data-close="expenseModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveExpenseBtn">Log expense</button>
+
+    <!-- Support Documents: Receipt or eTIMS Upload -->
+    <div class="field" style="margin-top:4px">
+      <label>Support Document (Receipt / eTIMS / Invoice)</label>
+      <div class="expense-upload-box" id="expenseDropzone">
+        <input type="file" id="neReceiptFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.docx,.doc">
+        <div class="expense-upload-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="expense-upload-label" id="expenseUploadText">Click or drag &amp; drop receipt / eTIMS file</div>
+        <div class="expense-upload-hint">PDF, PNG, JPG, or DOCX up to 25MB</div>
+      </div>
+
+      <!-- Uploaded Document Preview Card -->
+      <div class="expense-receipt-preview" id="neReceiptPreview" style="display:none">
+        <div class="expense-receipt-meta">
+          <div class="expense-receipt-icon" id="neReceiptIcon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div>
+            <div class="expense-receipt-name" id="neReceiptDisplayName">document.pdf</div>
+            <div style="font-size:11px;color:var(--muted)" id="neReceiptMeta">Attached Document</div>
+          </div>
+        </div>
+        <div class="expense-receipt-actions">
+          <a href="#" target="_blank" class="btn" id="neReceiptViewBtn" style="padding:4px 10px;font-size:11.5px;text-decoration:none" rel="noopener">View</a>
+          <button type="button" class="btn danger" id="neReceiptRemoveBtn" style="padding:4px 10px;font-size:11.5px">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:6px">
+      <label for="neNotes">Notes / Vendor Remarks (Optional)</label>
+      <input id="neNotes" placeholder="e.g. Paid via M-Pesa to vendor till; ETR received via WhatsApp" autocomplete="off">
+    </div>
+
+    <div class="mfoot" style="display:flex;align-items:center;justify-content:space-between">
+      <button type="button" class="btn danger" id="deleteExpenseModalBtn" style="display:none">Delete expense</button>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <button type="button" class="btn" data-close="expenseModal">Cancel</button>
+        <button type="button" class="btn primary" id="saveExpenseBtn">Log expense</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- 7. Add Person Modal -->
+<!-- 7. Add / Edit Person Modal -->
 <div class="modal" id="userModal" role="dialog" aria-modal="true" aria-labelledby="userModalTitle">
   <div class="mbg" data-close="userModal"></div>
   <div class="mbox">
     <button class="mclose" data-close="userModal" title="Close" aria-label="Close modal">&times;</button>
+    <input type="hidden" id="editUserId" value="">
     <h3 id="userModalTitle">Add a person</h3>
-    <p class="msub">They'll get their own login and only see what their access level allows.</p>
+    <p class="msub" id="userModalSub">They'll get their own login and only see what their access level allows.</p>
+
+    <!-- Avatar Preview & Upload -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px 14px;background:var(--paper);border:1px solid var(--line);border-radius:10px">
+      <div id="nuAvatarBox" style="width:48px;height:48px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-weight:700;font-size:16px;overflow:hidden;flex-shrink:0;border:2px solid var(--line)">
+        <span id="nuAvatarInitials">TM</span>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px">Profile Picture (Optional)</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="file" id="nuAvatarFile" accept="image/*" style="display:none">
+          <button type="button" class="btn sm" onclick="document.getElementById('nuAvatarFile').click()">Choose photo</button>
+          <span id="nuAvatarFileName" style="font-size:11px;color:var(--muted)">No file chosen</span>
+        </div>
+      </div>
+    </div>
+
     <div class="grid2">
       <div class="field">
         <label for="nuName">Full name *</label>
@@ -706,7 +797,28 @@
       </div>
       <div class="field">
         <label for="nuTitle">Role / title</label>
-        <input id="nuTitle" placeholder="e.g. Photographer" autocomplete="off">
+        <input id="nuTitle" placeholder="e.g. Lead Photographer" autocomplete="off">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label for="nuDept">Department</label>
+        <input id="nuDept" list="departmentSuggestions" placeholder="e.g. Production, Creative, Video" autocomplete="off">
+        <datalist id="departmentSuggestions">
+          <option value="Production">
+          <option value="Creative">
+          <option value="Video &amp; Cinematography">
+          <option value="Photography">
+          <option value="Audio &amp; Sound">
+          <option value="Post-Production &amp; 3D">
+          <option value="Sales &amp; Marketing">
+          <option value="Finance &amp; Operations">
+          <option value="Executive &amp; Management">
+        </datalist>
+      </div>
+      <div class="field">
+        <label for="nuPhone">Phone / WhatsApp</label>
+        <input id="nuPhone" placeholder="e.g. +254 700 000 000" autocomplete="off">
       </div>
     </div>
     <div class="field">
@@ -724,20 +836,22 @@
         </select>
       </div>
       <div class="field">
-        <label for="nuType">Employment</label>
+        <label for="nuType">Employment type</label>
         <select id="nuType">
           <option value="Full-time">Full-time</option>
           <option value="Per-project">Per-project</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Contractor">Contractor</option>
         </select>
       </div>
     </div>
     <div class="grid2">
       <div class="field">
-        <label for="nuPay">Pay</label>
-        <input id="nuPay" placeholder="e.g. 5,000/day" autocomplete="off">
+        <label for="nuPay">Salary / Wages (Pay)</label>
+        <input id="nuPay" placeholder="e.g. 65,000/mo or 5,000/day" autocomplete="off">
       </div>
       <div class="field">
-        <label for="nuPass">Temporary password</label>
+        <label for="nuPass" id="nuPassLabel">Temporary password</label>
         <input id="nuPass" placeholder="they can change it later" value="jeota2024" autocomplete="off">
       </div>
     </div>

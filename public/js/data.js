@@ -173,8 +173,12 @@ const JMOS_API = {
           id: u.id,
           name: u.name,
           title: u.title || 'Team',
+          department: u.department || '',
           email: u.email,
+          phone: u.phone || '',
           secondary_email: u.secondary_email || null,
+          avatar_url: u.avatar_url || null,
+          bio: u.bio || '',
           role: u.role || 'team',
           type: u.type || 'Full-time',
           pay: u.pay || '—',
@@ -183,13 +187,37 @@ const JMOS_API = {
         }));
       }
 
-      if (Array.isArray(clients)) JMOS_STATE.clients = clients;
-      if (Array.isArray(projects)) JMOS_STATE.projects = projects;
-      if (Array.isArray(pipeline)) JMOS_STATE.pipeline = pipeline;
-      if (Array.isArray(tasks)) JMOS_STATE.tasks = tasks;
-      if (Array.isArray(invoices)) JMOS_STATE.invoices = invoices;
-      if (Array.isArray(expenses)) JMOS_STATE.expenses = expenses;
-      if (Array.isArray(services)) JMOS_STATE.services = services;
+      function unwrapList(res) {
+        if (Array.isArray(res)) return res;
+        if (res && Array.isArray(res.data)) return res.data;
+        if (res && typeof res === 'object') {
+          for (const k of ['projects', 'clients', 'tasks', 'invoices', 'expenses', 'services', 'deals', 'users']) {
+            if (Array.isArray(res[k])) return res[k];
+          }
+        }
+        return null;
+      }
+
+      const cList = unwrapList(clients);
+      if (cList) JMOS_STATE.clients = cList;
+
+      const pList = unwrapList(projects);
+      if (pList) JMOS_STATE.projects = pList;
+
+      const pipeList = unwrapList(pipeline);
+      if (pipeList) JMOS_STATE.pipeline = pipeList;
+
+      const tList = unwrapList(tasks);
+      if (tList) JMOS_STATE.tasks = tList;
+
+      const iList = unwrapList(invoices);
+      if (iList) JMOS_STATE.invoices = iList;
+
+      const eList = unwrapList(expenses);
+      if (eList) JMOS_STATE.expenses = eList;
+
+      const sList = unwrapList(services);
+      if (sList) JMOS_STATE.services = sList;
       if (finance && finance.status === 'success') {
         JMOS_STATE.finance = finance;
         JMOS_STATE.broughtForward = finance.brought_forward;
