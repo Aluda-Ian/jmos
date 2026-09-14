@@ -164,6 +164,16 @@
   color: var(--amber);
 }
 
+.tint-purple {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7C3AED;
+}
+
+.tint-blue {
+  background: rgba(43, 110, 138, 0.15);
+  color: #2B6E8A;
+}
+
 .tint-alert {
   background: var(--red-soft);
   color: var(--red-deep);

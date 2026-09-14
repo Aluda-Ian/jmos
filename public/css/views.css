@@ -730,6 +730,11 @@
   color: var(--red);
 }
 
+.full-cal-event-pill.status_meeting {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7C3AED;
+}
+
 .full-cal-event-pill.shoot {
   background: var(--amber-soft);
   color: var(--amber);

@@ -910,6 +910,7 @@
         <label for="nevtType">Event Type</label>
         <select id="nevtType">
           <option value="meeting">Client Meeting</option>
+          <option value="status_meeting">Status Meeting</option>
           <option value="shoot">Production Shoot</option>
           <option value="deadline">Project Deadline</option>
           <option value="task">Internal Review / Task</option>

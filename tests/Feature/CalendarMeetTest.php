@@ -187,4 +187,40 @@ class CalendarMeetTest extends TestCase
         $this->assertEquals('disconnected', $user->google_calendar_status);
         $this->assertNull($user->google_calendar_synced_at);
     }
+
+    public function test_can_schedule_status_meeting_and_generate_meet_link(): void
+    {
+        $user = User::where('role', 'owner')->first();
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/calendar/events', [
+                'title' => 'Weekly Ops Status Meeting',
+                'event_type' => 'status_meeting',
+                'start_time' => '2026-09-22T09:00:00',
+                'end_time' => '2026-09-22T10:00:00',
+                'location' => 'Boardroom / Meet',
+                'attendees' => 'All Team',
+                'description' => 'Weekly operational review and blockers',
+                'generate_meet' => true,
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => 'success',
+                'data' => [
+                    'event_type' => 'status_meeting',
+                    'title' => 'Weekly Ops Status Meeting',
+                ],
+            ]);
+
+        $eventData = $response->json('data');
+        $this->assertNotEmpty($eventData['meet_link']);
+        $this->assertStringStartsWith('https://meet.google.com/', $eventData['meet_link']);
+
+        $dbEvent = CalendarEvent::find($eventData['id']);
+        $this->assertNotNull($dbEvent);
+        $this->assertEquals('status_meeting', $dbEvent->event_type);
+        $this->assertEquals('Weekly Ops Status Meeting', $dbEvent->title);
+    }
 }

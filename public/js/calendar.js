@@ -91,6 +91,7 @@ function renderDashboardCalendar() {
     if (dayEvents.length) {
       eventDots = `<div class="cal-dots">` + dayEvents.slice(0, 3).map(e => {
         let dotColor = '#C52523';
+        if (e.event_type === 'status_meeting') dotColor = '#7C3AED';
         if (e.event_type === 'shoot') dotColor = '#B4780F';
         if (e.event_type === 'deadline') dotColor = '#1C7A4E';
         if (e.event_type === 'invoice') dotColor = '#2B6E8A';
@@ -141,6 +142,7 @@ function renderDashboardCalendar() {
       agendaList.innerHTML = selectedEvents.map(e => {
         let badgeClass = 'tint-red';
         let typeName = 'Meeting';
+        if (e.event_type === 'status_meeting') { badgeClass = 'tint-purple'; typeName = 'Status Meeting'; }
         if (e.event_type === 'shoot') { badgeClass = 'tint-amber'; typeName = 'Shoot'; }
         if (e.event_type === 'deadline') { badgeClass = 'tint-green'; typeName = 'Deadline'; }
         if (e.event_type === 'invoice') { badgeClass = 'tint-blue'; typeName = 'Invoice Due'; }
@@ -236,6 +238,7 @@ function renderFullCalendar() {
       eventPills = `<div class="full-cal-events-wrap">` +
         dayEvents.slice(0, 3).map(e => {
           let typeClass = 'meeting';
+          if (e.event_type === 'status_meeting') typeClass = 'status_meeting';
           if (e.event_type === 'shoot') typeClass = 'shoot';
           if (e.event_type === 'deadline') typeClass = 'deadline';
           if (e.event_type === 'invoice') typeClass = 'invoice';
@@ -303,6 +306,7 @@ function renderFullCalendar() {
       fullAgendaList.innerHTML = selectedEvents.map(e => {
         let badgeClass = 'tint-red';
         let typeName = 'Meeting';
+        if (e.event_type === 'status_meeting') { badgeClass = 'tint-purple'; typeName = 'Status Meeting'; }
         if (e.event_type === 'shoot') { badgeClass = 'tint-amber'; typeName = 'Shoot'; }
         if (e.event_type === 'deadline') { badgeClass = 'tint-green'; typeName = 'Deadline'; }
         if (e.event_type === 'invoice') { badgeClass = 'tint-blue'; typeName = 'Invoice Due'; }
@@ -354,6 +358,7 @@ function renderFullCalendar() {
       upcomingList.innerHTML = upcomingEvents.slice(0, 6).map(e => {
         let badgeClass = 'tint-red';
         let typeName = 'Meeting';
+        if (e.event_type === 'status_meeting') { badgeClass = 'tint-purple'; typeName = 'Status Meeting'; }
         if (e.event_type === 'shoot') { badgeClass = 'tint-amber'; typeName = 'Shoot'; }
         if (e.event_type === 'deadline') { badgeClass = 'tint-green'; typeName = 'Deadline'; }
         if (e.event_type === 'invoice') { badgeClass = 'tint-blue'; typeName = 'Invoice'; }
@@ -982,6 +987,7 @@ window.openEventDetailModal = function(eventId) {
 
   let badgeClass = 'tint-red';
   let typeName = 'Client Meeting';
+  if (event.event_type === 'status_meeting') { badgeClass = 'tint-purple'; typeName = 'Status Meeting'; }
   if (event.event_type === 'shoot') { badgeClass = 'tint-amber'; typeName = 'Production Shoot'; }
   if (event.event_type === 'deadline') { badgeClass = 'tint-green'; typeName = 'Project Deadline'; }
   if (event.event_type === 'invoice') { badgeClass = 'tint-blue'; typeName = 'Invoice Due Date'; }

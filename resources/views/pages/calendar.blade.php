@@ -22,6 +22,7 @@
   <div class="cal-filter-bar" style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap">
     <button type="button" class="cal-pill active" data-cal-filter="all">All Operations</button>
     <button type="button" class="cal-pill" data-cal-filter="meeting"><span class="dot-indicator" style="background:var(--red)"></span>Client Meetings</button>
+    <button type="button" class="cal-pill" data-cal-filter="status_meeting"><span class="dot-indicator" style="background:#7C3AED"></span>Status Meetings</button>
     <button type="button" class="cal-pill" data-cal-filter="shoot"><span class="dot-indicator" style="background:var(--amber)"></span>Production Shoots</button>
     <button type="button" class="cal-pill" data-cal-filter="deadline"><span class="dot-indicator" style="background:var(--green)"></span>Project Deliveries</button>
     <button type="button" class="cal-pill" data-cal-filter="invoice" data-perm="owner finance"><span class="dot-indicator" style="background:var(--blue, #2B6E8A)"></span>Invoice Due Dates</button>

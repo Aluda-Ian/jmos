@@ -299,7 +299,7 @@ class CalendarController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'event_type' => 'required|string|in:meeting,shoot,deadline,task,other',
+            'event_type' => 'required|string|in:meeting,status_meeting,shoot,deadline,task,other',
             'start_time' => 'required|string',
             'end_time' => 'nullable|string',
             'all_day' => 'nullable|boolean',
@@ -315,8 +315,8 @@ class CalendarController extends Controller
 
         $user = auth('sanctum')->user() ?? auth()->user();
 
-        // Auto-generate Google Meet link if requested or if event type is meeting
-        if ($shouldGenerateMeet || $validated['event_type'] === 'meeting') {
+        // Auto-generate Google Meet link if requested or if event type is meeting / status meeting
+        if ($shouldGenerateMeet || in_array($validated['event_type'], ['meeting', 'status_meeting'], true)) {
             if (empty($meetLink)) {
                 $meetResult = $this->googleCalendarService->createCalendarEvent($validated, $user);
                 $meetLink = $meetResult['meet_link'];
