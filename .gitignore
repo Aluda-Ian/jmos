@@ -19,6 +19,10 @@
 /public/hot
 /public/storage
 /public/uploads/*
+/public/uploads/avatars/*
+/public/uploads/chat/*
+/public/uploads/expenses/*
+!/public/uploads/**/.gitkeep
 !/public/uploads/.gitkeep
 /storage/*.key
 /storage/pail
@@ -27,3 +31,11 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Sensitive credentials & instructions
+DEPLOYMENT_INSTRUCTIONS.md
+DEPLOYMENT_INSTRUCTIONS.zip
+*.sql
+*.zip
+*.tar.gz
+*.rar
