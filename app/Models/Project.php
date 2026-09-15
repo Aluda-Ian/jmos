@@ -14,6 +14,7 @@ class Project extends Model
         'project_name',
         'client',
         'project_type',
+        'category',
         'project_manager',
         'stage',
         'status',
@@ -37,6 +38,24 @@ class Project extends Model
         'budget' => 'float',
         'progress_pct' => 'integer',
     ];
+
+    protected $appends = [
+        'is_internal',
+    ];
+
+    public function getIsInternalAttribute(): bool
+    {
+        $cat = strtolower((string) ($this->category ?? ''));
+        $type = strtolower((string) ($this->project_type ?? ''));
+        $cli = strtolower((string) ($this->client ?? ''));
+
+        return $cat === 'internal'
+            || str_contains($type, 'internal')
+            || str_contains($type, 'system')
+            || str_contains($type, 'jmos')
+            || str_contains($cli, 'internal')
+            || str_contains($cli, 'jeota media (internal)');
+    }
 
     public function tasks(): HasMany
     {

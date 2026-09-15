@@ -174,6 +174,13 @@ window.getNextInvoiceNo = function() {
 
 // Global Modal Open & Close Functions
 window.openModal = function(id) {
+  if (id === 'scheduleModal') {
+    if (typeof window.openScheduleShootModal === 'function') {
+      window.openScheduleShootModal();
+      return;
+    }
+    id = 'eventModal';
+  }
   const m = typeof id === 'string' ? document.getElementById(id) : id;
   if (!m) return;
 
@@ -188,15 +195,21 @@ window.openModal = function(id) {
     const st = document.getElementById('ndStage');
     if (st) st.value = 'lead';
   } else if (modalId === 'clientModal') {
-    ['ncName', 'ncContact', 'ncOwner', 'ncService', 'ncValue'].forEach(fid => {
+    ['ncName', 'ncContact', 'ncEmail', 'ncPhone', 'ncOwner', 'ncService', 'ncValue'].forEach(fid => {
       const el = document.getElementById(fid);
       if (el) el.value = '';
     });
   } else if (modalId === 'projectModal') {
-    ['npName', 'npDeadline', 'npBudget'].forEach(fid => {
+    ['npName', 'npBudget'].forEach(fid => {
       const el = document.getElementById(fid);
       if (el) el.value = '';
     });
+    const dInput = document.getElementById('npDeadline');
+    if (dInput) {
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 14);
+      dInput.value = defaultDate.toISOString().split('T')[0];
+    }
     setupModalClientPicker('npClientSelect', 'npNewClientWrap', 'npNewClientInput', 'npClient', 'npToggleNewClientBtn');
 
     // Populate project managers from active team members
@@ -1263,6 +1276,8 @@ function initModals() {
           client_name: name,
           client_type: document.getElementById('ncType')?.value,
           contact_person: document.getElementById('ncContact')?.value.trim(),
+          email: document.getElementById('ncEmail')?.value.trim() || null,
+          phone: document.getElementById('ncPhone')?.value.trim() || null,
           owner: document.getElementById('ncOwner')?.value.trim(),
           service: document.getElementById('ncService')?.value.trim(),
           project_value: Number(document.getElementById('ncValue')?.value) || 0,
@@ -1306,18 +1321,33 @@ function initModals() {
       const client = resolveModalClient('npClientSelect', 'npNewClientWrap', 'npNewClientInput', 'npClient');
       if (!name || !client) return showToast('Name & Client required', 'Please fill project name and select or add a client', true);
 
+      const rawDeadline = document.getElementById('npDeadline')?.value.trim();
+      let deadlineStr = rawDeadline || 'To be scheduled';
+      if (rawDeadline) {
+        try {
+          const dParts = rawDeadline.split('-');
+          if (dParts.length === 3) {
+            const dObj = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
+            if (!isNaN(dObj.getTime())) {
+              deadlineStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            }
+          }
+        } catch (_) {}
+      }
+
       btn.disabled = true;
       btn.textContent = 'Creating…';
       try {
         await JMOS_API.post('/projects', {
           project_name: name,
           client: client,
-          project_type: document.getElementById('npType')?.value.trim() || 'Brand Film',
+          category: document.getElementById('npCategory')?.value || 'client',
+          project_type: document.getElementById('npType')?.value.trim() || 'Brand film',
           project_manager: document.getElementById('npManager')?.value.trim() || 'Barny Kiome',
           stage: document.getElementById('npStage')?.value || 'brief',
           status: document.getElementById('npStatus')?.value || 'On track',
           priority: 'High',
-          deadline: document.getElementById('npDeadline')?.value.trim() || 'Sep 30',
+          deadline: deadlineStr,
           budget: Number(document.getElementById('npBudget')?.value) || 0,
           progress_pct: 10,
           waiting_on: 'us'

@@ -38,6 +38,16 @@
     </div>
     <div class="grid2">
       <div class="field">
+        <label for="ncEmail">Contact email</label>
+        <input id="ncEmail" type="email" placeholder="e.g. client@brand.co.ke" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="ncPhone">Contact phone</label>
+        <input id="ncPhone" type="tel" placeholder="e.g. +254 712 345 678" autocomplete="off">
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
         <label for="ncService">Primary service</label>
         <input id="ncService" placeholder="e.g. Brand Film" autocomplete="off">
       </div>
@@ -49,6 +59,240 @@
     <div class="mfoot">
       <button type="button" class="btn" data-close="clientModal">Cancel</button>
       <button type="button" class="btn primary" id="saveClientBtn">Save client</button>
+    </div>
+  </div>
+</div>
+
+<!-- 1b. Client Detailed Workspace & Overview Modal -->
+<div class="modal" id="clientDetailModal" role="dialog" aria-modal="true" aria-labelledby="cdmTitle">
+  <div class="mbg" data-close="clientDetailModal"></div>
+  <div class="mbox" style="max-height:92vh;overflow-y:auto;padding:0;overflow-x:hidden;max-width:880px;width:95%">
+    <!-- Notion-style Cover Banner -->
+    <div style="height:120px;background:linear-gradient(135deg, #182848 0%, #2B6E8A 55%, #C52523 100%);position:relative;border-radius:16px 16px 0 0">
+      <button class="mclose" data-close="clientDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
+      
+      <!-- Dynamic Client Initials Avatar -->
+      <div id="cdmAvatar" style="position:absolute;bottom:-24px;left:28px;width:56px;height:56px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;border:3px solid var(--surface)">
+        CL
+      </div>
+    </div>
+
+    <div style="padding:36px 28px 24px">
+      <!-- Title & Header Actions -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <input type="hidden" id="cdmClientId">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="badge" id="cdmTypeBadge" style="background:rgba(43,110,138,0.15);color:#2B6E8A;font-size:11px;font-weight:600">Corporate</span>
+            <span class="pill tint-green" id="cdmStatusBadge">Active</span>
+            <span class="badge" id="cdmServiceBadge" style="background:var(--panel-2);color:var(--muted);font-size:11px">Brand Film</span>
+          </div>
+          <h2 id="cdmTitle" style="font-family:'Poppins',sans-serif;font-size:24px;font-weight:700;margin:0;color:var(--ink);line-height:1.2">Client Name</h2>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px" id="cdmSubtitle">Managed by Barny Kiome • Primary Contact: Peter Karanja</div>
+        </div>
+
+        <!-- Quick Header Action Buttons -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" id="cdmNewProjectBtn" style="font-size:12px;padding:6px 12px" title="Create new live project for this client">
+            <svg viewBox="0 0 24 24" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>+ Project
+          </button>
+          <button type="button" class="btn" id="cdmNewInvoiceBtn" style="font-size:12px;padding:6px 12px" title="Draft new invoice for this client">
+            <svg viewBox="0 0 24 24" width="13" height="13"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>+ Invoice
+          </button>
+          <button type="button" class="btn" id="cdmScheduleShootBtn" style="font-size:12px;padding:6px 12px" title="Schedule production shoot for this client">
+            <svg viewBox="0 0 24 24" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Shoot
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Stats Row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));gap:12px;margin-bottom:24px">
+        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Projects</div>
+          <div style="display:flex;align-items:baseline;gap:6px;margin-top:2px">
+            <span id="cdmStatActiveProjects" style="font-size:18px;font-weight:700;color:var(--ink)">0</span>
+            <span id="cdmStatTotalProjects" style="font-size:11.5px;color:var(--muted)">active / 0 total</span>
+          </div>
+        </div>
+        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Total Value</div>
+          <div class="mono" id="cdmStatTotalValue" style="font-size:17px;font-weight:700;color:var(--ink);margin-top:2px">KES 0</div>
+        </div>
+        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Invoiced / Paid</div>
+          <div style="margin-top:2px">
+            <div class="mono" id="cdmStatInvoiced" style="font-size:15px;font-weight:700;color:var(--ink)">KES 0</div>
+            <div id="cdmStatPaid" style="font-size:11px;color:var(--green);font-weight:600">KES 0 collected</div>
+          </div>
+        </div>
+        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Lead Producer</div>
+          <div id="cdmStatOwner" style="font-size:14px;font-weight:600;color:var(--ink);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Barny Kiome</div>
+        </div>
+      </div>
+
+      <!-- Tab Navigation Bar -->
+      <div class="client-tab-nav">
+        <button type="button" class="client-tab-btn active" data-cdm-tab="projects">
+          <svg viewBox="0 0 24 24" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>Projects</span>
+          <span class="client-tab-badge" id="cdmTabProjectsCount">0</span>
+        </button>
+        <button type="button" class="client-tab-btn" data-cdm-tab="info">
+          <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Information &amp; Contacts</span>
+        </button>
+        <button type="button" class="client-tab-btn" data-cdm-tab="invoices">
+          <svg viewBox="0 0 24 24" width="14" height="14"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Invoices</span>
+          <span class="client-tab-badge" id="cdmTabInvoicesCount">0</span>
+        </button>
+        <button type="button" class="client-tab-btn" data-cdm-tab="shoots">
+          <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Shoots &amp; Dates</span>
+          <span class="client-tab-badge" id="cdmTabShootsCount">0</span>
+        </button>
+      </div>
+
+      <!-- Tab 1: Projects List -->
+      <div id="cdmTabPaneProjects" class="cdm-tab-pane">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">Active &amp; Delivered Projects</div>
+          <button type="button" class="btn primary" id="cdmAddProjectFromTabBtn" style="padding:4px 10px;font-size:11.5px">
+            <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ Add Project
+          </button>
+        </div>
+        <div id="cdmProjectsList" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab 2: Information & Contacts -->
+      <div id="cdmTabPaneInfo" class="cdm-tab-pane" style="display:none">
+        <div class="grid2">
+          <div class="field">
+            <label for="cdmInputName">Client / Brand Name *</label>
+            <input id="cdmInputName" placeholder="Client Name" required>
+          </div>
+          <div class="field">
+            <label for="cdmSelectType">Client Type / Industry</label>
+            <select id="cdmSelectType">
+              <option value="Corporate">Corporate</option>
+              <option value="Tech">Tech</option>
+              <option value="Agency">Agency</option>
+              <option value="Agritech">Agritech</option>
+              <option value="Hospitality">Hospitality</option>
+              <option value="Direct">Direct</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label for="cdmInputContact">Primary Contact Person</label>
+            <input id="cdmInputContact" placeholder="e.g. Peter Karanja">
+          </div>
+          <div class="field">
+            <label for="cdmSelectOwner">Account Lead / Owner</label>
+            <select id="cdmSelectOwner">
+              <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
+              <option value="Ian Aluda">Ian Aluda (IT &amp; Systems)</option>
+              <option value="Lesley Chacha">Lesley Chacha (Client Relations)</option>
+              <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
+              <option value="Matthew Muange">Matthew Muange (Finance)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label for="cdmInputEmail">Contact Email</label>
+            <div style="display:flex;gap:6px">
+              <input id="cdmInputEmail" type="email" placeholder="client@brand.co.ke" style="flex:1">
+              <a id="cdmEmailLink" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Send Email">✉ Email</a>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cdmInputPhone">Contact Phone</label>
+            <div style="display:flex;gap:6px">
+              <input id="cdmInputPhone" type="tel" placeholder="+254 700 000 000" style="flex:1">
+              <a id="cdmPhoneLink" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Call / Contact">📞 Call</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label for="cdmInputAddress">Physical Address / Office Location</label>
+            <input id="cdmInputAddress" placeholder="e.g. Westlands, Nairobi, Kenya">
+          </div>
+          <div class="field">
+            <label for="cdmInputWebsite">Website</label>
+            <div style="display:flex;gap:6px">
+              <input id="cdmInputWebsite" placeholder="https://example.com" style="flex:1">
+              <a id="cdmWebsiteLink" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Open Website">↗ Visit</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label for="cdmInputService">Primary Service</label>
+            <input id="cdmInputService" placeholder="e.g. Brand Film, Social Media">
+          </div>
+          <div class="field">
+            <label for="cdmSelectStatus">Relationship Status</label>
+            <select id="cdmSelectStatus">
+              <option value="Active">Active</option>
+              <option value="On hold">On hold</option>
+              <option value="Lead">Lead</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:8px">
+          <label for="cdmTextareaNotes">Internal Client Notes &amp; Relationship History</label>
+          <textarea id="cdmTextareaNotes" rows="3" placeholder="Key preferences, communication style, special contract terms, shoot requirements..." style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;background:var(--surface);resize:vertical"></textarea>
+        </div>
+      </div>
+
+      <!-- Tab 3: Invoices & Billing -->
+      <div id="cdmTabPaneInvoices" class="cdm-tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">Invoices &amp; Retainer Records</div>
+          <button type="button" class="btn primary" id="cdmAddInvoiceFromTabBtn" style="padding:4px 10px;font-size:11.5px">
+            <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ Issue Invoice
+          </button>
+        </div>
+        <div id="cdmInvoicesList" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab 4: Shoots & Calendar -->
+      <div id="cdmTabPaneShoots" class="cdm-tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">Production Shoots &amp; Scheduled Meetings</div>
+          <button type="button" class="btn primary" id="cdmAddShootFromTabBtn" style="padding:4px 10px;font-size:11.5px">
+            <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ Schedule Shoot
+          </button>
+        </div>
+        <div id="cdmShootsList" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="mfoot" style="display:flex;align-items:center;justify-content:space-between;padding-top:16px;border-top:1px solid var(--line);margin-top:24px">
+        <button type="button" class="btn" id="cdmDeleteBtn" style="color:var(--red);border-color:var(--line)">
+          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete Client
+        </button>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn" data-close="clientDetailModal">Close</button>
+          <button type="button" class="btn primary" id="cdmSaveBtn">Save Changes</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -89,10 +333,18 @@
         <input type="hidden" id="npClient" name="client">
       </div>
     </div>
-    <div class="grid2">
+      <div class="field">
+        <label for="npCategory">Category</label>
+        <select id="npCategory">
+          <option value="client">Client Deliverable</option>
+          <option value="internal">Internal &amp; Systems (e.g. JMOS Development)</option>
+        </select>
+      </div>
       <div class="field">
         <label for="npType">Project type</label>
         <select id="npType">
+          <option value="Internal System Development">Internal System Development (JMOS / Tech)</option>
+          <option value="Internal Operations &amp; Studio R&amp;D">Internal Operations &amp; Studio R&amp;D</option>
           <option value="Brand film">Brand film</option>
           <option value="Documentary">Documentary</option>
           <option value="Social media reels">Social media reels</option>
@@ -105,6 +357,8 @@
           <option value="Other">Other</option>
         </select>
       </div>
+    </div>
+    <div class="grid2">
       <div class="field">
         <label for="npManager">Project manager</label>
         <select id="npManager">
@@ -143,8 +397,8 @@
     </div>
     <div class="grid2">
       <div class="field">
-        <label for="npDeadline">Deadline</label>
-        <input id="npDeadline" placeholder="e.g. Sep 30" autocomplete="off">
+        <label for="npDeadline">Deadline Date *</label>
+        <input id="npDeadline" type="date" class="date-input" required autocomplete="off" style="font-family:inherit">
       </div>
       <div class="field">
         <label for="npBudget">Budget (KES)</label>
@@ -163,8 +417,8 @@
   <div class="mbg" data-close="projectDetailModal"></div>
   <div class="mbox" style="max-height:92vh;overflow-y:auto;padding:0;overflow-x:hidden">
     <!-- Notion-style Cover Banner -->
-    <div style="height:110px;background:linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);position:relative;border-radius:16px 16px 0 0">
-      <button class="mclose" data-close="projectDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.4);color:#fff;border:none">&times;</button>
+    <div style="height:110px;background:linear-gradient(135deg, #E02826 0%, #C52523 25%, #6B0E0D 58%, #1F0505 82%, #080709 100%);position:relative;border-radius:16px 16px 0 0">
+      <button class="mclose" data-close="projectDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
       <div style="position:absolute;bottom:-20px;left:28px;width:44px;height:44px;border-radius:10px;background:var(--surface);box-shadow:0 4px 14px rgba(0,0,0,0.15);display:grid;place-items:center;color:var(--ink)">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
       </div>
@@ -175,8 +429,9 @@
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px">
         <div style="flex:1">
           <input type="hidden" id="pdmProjectId">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span class="badge" id="pdmClientBadge" style="background:var(--red-soft);color:var(--red);font-size:11px">Client</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            <span class="badge" id="pdmCategoryBadge" style="background:rgba(110,43,138,0.15);color:#8A2BE2;font-size:11px;font-weight:600">Internal</span>
+            <span class="badge" id="pdmClientBadge" style="background:var(--red-soft);color:var(--red);font-size:11px;cursor:pointer" title="Click to open client workspace">Client</span>
             <span class="badge" id="pdmTypeBadge" style="background:var(--panel-2);color:var(--muted);font-size:11px">Brand Film</span>
           </div>
           <h2 id="pdmTitle" style="font-family:'Poppins',sans-serif;font-size:24px;font-weight:700;margin:0;color:var(--ink);line-height:1.2">Project Name</h2>
@@ -189,6 +444,42 @@
 
       <!-- Properties Grid (Notion Style) -->
       <div class="project-props-list" style="background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:22px">
+        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
+          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+            <span>Category:</span>
+          </div>
+          <div style="flex:1">
+            <select id="pdmCategorySelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+              <option value="client">Client Deliverable</option>
+              <option value="internal">Internal &amp; Systems (e.g. JMOS Development)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
+          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Project Type:</span>
+          </div>
+          <div style="flex:1">
+            <select id="pdmTypeSelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+              <option value="Internal System Development">Internal System Development (JMOS / Tech)</option>
+              <option value="Internal Operations &amp; Studio R&amp;D">Internal Operations &amp; Studio R&amp;D</option>
+              <option value="Brand film">Brand film</option>
+              <option value="Documentary">Documentary</option>
+              <option value="Social media reels">Social media reels</option>
+              <option value="Corporate photography">Corporate photography</option>
+              <option value="Event coverage">Event coverage</option>
+              <option value="Podcast production">Podcast production</option>
+              <option value="Livestream">Livestream</option>
+              <option value="Social media management">Social media management</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
         <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
           <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1238,6 +1529,52 @@
       <div class="cstep"><span class="ck"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><div class="ct">Finance updated<small>Balance &amp; pipeline refreshed</small></div></div>
     </div>
     <div class="cfoot"><button type="button" class="btn primary" id="cascadeDone">Done — that was one click</button></div>
+  </div>
+</div>
+
+<!-- 12. PWA App Installation & Download Modal -->
+<div class="modal" id="pwaInstallModal" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle">
+  <div class="mbg" data-close="pwaInstallModal"></div>
+  <div class="mbox" style="max-width:480px">
+    <button class="mclose" data-close="pwaInstallModal" title="Close" aria-label="Close modal">&times;</button>
+    
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <img src="{{ asset('assets/img/jeota-logo.png') }}" alt="JMOS App" style="width:48px;height:48px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.12)">
+      <div>
+        <h3 id="pwaInstallTitle" style="margin:0;font-size:17px">Install JMOS as an App</h3>
+        <p style="margin:2px 0 0;font-size:12px;color:var(--muted)">Run standalone on Windows, macOS, Android, &amp; iPhone</p>
+      </div>
+    </div>
+
+    <!-- Quick instructions for Android/Chrome/Edge -->
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+      <div style="font-weight:600;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        PC / Laptop (Chrome, Edge, Brave)
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Click the button below or look for the Install icon in your browser address bar:</p>
+      <button type="button" class="btn primary pwa-install-btn" onclick="triggerDownloadApp()" style="width:100%;font-size:12px;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download &amp; Install on this Device
+      </button>
+    </div>
+
+    <!-- Instructions for iPhone / iPad (Safari) -->
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+      <div style="font-weight:600;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        iPhone &amp; iPad (Apple Safari)
+      </div>
+      <ol style="margin:0;padding-left:18px;font-size:12px;color:var(--muted);line-height:1.6">
+        <li>Tap the <b>Share</b> button <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's bottom toolbar.</li>
+        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b> in the top right. JMOS will launch full-screen!</li>
+      </ol>
+    </div>
+
+    <div class="mfoot" style="margin-top:14px">
+      <button type="button" class="btn" data-close="pwaInstallModal">Close</button>
+    </div>
   </div>
 </div>
 

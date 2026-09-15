@@ -193,6 +193,69 @@
     <div id="secondaryEmailResult" style="margin-top:10px;font-size:12px;display:none;padding:8px 12px;border-radius:8px"></div>
   </div>
 
+  <!-- App Installation & Browser Push Notifications Card -->
+  <div class="card" style="padding:24px;margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:8px;background:rgba(2,132,199,0.12);color:var(--blue);display:grid;place-items:center">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </div>
+        <div>
+          <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">App Download &amp; Push Notifications</h3>
+          <p style="font-size:12px;color:var(--muted)">Run JMOS as a native standalone application and receive real-time desktop &amp; mobile alerts.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <!-- 1. Native Push Notifications -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-weight:600;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              Browser Push Notifications
+            </div>
+            <span class="badge push-status-badge" style="font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(217,119,6,0.15);color:var(--amber);font-weight:600">Checking…</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px">
+            Receive native alerts for production shoots, task assignments, chat messages, and client payments even when JMOS is minimized or running in the background.
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn primary push-enable-btn" onclick="window.JMOS_PUSH.requestPermission()" style="font-size:12px;padding:7px 14px">
+            Enable Browser Notifications
+          </button>
+          <button type="button" class="btn" onclick="triggerTestPushNotification()" style="font-size:12px;padding:7px 12px" title="Send a test notification to verify delivery">
+            Send Test Alert
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Download / Install as App (PC & Mobile) -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-weight:600;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--blue)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Download App for PC &amp; Mobile
+            </div>
+            <span class="badge pwa-status-badge" style="font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(2,132,199,0.15);color:var(--blue);font-weight:600">Ready to Install</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px">
+            Install JMOS directly to your Windows PC, Mac, Android, or iOS device. Launches instantly in full-screen window with offline support and zero browser toolbars.
+          </p>
+        </div>
+        <div>
+          <button type="button" class="btn primary pwa-install-btn" onclick="triggerDownloadApp()" style="width:100%;font-size:12px;padding:8px 14px;display:flex;align-items:center;justify-content:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download &amp; Install JMOS App
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div data-perm="owner manager">
   <div class="settings-grid">
     <!-- 1. SMTP Email Gateway Configuration -->

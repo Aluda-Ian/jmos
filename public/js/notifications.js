@@ -53,6 +53,23 @@ async function fetchNotifications(filter = null) {
       if (notifPanel && (notifPanel.classList.contains('open') || notifPanel.classList.contains('on'))) {
         renderNotificationItems();
       }
+
+      // Dispatch native browser push notification for new arrivals
+      if (window.JMOS_PUSH && window.JMOS_PUSH.permission === 'granted') {
+        if (!window.JMOS_PUSH.isInitialLoad) {
+          (res.data || []).forEach(item => {
+            if (!item.read_at && !window.JMOS_PUSH.seenIds.has(item.id)) {
+              window.JMOS_PUSH.send({
+                title: item.title || 'JMOS Notification',
+                body: item.message || '',
+                url: item.link || '/'
+              });
+            }
+          });
+        }
+        (res.data || []).forEach(item => window.JMOS_PUSH.seenIds.add(item.id));
+        window.JMOS_PUSH.isInitialLoad = false;
+      }
     }
   } catch (err) {
     console.warn('Failed to fetch notifications:', err);
@@ -347,8 +364,255 @@ window.deleteNotificationItem = async function(id) {
   }
 };
 
+/* ==========================================================================
+   JMOS — Native Browser & Web Push Notifications Manager
+   ========================================================================== */
+window.JMOS_PUSH = {
+  isSupported: ('Notification' in window),
+  permission: ('Notification' in window) ? Notification.permission : 'unsupported',
+  seenIds: new Set(),
+  isInitialLoad: true,
+
+  async requestPermission() {
+    if (!this.isSupported) {
+      if (typeof showToast === 'function') {
+        showToast('Push Unsupported', 'Your browser does not support the Web Notifications API.', true);
+      }
+      return false;
+    }
+
+    try {
+      const perm = await Notification.requestPermission();
+      this.permission = perm;
+      this.updateUiControls();
+
+      if (perm === 'granted') {
+        this.send({
+          title: 'JMOS Notifications Activated 🔔',
+          body: 'You will now receive desktop and mobile push alerts for shoots, tasks, chats, and projects.',
+          url: '/'
+        });
+
+        if (typeof showToast === 'function') {
+          showToast('Push Enabled', 'Browser push notifications are now active on this device!');
+        }
+
+        // Record audit log
+        if (window.JMOS_API && window.JMOS_API.post) {
+          window.JMOS_API.post('/audit-logs', {
+            action: 'AUTH',
+            description: 'User enabled browser push notifications on ' + (navigator.userAgent.includes('Mobile') ? 'Mobile device' : 'PC / Desktop'),
+            entity_type: 'System'
+          }).catch(() => {});
+        }
+        return true;
+      } else {
+        if (typeof showToast === 'function') {
+          showToast('Notifications Blocked', 'Permission was denied. Please allow notifications in your browser address bar settings.', true);
+        }
+        return false;
+      }
+    } catch (err) {
+      console.warn('Error requesting notification permission:', err);
+      return false;
+    }
+  },
+
+  send(options = {}) {
+    if (!this.isSupported || Notification.permission !== 'granted') return;
+
+    const title = options.title || 'JMOS Alert';
+    const notifOptions = {
+      body: options.body || '',
+      icon: options.icon || '/assets/img/jeota-logo.png',
+      badge: options.badge || '/assets/img/jeota-logo.png',
+      tag: options.tag || ('jmos-' + Date.now()),
+      data: { url: options.url || '/' },
+      requireInteraction: options.requireInteraction || false
+    };
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(reg => {
+        if (reg && reg.showNotification) {
+          reg.showNotification(title, notifOptions);
+        } else {
+          this.fallbackNotification(title, notifOptions);
+        }
+      }).catch(() => {
+        this.fallbackNotification(title, notifOptions);
+      });
+    } else {
+      this.fallbackNotification(title, notifOptions);
+    }
+  },
+
+  fallbackNotification(title, options) {
+    try {
+      const n = new Notification(title, options);
+      n.onclick = function() {
+        window.focus();
+        if (options.data?.url && options.data.url !== '/') {
+          if (typeof navigateToView === 'function') {
+            navigateToView(options.data.url.replace('/', ''));
+          }
+        }
+        n.close();
+      };
+    } catch (e) {
+      console.warn('Fallback Notification failed:', e);
+    }
+  },
+
+  updateUiControls() {
+    const statusBadges = document.querySelectorAll('.push-status-badge');
+    const enableBtns = document.querySelectorAll('.push-enable-btn');
+    const isGranted = (this.permission === 'granted');
+
+    statusBadges.forEach(b => {
+      if (isGranted) {
+        b.textContent = 'Active / Allowed';
+        b.style.background = 'rgba(43,138,90,0.15)';
+        b.style.color = 'var(--green)';
+      } else if (this.permission === 'denied') {
+        b.textContent = 'Blocked by Browser';
+        b.style.background = 'rgba(197,37,35,0.15)';
+        b.style.color = 'var(--red)';
+      } else {
+        b.textContent = 'Not Enabled';
+        b.style.background = 'rgba(217,119,6,0.15)';
+        b.style.color = 'var(--amber)';
+      }
+    });
+
+    enableBtns.forEach(btn => {
+      if (isGranted) {
+        btn.textContent = 'Push Active ✓';
+        btn.disabled = true;
+        btn.style.opacity = '0.75';
+      } else {
+        btn.textContent = 'Enable Browser Notifications';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    });
+  }
+};
+
+window.triggerTestPushNotification = function() {
+  if (window.JMOS_PUSH.permission !== 'granted') {
+    window.JMOS_PUSH.requestPermission().then(granted => {
+      if (granted) {
+        window.JMOS_PUSH.send({
+          title: '🎬 Shoot Confirmed: Westlands Studio',
+          body: 'Production shoot call sheet generated for Moyo Honey Commercial. Crew: Amos, Stephen.',
+          url: 'calendar'
+        });
+      }
+    });
+  } else {
+    window.JMOS_PUSH.send({
+      title: '🎬 Production Shoot Alert',
+      body: 'Production shoot call sheet synced with Google Meet for tomorrow at 10:00 AM.',
+      url: 'calendar'
+    });
+    if (typeof showToast === 'function') {
+      showToast('Push Sent', 'Test push notification dispatched to your browser.');
+    }
+  },
+
+  scheduleDailyFirstVisitPrompt() {
+    if (!this.isSupported) return;
+    if (Notification.permission !== 'default') return;
+
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastPromptDate = localStorage.getItem('jmos_notif_prompt_date');
+
+      // Only trigger on the day's first site visit
+      if (lastPromptDate === todayStr) {
+        return;
+      }
+
+      // Record today's visit so subsequent visits today won't re-prompt
+      localStorage.setItem('jmos_notif_prompt_date', todayStr);
+
+      // Trigger after 10 seconds of the day's first site visit
+      setTimeout(() => {
+        if (Notification.permission === 'default') {
+          this.showPermissionBanner();
+        }
+      }, 10000);
+    } catch (e) {
+      console.warn('Error scheduling notification prompt:', e);
+    }
+  },
+
+  showPermissionBanner() {
+    if (document.getElementById('jmosPushPromptBanner')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'jmosPushPromptBanner';
+    banner.style.cssText = 'position:fixed;top:20px;right:20px;max-width:390px;width:calc(100vw - 40px);background:var(--surface,#1e1715);border:1px solid var(--red,#C52523);box-shadow:0 10px 30px rgba(0,0,0,0.35);border-radius:12px;padding:16px 18px;z-index:99999;display:flex;flex-direction:column;gap:10px;animation:jmosSlideDown 0.35s ease-out;font-family:inherit;';
+
+    banner.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:34px;height:34px;border-radius:8px;background:rgba(197,37,35,0.15);display:grid;place-items:center;color:var(--red,#C52523);font-size:16px">
+            🔔
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:var(--ink,#fff)">Enable JMOS Notifications</div>
+            <div style="font-size:11.5px;color:var(--muted,#948885)">Real-time alerts for shoots, tasks &amp; projects</div>
+          </div>
+        </div>
+        <button type="button" id="jmosClosePushBanner" style="background:none;border:none;color:var(--muted,#948885);font-size:18px;cursor:pointer;padding:0 4px;line-height:1">&times;</button>
+      </div>
+      <p style="font-size:12px;color:var(--ink,#fff);line-height:1.45;margin:0">
+        Allow browser push notifications to stay informed on live shoots, client delivery deadlines, and system updates.
+      </p>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:4px">
+        <button type="button" id="jmosDismissPushBanner" class="btn" style="padding:5px 12px;font-size:11.5px">Later</button>
+        <button type="button" id="jmosAllowPushBanner" class="btn primary" style="padding:5px 14px;font-size:11.5px;font-weight:600">Allow Notifications</button>
+      </div>
+    `;
+
+    document.body.appendChild(banner);
+
+    // Also attempt native browser prompt directly
+    try {
+      Notification.requestPermission().then(perm => {
+        this.permission = perm;
+        this.updateUiControls();
+        if (perm === 'granted' || perm === 'denied') {
+          banner.remove();
+        }
+      }).catch(() => {});
+    } catch (_) {}
+
+    const removeBanner = () => {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateY(-10px)';
+      banner.style.transition = 'all 0.25s ease';
+      setTimeout(() => banner.remove(), 250);
+    };
+
+    document.getElementById('jmosClosePushBanner')?.addEventListener('click', removeBanner);
+    document.getElementById('jmosDismissPushBanner')?.addEventListener('click', removeBanner);
+    document.getElementById('jmosAllowPushBanner')?.addEventListener('click', async () => {
+      removeBanner();
+      await this.requestPermission();
+    });
+  }
+};
+
 // 13. Initialize Background Polling
 function initNotifications() {
+  // Update Push UI state
+  if (window.JMOS_PUSH) {
+    window.JMOS_PUSH.updateUiControls();
+    window.JMOS_PUSH.scheduleDailyFirstVisitPrompt();
+  }
+
   // Fetch immediately
   fetchNotifications();
 

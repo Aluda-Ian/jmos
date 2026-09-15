@@ -1171,3 +1171,178 @@
   color: var(--faint, #b0a8a5);
 }
 
+/* ==========================================================================
+   Client Workspace & Detail Modal Styling
+   ========================================================================== */
+.client-tab-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 20px;
+  padding-bottom: 2px;
+  overflow-x: auto;
+}
+
+.client-tab-btn {
+  background: none;
+  border: none;
+  color: var(--muted, #948885);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all .15s ease;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.client-tab-btn svg {
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.client-tab-btn:hover {
+  color: var(--ink, #fff);
+  background: var(--panel-2, rgba(255,255,255,0.03));
+}
+
+.client-tab-btn.active {
+  color: var(--red, #C52523);
+  font-weight: 600;
+  border-bottom-color: var(--red, #C52523);
+  background: transparent;
+}
+
+.client-tab-badge {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 12px;
+  background: var(--panel-2, #2a221f);
+  color: var(--muted, #948885);
+  font-weight: 600;
+}
+
+.client-tab-btn.active .client-tab-badge {
+  background: var(--red-soft, rgba(197, 37, 35, 0.15));
+  color: var(--red, #C52523);
+}
+
+.client-card-item {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.client-card-item:hover {
+  border-color: var(--line-strong, rgba(255,255,255,0.18));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.clickable-client-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.clickable-client-row:hover {
+  background: var(--panel-2) !important;
+}
+
+.clickable-client-row .cn {
+  transition: color 0.15s ease;
+}
+
+.clickable-client-row:hover .cn {
+  color: var(--red) !important;
+}
+
+/* ==========================================================================
+   Projects Category Navigation Styling
+   ========================================================================== */
+.project-tab-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2px;
+  overflow-x: auto;
+}
+
+.project-tab-btn {
+  background: none;
+  border: none;
+  color: var(--muted, #948885);
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all .15s ease;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.project-tab-btn svg {
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.project-tab-btn:hover {
+  color: var(--ink, #fff);
+  background: var(--panel-2, rgba(255,255,255,0.03));
+}
+
+.project-tab-btn.active {
+  color: var(--red, #C52523);
+  font-weight: 600;
+  border-bottom-color: var(--red, #C52523);
+  background: transparent;
+}
+
+.project-tab-badge {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 12px;
+  background: var(--panel-2, #2a221f);
+  color: var(--muted, #948885);
+  font-weight: 600;
+}
+
+.project-tab-btn.active .project-tab-badge {
+  background: var(--red-soft, rgba(197, 37, 35, 0.15));
+  color: var(--red, #C52523);
+}
+
+.tint-purple {
+  background: rgba(138, 43, 226, 0.12) !important;
+  color: #8A2BE2 !important;
+}
+
+@keyframes jmosSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
+

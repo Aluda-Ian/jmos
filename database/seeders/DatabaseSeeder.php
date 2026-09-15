@@ -3,9 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\AppNotification;
+use App\Models\AuditLog;
 use App\Models\ChatParticipant;
 use App\Models\ChatThread;
+use App\Models\Client;
 use App\Models\FinanceSetting;
+use App\Models\Project;
 use App\Models\ServiceRecipe;
 use App\Models\SystemSetting;
 use App\Models\User;
@@ -50,6 +53,8 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Podcast production', 'code' => 'PP', 'stages' => ['brief', 'concept', 'pre-pro', 'shoot', 'edit', 'review', 'delivery'], 'deliverables' => 'Trailer + teaser + full episode'],
             ['name' => 'Livestream', 'code' => 'LS', 'stages' => ['brief', 'pre-pro', 'shoot', 'delivery'], 'deliverables' => 'Live stream (YouTube/FB/Zoom)'],
             ['name' => 'Social media management', 'code' => 'SM', 'stages' => ['brief', 'concept', 'content calendar', 'review', 'publish'], 'deliverables' => 'Content calendars + assets'],
+            ['name' => 'Internal System Development', 'code' => 'ISD', 'stages' => ['backlog', 'architecture', 'sprint', 'testing', 'deployment', 'live'], 'deliverables' => 'Software features + modules + updates'],
+            ['name' => 'Internal Operations & R&D', 'code' => 'INT', 'stages' => ['planning', 'execution', 'review', 'completed'], 'deliverables' => 'Internal infrastructure + documentation'],
         ];
 
         foreach ($services as $svc) {
@@ -166,5 +171,129 @@ class DatabaseSeeder extends Seeder
                 $notif
             );
         }
+
+        // 7. Initial System Audit Trail Logs
+        if (AuditLog::count() === 0) {
+            $bk = User::where('email', 'barny@jeotamedia.co.ke')->first();
+            $ia = User::where('email', 'ian@jeotamedia.co.ke')->first();
+
+            $initialLogs = [
+                [
+                    'user_id' => $ia?->id,
+                    'user_name' => 'Ian Aluda',
+                    'user_role' => 'manager',
+                    'action' => 'SYSTEM',
+                    'entity_type' => 'System',
+                    'entity_id' => null,
+                    'description' => 'System configuration optimized and automated zero-data-loss backup routines verified',
+                    'ip_address' => '197.232.61.18',
+                    'created_at' => now()->subMinutes(12),
+                ],
+                [
+                    'user_id' => $bk?->id,
+                    'user_name' => 'Barny Kiome',
+                    'user_role' => 'owner',
+                    'action' => 'AUTH',
+                    'entity_type' => 'User',
+                    'entity_id' => $bk?->id ? (string) $bk->id : null,
+                    'description' => 'Barny Kiome signed into JMOS workspace',
+                    'ip_address' => '102.219.208.4',
+                    'created_at' => now()->subMinutes(35),
+                ],
+                [
+                    'user_id' => $ia?->id,
+                    'user_name' => 'Ian Aluda',
+                    'user_role' => 'manager',
+                    'action' => 'SYSTEM',
+                    'entity_type' => 'System',
+                    'entity_id' => null,
+                    'description' => 'Cleared application and compiled system caches during maintenance pass',
+                    'ip_address' => '197.232.61.18',
+                    'created_at' => now()->subHours(2),
+                ],
+                [
+                    'user_id' => $bk?->id,
+                    'user_name' => 'Barny Kiome',
+                    'user_role' => 'owner',
+                    'action' => 'CREATE',
+                    'entity_type' => 'Project',
+                    'entity_id' => '1',
+                    'description' => "Created live project 'Most' for client 'Pankaj Social Service'",
+                    'ip_address' => '102.219.208.4',
+                    'created_at' => now()->subHours(5),
+                ],
+                [
+                    'user_id' => $bk?->id,
+                    'user_name' => 'Barny Kiome',
+                    'user_role' => 'owner',
+                    'action' => 'CREATE',
+                    'entity_type' => 'Shoot',
+                    'entity_id' => '1',
+                    'description' => "Scheduled production shoot 'Client Briefing — Nairobi Homes' with Google Meet video link",
+                    'ip_address' => '102.219.208.4',
+                    'created_at' => now()->subHours(6),
+                ],
+                [
+                    'user_id' => $ia?->id,
+                    'user_name' => 'Ian Aluda',
+                    'user_role' => 'manager',
+                    'action' => 'AUTH',
+                    'entity_type' => 'User',
+                    'entity_id' => $ia?->id ? (string) $ia->id : null,
+                    'description' => 'Ian Aluda signed into JMOS workspace',
+                    'ip_address' => '197.232.61.18',
+                    'created_at' => now()->subHours(8),
+                ],
+                [
+                    'user_id' => null,
+                    'user_name' => 'System',
+                    'user_role' => 'system',
+                    'action' => 'SYSTEM',
+                    'entity_type' => 'System',
+                    'entity_id' => null,
+                    'description' => 'Automated daily database snapshot generated successfully (manual_backup_daily.sql.gz)',
+                    'ip_address' => '127.0.0.1',
+                    'created_at' => now()->subDay(),
+                ],
+            ];
+
+            foreach ($initialLogs as $log) {
+                AuditLog::create($log);
+            }
+        }
+
+        // 8. Initial Internal Client & System Development Project
+        Client::updateOrCreate(
+            ['client_name' => 'Jeota Media (Internal)'],
+            [
+                'client_type' => 'Direct',
+                'contact_person' => 'Barny Kiome',
+                'owner' => 'Ian Aluda',
+                'service' => 'Internal System Development',
+                'project_status' => 'Active',
+                'email' => 'info@jeotamedia.co.ke',
+                'phone' => '+254700000000',
+                'address' => 'Nairobi, Kenya',
+                'website' => 'https://jmos.jeotamedia.co.ke',
+                'notes' => 'Internal software development, infrastructure, and tools engineering for Jeota Media Ltd.',
+            ]
+        );
+
+        Project::updateOrCreate(
+            ['project_name' => 'JMOS Operating System Development'],
+            [
+                'client' => 'Jeota Media (Internal)',
+                'project_type' => 'Internal System Development',
+                'category' => 'internal',
+                'project_manager' => 'Ian Aluda',
+                'stage' => 'live',
+                'status' => 'On track',
+                'priority' => 'High',
+                'budget' => 0,
+                'progress_pct' => 95,
+                'deadline' => 'Continuous',
+                'notes' => 'Development of this system (JMOS): Central operating system for clients, live production, pipeline deals, finance, Google Meet video sync, and browser push notifications.',
+            ]
+        );
     }
 }

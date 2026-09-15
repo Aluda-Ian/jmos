@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\TaskAssignedMail;
 use App\Models\AppNotification;
+use App\Models\AuditLog;
 use App\Models\CalendarEvent;
 use App\Models\Project;
 use App\Models\User;
@@ -16,9 +17,15 @@ use Illuminate\Support\Facades\Mail;
 
 class ProjectController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(Project::with('tasks')->latest()->get());
+        $query = Project::with('tasks')->latest();
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->query('category'));
+        }
+
+        return response()->json($query->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -27,6 +34,7 @@ class ProjectController extends Controller
             'project_name' => 'required|string|max:255',
             'client' => 'required|string|max:255',
             'project_type' => 'nullable|string|max:100',
+            'category' => 'nullable|string|max:50',
             'project_manager' => 'nullable|string|max:255',
             'stage' => 'nullable|string|max:100',
             'status' => 'nullable|string|max:100',
@@ -44,10 +52,26 @@ class ProjectController extends Controller
             'comments' => 'nullable|array',
         ]);
 
+        if (empty($validated['category'])) {
+            $isInternal = str_contains(strtolower((string) ($validated['project_type'] ?? '')), 'internal')
+                || str_contains(strtolower((string) ($validated['project_type'] ?? '')), 'system')
+                || str_contains(strtolower((string) ($validated['client'] ?? '')), 'internal');
+            $validated['category'] = $isInternal ? 'internal' : 'client';
+        }
+
         $project = Project::create($validated);
 
         $this->syncProjectCalendarEvent($project);
         $this->notifyProjectManager($project);
+
+        AuditLog::record(
+            'CREATE',
+            "Created live project '{$project->project_name}' for client '{$project->client}'",
+            'Project',
+            $project->id,
+            ['stage' => $project->stage, 'status' => $project->status, 'budget' => $project->budget],
+            $request
+        );
 
         return response()->json([
             'status' => 'success',
@@ -67,6 +91,7 @@ class ProjectController extends Controller
             'project_name' => 'sometimes|required|string|max:255',
             'client' => 'nullable|string|max:255',
             'project_type' => 'nullable|string|max:100',
+            'category' => 'nullable|string|max:50',
             'project_manager' => 'nullable|string|max:255',
             'stage' => 'nullable|string|max:100',
             'status' => 'nullable|string|max:100',
@@ -94,6 +119,15 @@ class ProjectController extends Controller
         if (! empty($validated['project_manager']) && $validated['project_manager'] !== $oldManager) {
             $this->notifyProjectManager($project);
         }
+
+        AuditLog::record(
+            'UPDATE',
+            "Updated project '{$project->project_name}' (Stage: {$project->stage}, Status: {$project->status})",
+            'Project',
+            $project->id,
+            $request->except(['files', 'comments']),
+            $request
+        );
 
         return response()->json([
             'status' => 'success',
@@ -166,9 +200,20 @@ class ProjectController extends Controller
         }
     }
 
-    public function destroy(Project $project): JsonResponse
+    public function destroy(Request $request, Project $project): JsonResponse
     {
+        $name = $project->project_name;
+        $id = $project->id;
         $project->delete();
+
+        AuditLog::record(
+            'DELETE',
+            "Deleted project '{$name}'",
+            'Project',
+            $id,
+            [],
+            $request
+        );
 
         return response()->json([
             'status' => 'success',

@@ -184,6 +184,74 @@
     </div>
   </div>
 
+  <!-- 5. System Audit Trail & Activity Feed (Admin & IT Manager Exclusive) -->
+  <div class="card" style="margin-top:17px" data-perm="owner manager admin" id="dashAuditTrailCard">
+    <div class="card-h" style="flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <h3 style="margin:0;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600">Audit Trail &amp; Activity Log</h3>
+        </div>
+        <span class="badge" style="background:rgba(43,138,90,0.12);color:var(--green);font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
+          Live Security Feed
+        </span>
+        <span class="count" id="dashAuditTotalBadge">0 events</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="audit-filter-group" style="display:flex;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:2px 4px;gap:2px">
+          <button type="button" class="linkbtn active audit-filter-btn" data-audit-filter="all" onclick="filterAuditLogs('all')" style="font-size:11.5px;padding:3px 8px;border-radius:6px;font-weight:600">All</button>
+          <button type="button" class="linkbtn audit-filter-btn" data-audit-filter="PROJECT" onclick="filterAuditLogs('PROJECT')" style="font-size:11.5px;padding:3px 8px;border-radius:6px">Projects</button>
+          <button type="button" class="linkbtn audit-filter-btn" data-audit-filter="SHOOT" onclick="filterAuditLogs('SHOOT')" style="font-size:11.5px;padding:3px 8px;border-radius:6px">Shoots</button>
+          <button type="button" class="linkbtn audit-filter-btn" data-audit-filter="AUTH" onclick="filterAuditLogs('AUTH')" style="font-size:11.5px;padding:3px 8px;border-radius:6px">Auth</button>
+          <button type="button" class="linkbtn audit-filter-btn" data-audit-filter="SYSTEM" onclick="filterAuditLogs('SYSTEM')" style="font-size:11.5px;padding:3px 8px;border-radius:6px">System</button>
+        </div>
+
+        <button type="button" class="btn" id="dashAuditRefreshBtn" onclick="fetchAuditLogs()" title="Refresh live audit trail" style="padding:5px 10px;font-size:11.5px;display:flex;align-items:center;gap:5px">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Stats Bar -->
+    <div style="padding:10px 16px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:12px">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <span style="color:var(--muted)">Today: <b id="dashAuditStatToday" style="color:var(--ink)">0</b></span>
+        <span style="color:var(--muted)">Created: <b id="dashAuditStatCreates" style="color:var(--green)">0</b></span>
+        <span style="color:var(--muted)">Updated: <b id="dashAuditStatUpdates" style="color:var(--blue)">0</b></span>
+        <span style="color:var(--muted)">Deleted: <b id="dashAuditStatDeletes" style="color:var(--red)">0</b></span>
+        <span style="color:var(--muted)">Auth: <b id="dashAuditStatAuth" style="color:#8b5cf6">0</b></span>
+        <span style="color:var(--muted)">System: <b id="dashAuditStatSystem" style="color:var(--amber)">0</b></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="text" id="dashAuditSearchInput" placeholder="Filter activity..." oninput="handleAuditSearch(this.value)" style="padding:4px 9px;font-size:11.5px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:160px" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Audit Event Log Table -->
+    <div class="tablewrap" style="max-height:360px;overflow-y:auto">
+      <table style="width:100%;font-size:12px">
+        <thead>
+          <tr>
+            <th style="width:110px">Action</th>
+            <th style="width:170px">User</th>
+            <th>Activity Details</th>
+            <th style="width:110px">Entity</th>
+            <th style="width:120px">IP / Host</th>
+            <th style="width:110px;text-align:right">Time</th>
+          </tr>
+        </thead>
+        <tbody id="dashAuditLogsBody">
+          <tr>
+            <td colspan="6" style="padding:24px;text-align:center;color:var(--muted)">Loading system audit records…</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Home Screen Footnote -->
   <footer class="dash-footnote" style="margin-top:28px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--muted);flex-wrap:wrap;gap:8px">
     <div style="display:flex;align-items:center;gap:8px">
@@ -192,7 +260,7 @@
       <span>All systems operational</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.4.3') }}</span>
+      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.4.6') }}</span>
       <span>&copy; {{ date('Y') }} Jeota Media Ltd</span>
     </div>
   </footer>

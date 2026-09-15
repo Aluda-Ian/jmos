@@ -147,4 +147,45 @@ class PipelineProjectWorkspaceTest extends TestCase
         $this->assertEquals('P099887766Z', SystemSetting::getVal('kra_pin'));
         $this->assertEquals('connected', SystemSetting::getVal('kra_status'));
     }
+
+    public function test_can_create_and_update_internal_project_category(): void
+    {
+        $user = User::where('email', 'ian@jeotamedia.co.ke')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        // Create internal project
+        $res = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/projects', [
+                'project_name' => 'JMOS v2.5 Core Architecture',
+                'client' => 'Jeota Media (Internal)',
+                'project_type' => 'Internal System Development',
+                'category' => 'internal',
+                'stage' => 'concept',
+                'status' => 'In progress',
+                'deadline' => '2026-11-01',
+            ]);
+
+        $res->assertStatus(201);
+        $projectData = $res->json('data');
+        $this->assertEquals('internal', $projectData['category']);
+        $this->assertTrue($projectData['is_internal']);
+
+        $projectId = $projectData['id'];
+
+        // Retrieve and filter by category
+        $filterRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/projects?category=internal');
+        $filterRes->assertStatus(200);
+        $internalList = collect($filterRes->json());
+        $this->assertTrue($internalList->contains('id', $projectId));
+
+        // Update category
+        $updateRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->putJson("/api/projects/{$projectId}", [
+                'category' => 'internal',
+                'project_type' => 'Internal Operations & R&D',
+            ]);
+        $updateRes->assertStatus(200);
+        $this->assertEquals('Internal Operations & R&D', $updateRes->json('data.project_type'));
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Services\DatabaseBackupService;
 use App\Services\SystemUpgradeService;
 use Illuminate\Http\JsonResponse;
@@ -149,6 +150,15 @@ class SystemUpgradeController extends Controller
             ], 500);
         }
 
+        AuditLog::record(
+            'SYSTEM',
+            "Generated on-demand database backup '{$result['filename']}' ({$result['size']})",
+            'System',
+            null,
+            ['filename' => $result['filename'], 'size' => $result['size']],
+            $request
+        );
+
         return response()->json([
             'status' => 'success',
             'message' => "Database backup created successfully: {$result['filename']}",
@@ -213,6 +223,17 @@ class SystemUpgradeController extends Controller
         }
 
         $result = $this->upgradeService->clearApplicationCaches();
+
+        if ($result['success']) {
+            AuditLog::record(
+                'SYSTEM',
+                'Cleared application view, config, route, and compiled system caches',
+                'System',
+                null,
+                [],
+                $request
+            );
+        }
 
         return response()->json([
             'status' => $result['success'] ? 'success' : 'error',

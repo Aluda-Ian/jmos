@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,8 @@ class AuthController extends Controller
 
         $token = $user->createToken('jmos_api_token')->plainTextToken;
 
+        AuditLog::record('AUTH', "{$user->name} signed into JMOS workspace", 'User', $user->id, ['role' => $user->role], $request, $user);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Signed in successfully.',
@@ -71,7 +74,10 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        $user->currentAccessToken()->delete();
+
+        AuditLog::record('AUTH', "{$user->name} signed out of JMOS", 'User', $user->id, ['role' => $user->role], $request, $user);
 
         return response()->json([
             'status' => 'success',

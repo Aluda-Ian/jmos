@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\CalendarEvent;
 use App\Models\Invoice;
 use App\Models\Project;
@@ -344,6 +345,15 @@ class CalendarController extends Controller
             'created_by' => $user?->name ?? 'Admin',
         ]);
 
+        AuditLog::record(
+            'CREATE',
+            'Scheduled '.($event->event_type === 'shoot' ? 'production shoot' : 'calendar event')." '{$event->title}' (".Carbon::parse($event->start_time)->format('M d, Y H:i').')',
+            $event->event_type === 'shoot' ? 'Shoot' : 'Calendar',
+            $event->id,
+            ['event_type' => $event->event_type, 'start_time' => $event->start_time, 'location' => $event->location],
+            $request
+        );
+
         return response()->json([
             'status' => 'success',
             'message' => 'Event scheduled and Google Meet link generated.',
@@ -385,9 +395,21 @@ class CalendarController extends Controller
         ]);
     }
 
-    public function destroy(CalendarEvent $event): JsonResponse
+    public function destroy(Request $request, CalendarEvent $event): JsonResponse
     {
+        $title = $event->title;
+        $id = $event->id;
+        $isShoot = ($event->event_type === 'shoot');
         $event->delete();
+
+        AuditLog::record(
+            'DELETE',
+            'Cancelled '.($isShoot ? 'production shoot' : 'calendar event')." '{$title}'",
+            $isShoot ? 'Shoot' : 'Calendar',
+            $id,
+            [],
+            $request
+        );
 
         return response()->json([
             'status' => 'success',

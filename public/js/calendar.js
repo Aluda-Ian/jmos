@@ -730,6 +730,49 @@ window.openScheduleModal = function(prefillDate) {
   openModal('eventModal');
 };
 
+window.openScheduleShootModal = function(projectName = '', clientName = '', prefillDate = null) {
+  if (typeof window.openScheduleModal === 'function') {
+    window.openScheduleModal(prefillDate);
+  } else {
+    window.openModal('eventModal');
+  }
+
+  const typeSelect = document.getElementById('nevtType');
+  if (typeSelect) {
+    typeSelect.value = 'shoot';
+  }
+
+  const titleInput = document.getElementById('nevtTitle');
+  if (titleInput) {
+    if (projectName) {
+      titleInput.value = `Shoot: ${projectName}`;
+    } else {
+      titleInput.value = 'Production Shoot';
+    }
+  }
+
+  const modalTitle = document.getElementById('eventModalTitle');
+  if (modalTitle) {
+    modalTitle.textContent = 'Schedule Production Shoot';
+  }
+
+  if (clientName) {
+    const clientSelect = document.getElementById('nevtClientSelect');
+    if (clientSelect && clientSelect.options) {
+      for (let i = 0; i < clientSelect.options.length; i++) {
+        if (clientSelect.options[i].text.toLowerCase().includes(clientName.toLowerCase())) {
+          clientSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+  }
+
+  window.openModal('eventModal');
+};
+
+window.openShootModal = window.openScheduleShootModal;
+
 // --------------------------------------------------------------------------
 // 6. EVENT LISTENERS & INITIALIZATION
 // --------------------------------------------------------------------------

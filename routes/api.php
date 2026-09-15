@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ChatController;
@@ -76,6 +77,10 @@ Route::prefix('system')->group(function () {
     Route::get('backups/{filename}', [SystemUpgradeController::class, 'downloadBackup']);
     Route::post('clear-cache', [SystemUpgradeController::class, 'clearCache']);
 });
+
+// Audit Trail & System Activity (Admin & IT Manager)
+Route::get('audit-logs', [AuditLogController::class, 'index']);
+Route::post('audit-logs', [AuditLogController::class, 'store']);
 
 // Operations & Meetings Calendar
 Route::get('calendar/events', [CalendarController::class, 'index']);

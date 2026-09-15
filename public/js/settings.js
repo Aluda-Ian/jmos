@@ -8,6 +8,9 @@ async function loadSettings() {
       populateMyProfile();
     }
 
+    if (window.JMOS_PUSH) window.JMOS_PUSH.updateUiControls();
+    if (window.JMOS_PWA) window.JMOS_PWA.updateInstallButtons();
+
     // Populate user's secondary notification email if available in current session
     const secondaryEmailInput = document.getElementById('cfg_secondary_email');
     if (secondaryEmailInput && !secondaryEmailInput.matches(':focus')) {

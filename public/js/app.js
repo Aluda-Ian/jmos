@@ -189,6 +189,14 @@ function renderDashboard() {
       `;
     }).join('');
   }
+
+  // Audit Trail & Activity Feed (Owner, Admin, IT Manager)
+  const auditCard = document.getElementById('dashAuditTrailCard');
+  if (auditCard && JMOS_STATE.currentUser && ['owner', 'admin', 'manager'].includes(JMOS_STATE.currentUser.role)) {
+    if (typeof window.fetchAuditLogs === 'function') {
+      window.fetchAuditLogs();
+    }
+  }
 }
 
 // 2. Pipeline Kanban Board Renderer
@@ -538,6 +546,285 @@ document.getElementById('ddDeleteBtn')?.addEventListener('click', async () => {
   }
 });
 
+/* ==========================================================================
+   JMOS — Audit Trail & System Activity Feed (Admin & IT Managers)
+   ========================================================================== */
+window.JMOS_AUDIT = {
+  items: [],
+  currentFilter: 'all',
+  searchQuery: '',
+};
+
+window.fetchAuditLogs = async function(filter = null) {
+  if (!JMOS_STATE.currentUser) return;
+  const role = JMOS_STATE.currentUser.role;
+  if (!['owner', 'admin', 'manager'].includes(role)) return;
+
+  const card = document.getElementById('dashAuditTrailCard');
+  if (!card) return;
+
+  if (filter !== null) {
+    window.JMOS_AUDIT.currentFilter = filter;
+  }
+
+  const tbody = document.getElementById('dashAuditLogsBody');
+  if (tbody && (!window.JMOS_AUDIT.items || !window.JMOS_AUDIT.items.length)) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--muted)">Loading system audit records…</td></tr>';
+  }
+
+  try {
+    let url = '/audit-logs';
+    if (window.JMOS_AUDIT.currentFilter && window.JMOS_AUDIT.currentFilter !== 'all') {
+      url += `?action=${encodeURIComponent(window.JMOS_AUDIT.currentFilter)}`;
+    }
+    const res = await JMOS_API.get(url);
+    if (res && res.status === 'success') {
+      window.JMOS_AUDIT.items = res.data || [];
+      if (res.stats) {
+        updateAuditStats(res.stats);
+      }
+      applyAuditFilters();
+    }
+  } catch (err) {
+    console.warn('Failed to load audit logs:', err);
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--red)">Failed to load audit trail: ${escHtml(err.message)}</td></tr>`;
+    }
+  }
+};
+
+function updateAuditStats(stats) {
+  const badge = document.getElementById('dashAuditTotalBadge');
+  if (badge) badge.textContent = `${stats.total || 0} events`;
+
+  const stToday = document.getElementById('dashAuditStatToday');
+  const stCreates = document.getElementById('dashAuditStatCreates');
+  const stUpdates = document.getElementById('dashAuditStatUpdates');
+  const stDeletes = document.getElementById('dashAuditStatDeletes');
+  const stAuth = document.getElementById('dashAuditStatAuth');
+  const stSystem = document.getElementById('dashAuditStatSystem');
+
+  if (stToday) stToday.textContent = stats.today ?? 0;
+  if (stCreates) stCreates.textContent = stats.creates ?? 0;
+  if (stUpdates) stUpdates.textContent = stats.updates ?? 0;
+  if (stDeletes) stDeletes.textContent = stats.deletes ?? 0;
+  if (stAuth) stAuth.textContent = stats.auth ?? 0;
+  if (stSystem) stSystem.textContent = stats.system ?? 0;
+}
+
+window.filterAuditLogs = function(filter) {
+  window.JMOS_AUDIT.currentFilter = filter;
+  document.querySelectorAll('.audit-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-audit-filter') === filter);
+    if (btn.getAttribute('data-audit-filter') === filter) {
+      btn.style.fontWeight = '600';
+    } else {
+      btn.style.fontWeight = '400';
+    }
+  });
+  window.fetchAuditLogs(filter);
+};
+
+window.handleAuditSearch = function(query) {
+  window.JMOS_AUDIT.searchQuery = (query || '').toLowerCase().trim();
+  applyAuditFilters();
+};
+
+function applyAuditFilters() {
+  let list = window.JMOS_AUDIT.items || [];
+  const q = window.JMOS_AUDIT.searchQuery;
+  if (q) {
+    list = list.filter(item => {
+      return (item.description || '').toLowerCase().includes(q)
+        || (item.user_name || '').toLowerCase().includes(q)
+        || (item.entity_type || '').toLowerCase().includes(q)
+        || (item.action || '').toLowerCase().includes(q)
+        || (item.ip_address || '').toLowerCase().includes(q);
+    });
+  }
+  renderAuditLogsTable(list);
+}
+
+function renderAuditLogsTable(list) {
+  const tbody = document.getElementById('dashAuditLogsBody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:28px;text-align:center;color:var(--muted)">No audit events recorded for this view.</td></tr>';
+    return;
+  }
+
+  const actionStyles = {
+    CREATE: 'background:rgba(43,138,90,0.12);color:var(--green);border:1px solid rgba(43,138,90,0.25)',
+    UPDATE: 'background:rgba(2,132,199,0.12);color:var(--blue);border:1px solid rgba(2,132,199,0.25)',
+    DELETE: 'background:rgba(197,37,35,0.12);color:var(--red);border:1px solid rgba(197,37,35,0.25)',
+    AUTH: 'background:rgba(139,92,246,0.12);color:#8b5cf6;border:1px solid rgba(139,92,246,0.25)',
+    SYSTEM: 'background:rgba(217,119,6,0.12);color:var(--amber);border:1px solid rgba(217,119,6,0.25)'
+  };
+
+  tbody.innerHTML = list.map(log => {
+    const act = (log.action || 'SYSTEM').toUpperCase();
+    const style = actionStyles[act] || actionStyles.SYSTEM;
+    const initials = log.user_name ? log.user_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'SY';
+    const roleBadge = log.user_role ? `<span style="font-size:10px;color:var(--muted);font-weight:400">(${escHtml(log.user_role)})</span>` : '';
+    const dateObj = new Date(log.created_at);
+    const timeFormatted = typeof formatRelativeTime === 'function' ? formatRelativeTime(log.created_at) : log.created_at;
+
+    return `
+      <tr>
+        <td>
+          <span class="badge" style="font-size:10px;font-weight:700;letter-spacing:0.3px;padding:2px 7px;border-radius:6px;display:inline-block;${style}">
+            ${escHtml(act)}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="width:22px;height:22px;border-radius:50%;background:var(--paper);border:1px solid var(--line);font-size:9.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;color:var(--ink)">
+              ${initials}
+            </span>
+            <span style="font-weight:600;color:var(--ink)">${escHtml(log.user_name)}</span>
+            ${roleBadge}
+          </div>
+        </td>
+        <td style="color:var(--ink);line-height:1.45">
+          ${escHtml(log.description)}
+        </td>
+        <td>
+          <span class="badge" style="font-size:11px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">
+            ${escHtml(log.entity_type || 'System')}
+          </span>
+        </td>
+        <td class="mono" style="font-size:11px;color:var(--muted)">
+          ${escHtml(log.ip_address || '127.0.0.1')}
+        </td>
+        <td style="text-align:right;white-space:nowrap;color:var(--muted);font-size:11px" title="${dateObj.toLocaleString()}">
+          ${timeFormatted}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/* ==========================================================================
+   JMOS — Progressive Web App (PWA) & Application Installation Manager
+   ========================================================================== */
+window.JMOS_PWA = {
+  deferredPrompt: null,
+  isInstalled: false,
+  isIos: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
+  isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+
+  init() {
+    // 1. Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          console.log('JMOS Service Worker active:', reg.scope);
+        })
+        .catch(err => {
+          console.warn('JMOS Service Worker registration failed:', err);
+        });
+    }
+
+    // 2. Capture install prompt on Chromium, Edge & Android
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      this.updateInstallButtons(true);
+    });
+
+    // 3. Detect when app is successfully installed
+    window.addEventListener('appinstalled', () => {
+      this.isInstalled = true;
+      this.deferredPrompt = null;
+      this.updateInstallButtons(false, true);
+      if (typeof showToast === 'function') {
+        showToast('App Installed 🎉', 'JMOS is now installed on your device!');
+      }
+      if (window.JMOS_API && window.JMOS_API.post) {
+        window.JMOS_API.post('/audit-logs', {
+          action: 'SYSTEM',
+          description: 'JMOS application installed on device (' + (this.isIos ? 'iOS' : (navigator.userAgent.includes('Android') ? 'Android' : 'PC/Mac')) + ')',
+          entity_type: 'System'
+        }).catch(() => {});
+      }
+    });
+
+    // Standalone check
+    if (this.isStandalone) {
+      this.isInstalled = true;
+      this.updateInstallButtons(false, true);
+    }
+  },
+
+  async triggerInstall() {
+    if (this.isStandalone || this.isInstalled) {
+      if (typeof showToast === 'function') {
+        showToast('Already Installed', 'JMOS is already installed and running as an application.');
+      }
+      return;
+    }
+
+    if (this.deferredPrompt) {
+      try {
+        this.deferredPrompt.prompt();
+        const choice = await this.deferredPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          this.isInstalled = true;
+          this.deferredPrompt = null;
+          this.updateInstallButtons(false, true);
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
+      }
+      return;
+    }
+
+    if (typeof openModal === 'function') {
+      openModal('pwaInstallModal');
+    }
+  },
+
+  updateInstallButtons(canInstall = false, isInstalled = false) {
+    const btns = document.querySelectorAll('.pwa-install-btn');
+    const badges = document.querySelectorAll('.pwa-status-badge');
+
+    btns.forEach(b => {
+      if (isInstalled || this.isStandalone) {
+        b.innerHTML = `
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--green)"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>App Installed</span>
+        `;
+        b.disabled = true;
+        b.style.opacity = '0.85';
+      } else {
+        b.disabled = false;
+        b.style.opacity = '1';
+      }
+    });
+
+    badges.forEach(badge => {
+      if (isInstalled || this.isStandalone) {
+        badge.textContent = 'Installed (Standalone App)';
+        badge.style.background = 'rgba(43,138,90,0.15)';
+        badge.style.color = 'var(--green)';
+      } else if (canInstall) {
+        badge.textContent = 'Ready to Install';
+        badge.style.background = 'rgba(2,132,199,0.15)';
+        badge.style.color = 'var(--blue)';
+      } else {
+        badge.textContent = 'Available via Browser Menu';
+        badge.style.background = 'rgba(217,119,6,0.15)';
+        badge.style.color = 'var(--amber)';
+      }
+    });
+  }
+};
+
+window.triggerDownloadApp = function() {
+  window.JMOS_PWA.triggerInstall();
+};
+
 // App Master Bootloader
 document.addEventListener('DOMContentLoaded', async () => {
   initAuth();
@@ -548,6 +835,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof initChat === 'function') initChat();
   if (typeof initSettings === 'function') initSettings();
   initModals();
+
+  // Initialize Progressive Web App services
+  window.JMOS_PWA.init();
 
   // Load database state
   await JMOS_API.fetchAll();

@@ -11,6 +11,14 @@
   <link rel="shortcut icon" type="image/png" href="{{ asset('assets/img/jeota-logo.png') }}">
   <link rel="apple-touch-icon" href="{{ asset('assets/img/jeota-logo.png') }}">
 
+  <!-- Progressive Web App (PWA) Manifest & Mobile Config -->
+  <link rel="manifest" href="{{ asset('manifest.json') }}">
+  <meta name="theme-color" content="#C52523">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JMOS">
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,7 +66,7 @@
         <h1>Run all of Jeota from one place.</h1>
         <p>Clients, projects, tasks and finances — your whole operation, signed in and ready.</p>
       </div>
-      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.4.3') }}</span></div>
+      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.4.6') }}</span></div>
       <div class="bdrip" style="left:46px;height:60px"></div>
       <div class="bdrip" style="left:62px;height:96px"></div>
       <div class="bdrip" style="left:77px;height:44px"></div>
@@ -182,7 +190,7 @@
       </div>
       <div style="padding:4px 16px 14px;font-size:10.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;opacity:0.7;display:flex;align-items:center;gap:6px">
         <span>JMOS</span>
-        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.4.3') }}</span>
+        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.4.6') }}</span>
       </div>
     </aside>
 
@@ -198,6 +206,12 @@
           <input placeholder="Search clients, projects, invoices, tasks…">
         </div>
         <div class="spacer"></div>
+        <!-- Download / Install App Button -->
+        <button type="button" class="btn pwa-install-btn" id="headerInstallAppBtn" onclick="triggerDownloadApp()" title="Download &amp; install JMOS application for PC &amp; mobile" style="padding:5px 11px;font-size:11.5px;display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:8px;font-weight:600;color:var(--ink)">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span class="pwa-btn-text">Download App</span>
+        </button>
+
         <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle dark mode" aria-label="Toggle dark mode" onclick="toggleTheme()">
           <!-- Sun icon (shown in dark mode) -->
           <svg class="theme-icon-light" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -248,11 +262,15 @@
               <!-- Injected dynamically by JS -->
             </div>
 
-            <!-- Footer -->
-            <div class="notif-panel-foot">
-              <div style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px">
+            <!-- Footer with Browser Push Enable / Status -->
+            <div class="notif-panel-foot" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--paper);border-top:1px solid var(--line);font-size:11px">
+              <div style="color:var(--muted);display:flex;align-items:center;gap:6px">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
-                Live operational updates
+                <span>Push: <b class="push-status-badge" style="font-weight:600;color:var(--ink)">Checking…</b></span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button type="button" class="linkbtn" onclick="triggerTestPushNotification()" style="font-size:11px;font-weight:600" title="Send a test notification">Test Alert</button>
+                <button type="button" class="linkbtn push-enable-btn" onclick="window.JMOS_PUSH.requestPermission()" style="font-size:11px;font-weight:600;color:var(--red)">Enable</button>
               </div>
             </div>
           </div>

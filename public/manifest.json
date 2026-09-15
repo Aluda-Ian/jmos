@@ -1,0 +1,32 @@
+{
+  "name": "JMOS — Jeota Media Operating System",
+  "short_name": "JMOS",
+  "description": "Operating system for Jeota Media clients, live projects, shoots, and finances.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#C52523",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/img/jeota-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/jeota-logo.png",
+      "sizes": "240x240",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/jeota-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

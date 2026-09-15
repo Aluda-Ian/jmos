@@ -13,9 +13,8 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
-
-    'version' => env('APP_VERSION', 'v2.4.3'),
+    'name' => env('APP_NAME', 'JMOS — Jeota Media Operating System'),
+    'version' => env('APP_VERSION', 'v2.4.6'),
 
     /*
     |--------------------------------------------------------------------------
