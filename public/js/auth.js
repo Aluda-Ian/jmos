@@ -461,3 +461,182 @@ function initAuth() {
     if (loginPass && !loginPass.value) loginPass.value = 'jeota2024';
   }
 }
+
+/* ==========================================================================
+   User Account & Profile Picture Management
+   ========================================================================== */
+
+window.openMyProfileModal = function () {
+  const user = JMOS_STATE.currentUser;
+  if (!user) return;
+
+  const modal = document.getElementById('myProfileModal');
+  if (!modal) return;
+
+  // Populate form fields
+  if (document.getElementById('mpName')) document.getElementById('mpName').value = user.name || '';
+  if (document.getElementById('mpTitle')) document.getElementById('mpTitle').value = user.title || '';
+  if (document.getElementById('mpDepartment')) document.getElementById('mpDepartment').value = user.department || '';
+  if (document.getElementById('mpPhone')) document.getElementById('mpPhone').value = user.phone || '';
+  if (document.getElementById('mpEmail')) document.getElementById('mpEmail').value = user.email || '';
+  if (document.getElementById('mpSecondaryEmail')) document.getElementById('mpSecondaryEmail').value = user.secondary_email || '';
+  if (document.getElementById('mpBio')) document.getElementById('mpBio').value = user.bio || '';
+
+  // Reset password inputs
+  if (document.getElementById('mpCurrentPass')) document.getElementById('mpCurrentPass').value = '';
+  if (document.getElementById('mpNewPass')) document.getElementById('mpNewPass').value = '';
+  if (document.getElementById('mpConfirmPass')) document.getElementById('mpConfirmPass').value = '';
+
+  // Reset file input
+  const fileInput = document.getElementById('mpAvatarFileInput');
+  if (fileInput) fileInput.value = '';
+
+  // Render current avatar in preview box
+  window.updateMyAvatarPreviewDisplay(user.avatar_url, user.name, user.color);
+
+  openModal('myProfileModal');
+};
+
+window.updateMyAvatarPreviewDisplay = function (avatarUrl, name, color) {
+  const box = document.getElementById('mpAvatarPreviewBox');
+  const removeBtn = document.getElementById('mpRemoveAvatarBtn');
+  if (!box) return;
+
+  if (avatarUrl) {
+    box.innerHTML = `<img src="${avatarUrl}" alt="${escHtml(name || 'User')}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+    box.style.background = 'transparent';
+    if (removeBtn) removeBtn.style.display = 'inline-flex';
+  } else {
+    const initials = getInitials(name || 'User');
+    box.innerHTML = `<span id="mpAvatarInitials">${escHtml(initials)}</span>`;
+    box.style.background = color || 'var(--red)';
+    if (removeBtn) removeBtn.style.display = 'none';
+  }
+};
+
+window.onMyAvatarFileSelected = function (input) {
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+
+  const box = document.getElementById('mpAvatarPreviewBox');
+  const removeBtn = document.getElementById('mpRemoveAvatarBtn');
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File size exceeds 10MB limit. Please choose a smaller photo.');
+    input.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    if (box) {
+      box.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+      box.style.background = 'transparent';
+    }
+    if (removeBtn) removeBtn.style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeMyAvatar = async function () {
+  if (!confirm('Remove your custom profile picture and use initials avatar?')) return;
+
+  try {
+    const res = await JMOS_API.post('/auth/avatar/remove', {});
+    if (res && res.user) {
+      Object.assign(JMOS_STATE.currentUser, res.user);
+      localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+      applyAuthenticatedUI(JMOS_STATE.currentUser);
+      window.updateMyAvatarPreviewDisplay(null, JMOS_STATE.currentUser.name, JMOS_STATE.currentUser.color);
+      if (window.showToast) window.showToast('Profile picture removed', 'Default initials restored');
+    }
+  } catch (err) {
+    alert('Failed to remove photo: ' + err.message);
+  }
+};
+
+window.saveMyProfile = async function (e) {
+  if (e) e.preventDefault();
+  const saveBtn = document.getElementById('mpSaveBtn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+  }
+
+  try {
+    const name = document.getElementById('mpName')?.value.trim();
+    const title = document.getElementById('mpTitle')?.value.trim();
+    const department = document.getElementById('mpDepartment')?.value.trim();
+    const phone = document.getElementById('mpPhone')?.value.trim();
+    const secondaryEmail = document.getElementById('mpSecondaryEmail')?.value.trim();
+    const bio = document.getElementById('mpBio')?.value.trim();
+
+    const fileInput = document.getElementById('mpAvatarFileInput');
+    const avatarFile = fileInput && fileInput.files && fileInput.files[0];
+
+    // 1. Upload Avatar if a new file was chosen
+    if (avatarFile) {
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+      const avRes = await JMOS_API.upload('/auth/avatar', formData);
+      if (avRes && avRes.user) {
+        Object.assign(JMOS_STATE.currentUser, avRes.user);
+      }
+    }
+
+    // 2. Update Profile Information
+    const profRes = await JMOS_API.post('/auth/profile', {
+      name: name,
+      title: title,
+      department: department,
+      phone: phone,
+      secondary_email: secondaryEmail,
+      bio: bio,
+    });
+
+    if (profRes && profRes.user) {
+      Object.assign(JMOS_STATE.currentUser, profRes.user);
+    }
+
+    // 3. Update Password if specified
+    const currentPass = document.getElementById('mpCurrentPass')?.value;
+    const newPass = document.getElementById('mpNewPass')?.value;
+    const confirmPass = document.getElementById('mpConfirmPass')?.value;
+
+    if (newPass) {
+      if (!currentPass) {
+        throw new Error('Please enter your current password to set a new password.');
+      }
+      if (newPass !== confirmPass) {
+        throw new Error('New password and confirmation do not match.');
+      }
+      await JMOS_API.post('/auth/password', {
+        current_password: currentPass,
+        password: newPass,
+        password_confirmation: confirmPass
+      });
+    }
+
+    // Save state and update UI
+    localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
+    applyAuthenticatedUI(JMOS_STATE.currentUser);
+
+    // Refresh people directory in background
+    if (typeof ensurePeople === 'function') ensurePeople();
+
+    closeModal('myProfileModal');
+    if (window.showToast) {
+      window.showToast('Profile updated', 'Your personal details and avatar have been saved successfully');
+    } else {
+      alert('Profile updated successfully');
+    }
+  } catch (err) {
+    alert('Error updating profile: ' + err.message);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Changes';
+    }
+  }
+};
+

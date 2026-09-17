@@ -35,4 +35,19 @@ class Client extends Model
     {
         return $this->hasMany(Invoice::class, 'client', 'client_name');
     }
+
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class, 'client_id');
+    }
+
+    public function deals(): HasMany
+    {
+        return $this->hasMany(Deal::class, 'client_id');
+    }
+
+    public function calls(): HasMany
+    {
+        return $this->hasMany(LeadCall::class, 'client_id')->latest();
+    }
 }

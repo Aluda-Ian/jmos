@@ -1578,5 +1578,963 @@
   </div>
 </div>
 
+<!-- ==========================================================================
+     ZOHO CRM LEAD GENERATION & JOURNEY MODALS
+     ========================================================================== -->
+
+<!-- A. Create / Edit Lead Modal -->
+<div class="modal" id="leadModal" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
+  <div class="mbg" data-close="leadModal"></div>
+  <div class="mbox" style="max-width:640px">
+    <button class="mclose" data-close="leadModal" title="Close" aria-label="Close modal">&times;</button>
+    <h3 id="leadModalTitle">Create Lead</h3>
+    <p class="msub">Capture a new prospective client into your sales pipeline.</p>
+    
+    <input type="hidden" id="leadFormId">
+    <div class="grid2">
+      <div class="field">
+        <label for="leadFirstName">First name</label>
+        <input id="leadFirstName" placeholder="e.g. Ian" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="leadLastName">Last name *</label>
+        <input id="leadLastName" placeholder="e.g. Aluda" required autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="leadCompany">Company / Brand *</label>
+        <input id="leadCompany" placeholder="e.g. Venda Technologies" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="leadTitle">Job title / Designation</label>
+        <input id="leadTitle" placeholder="e.g. Head of Marketing" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="leadEmail">Email address</label>
+        <input id="leadEmail" type="email" placeholder="e.g. client@brand.co.ke" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="leadPhone">Phone number</label>
+        <input id="leadPhone" type="tel" placeholder="e.g. +254 712 345 678" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="leadSource">Lead source</label>
+        <select id="leadSource">
+          <option value="Web Research">Web Research</option>
+          <option value="LinkedIn">LinkedIn</option>
+          <option value="Referral">Referral</option>
+          <option value="Cold Outreach">Cold Outreach</option>
+          <option value="Website">Website</option>
+          <option value="Campaign">Campaign</option>
+          <option value="Partner">Partner</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="leadOwner">Lead owner</label>
+        <select id="leadOwner">
+          <option value="Jeota Media">Jeota Media</option>
+          <option value="Barny Kiome">Barny Kiome (Owner)</option>
+          <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
+          <option value="Lesley Chacha">Lesley Chacha (Client Relations)</option>
+          <option value="Amos Muthama">Amos Muthama</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="field">
+        <label for="leadRating">Lead rating</label>
+        <select id="leadRating">
+          <option value="Hot">Hot 🔥</option>
+          <option value="Warm" selected>Warm ⚡</option>
+          <option value="Cold">Cold ❄️</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="leadStatus">Lead status</label>
+        <select id="leadStatus">
+          <option value="New">New</option>
+          <option value="Attempted to Contact">Attempted to Contact</option>
+          <option value="Contacted">Contacted</option>
+          <option value="In Discussion">In Discussion</option>
+          <option value="Qualified">Qualified</option>
+          <option value="Junk/Lost">Junk/Lost</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="leadRevenue">Est. Value (KES)</label>
+        <input id="leadRevenue" type="number" placeholder="e.g. 450000" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="leadIndustry">Industry</label>
+        <select id="leadIndustry">
+          <option value="Corporate">Corporate</option>
+          <option value="Tech">Tech</option>
+          <option value="Fintech">Fintech</option>
+          <option value="Agency">Agency</option>
+          <option value="Hospitality">Hospitality</option>
+          <option value="Agritech">Agritech</option>
+          <option value="Direct">Direct</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="leadCity">City / Location</label>
+        <input id="leadCity" placeholder="e.g. Nairobi, Kenya" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="leadNotes">Notes &amp; Scope Summary</label>
+      <textarea id="leadNotes" rows="3" placeholder="Add any background, project scope, or notes from initial outreach..."></textarea>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="leadModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveLeadBtn" onclick="window.submitLeadForm()">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<!-- B. Zoho CRM Lead Workspace & Journey Drawer Modal -->
+<div class="modal" id="leadDetailModal" role="dialog" aria-modal="true" aria-labelledby="ldmLeadName">
+  <div class="mbg" data-close="leadDetailModal"></div>
+  <div class="mbox" style="max-height:92vh;overflow-y:auto;padding:0;overflow-x:hidden;max-width:880px;width:95%">
+    <!-- Notion / Zoho Banner Header -->
+    <div style="height:110px;background:linear-gradient(135deg, #182848 0%, #2B6E8A 50%, #C52523 100%);position:relative;border-radius:16px 16px 0 0">
+      <button class="mclose" data-close="leadDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
+      
+      <!-- Dynamic Lead Initials Avatar -->
+      <div id="ldmAvatar" style="position:absolute;bottom:-22px;left:28px;width:54px;height:54px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;border:3px solid var(--surface)">
+        IA
+      </div>
+    </div>
+
+    <div style="padding:32px 28px 24px">
+      <!-- Title & Header Actions -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:260px">
+          <input type="hidden" id="ldmLeadId">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="badge" id="ldmRatingBadge" style="background:rgba(197,37,35,0.12);color:var(--red);font-size:11px;font-weight:700">Hot 🔥</span>
+            <span class="badge" id="ldmSourceBadge" style="background:var(--panel-2);color:var(--muted);font-size:11px">Web Research</span>
+            <span class="pill tint-amber" id="ldmStatusBadge">Qualified</span>
+          </div>
+          <h2 id="ldmLeadName" style="font-family:'Poppins',sans-serif;font-size:24px;font-weight:700;margin:0;color:var(--ink);line-height:1.2">Ian Aluda</h2>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:4px" id="ldmSubtitle">Chief Technology Officer at Venda Technologies</div>
+        </div>
+
+        <!-- Zoho CRM Primary Actions -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" onclick="window.JMOS_QUOTES.openCreateModal(document.getElementById('ldmLeadId').value)" style="font-size:12px;padding:6px 12px" title="Generate quotation for lead">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>Quote Lead
+          </button>
+          <button type="button" class="btn" onclick="window.openLogCallForActiveLead()" style="font-size:12px;padding:6px 12px" title="Log phone call with this lead">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Log Call
+          </button>
+          <button type="button" class="btn" onclick="window.openScheduleMeetingForActiveLead()" style="font-size:12px;padding:6px 12px" title="Schedule discovery meeting">
+            <svg viewBox="0 0 24 24" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule Meet
+          </button>
+          <button type="button" class="btn primary" id="ldmConvertBtn" onclick="window.openConvertLeadModal(document.getElementById('ldmLeadId').value)" style="font-size:12px;padding:6px 14px;background:var(--red);border-color:var(--red);font-weight:700" title="Convert qualified lead to Account, Contact & Deal">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Convert Lead
+          </button>
+        </div>
+      </div>
+
+      <!-- Zoho CRM Visual Status Lifecycle Stepper -->
+      <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Lead Lifecycle Journey</span>
+          <span id="ldmStepperLabel" style="font-size:11.5px;font-weight:600;color:var(--ink)">Stage: QUALIFIED</span>
+        </div>
+        <div class="lead-journey-stepper" id="ldmJourneyStepper">
+          <button type="button" class="lead-step-btn" data-lead-stage="New" onclick="window.changeLeadStage('New')">
+            <span>1. New</span>
+          </button>
+          <button type="button" class="lead-step-btn" data-lead-stage="Contacted" onclick="window.changeLeadStage('Contacted')">
+            <span>2. Contacted</span>
+          </button>
+          <button type="button" class="lead-step-btn" data-lead-stage="In Discussion" onclick="window.changeLeadStage('In Discussion')">
+            <span>3. In Discussion</span>
+          </button>
+          <button type="button" class="lead-step-btn" data-lead-stage="Qualified" onclick="window.changeLeadStage('Qualified')">
+            <span>4. Qualified</span>
+          </button>
+          <button type="button" class="lead-step-btn convert" data-lead-stage="Converted" onclick="window.openConvertLeadModal(document.getElementById('ldmLeadId').value)">
+            <span>5. Convert ➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Summary -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));gap:12px;margin-bottom:22px">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Est. Deal Value</div>
+          <div class="mono" id="ldmStatValue" style="font-size:16px;font-weight:700;color:var(--ink);margin-top:2px">KES 0</div>
+        </div>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Lead Owner</div>
+          <div id="ldmStatOwner" style="font-size:13px;font-weight:600;color:var(--ink);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Jeota Media</div>
+        </div>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Calls Logged</div>
+          <div id="ldmStatCalls" style="font-size:15px;font-weight:700;color:var(--ink);margin-top:2px">0 calls</div>
+        </div>
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase">Meetings</div>
+          <div id="ldmStatMeetings" style="font-size:15px;font-weight:700;color:var(--ink);margin-top:2px">0 scheduled</div>
+        </div>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <div class="client-tab-nav" style="margin-bottom:16px">
+        <button type="button" class="client-tab-btn active" data-ldm-tab="info" onclick="window.switchLeadDrawerTab('info')">
+          <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Lead Info &amp; Notes</span>
+        </button>
+        <button type="button" class="client-tab-btn" data-ldm-tab="calls" onclick="window.switchLeadDrawerTab('calls')">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>Call Logs</span>
+          <span class="client-tab-badge" id="ldmTabCallsCount">0</span>
+        </button>
+        <button type="button" class="client-tab-btn" data-ldm-tab="meetings" onclick="window.switchLeadDrawerTab('meetings')">
+          <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Meetings &amp; Meets</span>
+          <span class="client-tab-badge" id="ldmTabMeetingsCount">0</span>
+        </button>
+      </div>
+
+      <!-- Tab Pane 1: Lead Information -->
+      <div id="ldmTabPaneInfo" class="ldm-tab-pane">
+        <div class="grid2">
+          <div class="field">
+            <label>Email Address</label>
+            <div id="ldmInfoEmail" style="font-size:13px;color:var(--ink);padding:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px">—</div>
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <div id="ldmInfoPhone" style="font-size:13px;color:var(--ink);padding:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px">—</div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>Industry</label>
+            <div id="ldmInfoIndustry" style="font-size:13px;color:var(--ink);padding:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px">—</div>
+          </div>
+          <div class="field">
+            <label>City / Location</label>
+            <div id="ldmInfoCity" style="font-size:13px;color:var(--ink);padding:8px;background:var(--paper);border:1px solid var(--line);border-radius:6px">—</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Scope &amp; Qualification Notes</label>
+          <div id="ldmInfoNotes" style="font-size:13px;color:var(--ink);padding:10px;background:var(--paper);border:1px solid var(--line);border-radius:6px;min-height:70px;white-space:pre-wrap">—</div>
+        </div>
+        
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;border-top:1px solid var(--line);padding-top:14px">
+          <button type="button" class="linkbtn" style="color:var(--red)" onclick="window.deleteActiveLead()">Delete Lead</button>
+          <button type="button" class="btn" onclick="window.editActiveLead()">Edit Lead Information</button>
+        </div>
+      </div>
+
+      <!-- Tab Pane 2: Calls Log -->
+      <div id="ldmTabPaneCalls" class="ldm-tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">Phone Call Interactions</div>
+          <button type="button" class="btn primary" onclick="window.openLogCallForActiveLead()" style="padding:4px 10px;font-size:11.5px">+ Log Call</button>
+        </div>
+        <div id="ldmCallsList" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab Pane 3: Meetings -->
+      <div id="ldmTabPaneMeetings" class="ldm-tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">Discovery &amp; Pitch Meetings</div>
+          <button type="button" class="btn primary" onclick="window.openScheduleMeetingForActiveLead()" style="padding:4px 10px;font-size:11.5px">+ Schedule Meeting</button>
+        </div>
+        <div id="ldmMeetingsList" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- C. Zoho CRM Lead Conversion Engine Dialog -->
+<div class="modal" id="convertLeadModal" role="dialog" aria-modal="true" aria-labelledby="convertModalTitle">
+  <div class="mbg" data-close="convertLeadModal"></div>
+  <div class="mbox" style="max-width:580px">
+    <button class="mclose" data-close="convertLeadModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:10px;font-weight:700">ZOHO CRM ENGINE</span>
+    </div>
+    <h3 id="convertModalTitle">Convert Lead</h3>
+    <p class="msub">Converting this lead creates an <b>Account (Client)</b>, a <b>Contact person</b>, and a <b>Pipeline Deal</b>.</p>
+    
+    <input type="hidden" id="convLeadId">
+
+    <!-- 1. Account (Company) Section -->
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge" style="background:rgba(43,110,138,0.15);color:#2B6E8A;font-weight:700">1. ACCOUNT (COMPANY)</span>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label for="convAccountName">Account / Client Name *</label>
+        <input id="convAccountName" placeholder="e.g. Venda Technologies" required>
+      </div>
+    </div>
+
+    <!-- 2. Contact Person Section -->
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge" style="background:rgba(217,119,6,0.15);color:#D97706;font-weight:700">2. CONTACT (PERSON)</span>
+      </div>
+      <div class="grid2">
+        <div class="field" style="margin-bottom:0">
+          <label for="convContactName">Contact Name *</label>
+          <input id="convContactName" placeholder="e.g. Ian Aluda" required>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label for="convContactTitle">Job Title</label>
+          <input id="convContactTitle" placeholder="e.g. CTO">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Pipeline Deal Section -->
+    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge" style="background:rgba(197,37,35,0.15);color:var(--red);font-weight:700">3. PIPELINE DEAL (OPPORTUNITY)</span>
+      </div>
+      <div class="field">
+        <label for="convDealTitle">Deal Title *</label>
+        <input id="convDealTitle" placeholder="e.g. Venda Technologies · Commercial Video" required>
+      </div>
+      <div class="grid2">
+        <div class="field" style="margin-bottom:0">
+          <label for="convDealValue">Deal Amount (KES) *</label>
+          <input id="convDealValue" type="number" placeholder="e.g. 450000" required>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label for="convDealStage">Initial Stage</label>
+          <select id="convDealStage">
+            <option value="lead">1. Lead</option>
+            <option value="meeting" selected>2. Meeting</option>
+            <option value="proposal">3. Proposal</option>
+            <option value="negotiation">4. Negotiation</option>
+            <option value="won">5. Won (Cascade Project &amp; Invoice)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="convertLeadModal">Cancel</button>
+      <button type="button" class="btn primary" id="convSubmitBtn" onclick="window.submitConvertLead()" style="background:var(--red);border-color:var(--red);font-weight:700">Convert Lead Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- D. Log Call Modal -->
+<div class="modal" id="logLeadCallModal" role="dialog" aria-modal="true" aria-labelledby="logCallTitle">
+  <div class="mbg" data-close="logLeadCallModal"></div>
+  <div class="mbox" style="max-width:520px">
+    <button class="mclose" data-close="logLeadCallModal" title="Close" aria-label="Close modal">&times;</button>
+    <h3 id="logCallTitle">Log Phone Call</h3>
+    <p class="msub">Record phone outreach, discovery details, or client discussion.</p>
+
+    <input type="hidden" id="callLeadId">
+    <input type="hidden" id="callClientId">
+
+    <div class="grid2">
+      <div class="field">
+        <label for="callType">Call Type</label>
+        <select id="callType">
+          <option value="Outbound">Outbound (We called)</option>
+          <option value="Inbound">Inbound (They called)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="callPurpose">Purpose</label>
+        <select id="callPurpose">
+          <option value="Discovery">Discovery</option>
+          <option value="Pitch">Pitch</option>
+          <option value="Follow-up">Follow-up</option>
+          <option value="Negotiation">Negotiation</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="callOutcome">Outcome</label>
+        <select id="callOutcome">
+          <option value="Interested">Interested / Qualified</option>
+          <option value="Meeting Scheduled">Meeting Scheduled</option>
+          <option value="Follow-up Needed">Follow-up Needed</option>
+          <option value="Left Voicemail">Left Voicemail / SMS</option>
+          <option value="Busy">Busy / Call Later</option>
+          <option value="Not Interested">Not Interested</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="callDuration">Duration (Minutes)</label>
+        <input id="callDuration" type="number" placeholder="e.g. 15" value="10">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="callNotes">Call Summary &amp; Next Steps *</label>
+      <textarea id="callNotes" rows="3" placeholder="Key points discussed, client needs, budget, or next scheduled touchpoint..." required></textarea>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="logLeadCallModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveCallBtn" onclick="window.submitLogCall()">Save Call Log</button>
+    </div>
+  </div>
+</div>
+
+<!-- E. Schedule Lead Meeting Modal -->
+<div class="modal" id="scheduleLeadMeetingModal" role="dialog" aria-modal="true" aria-labelledby="schMeetingTitle">
+  <div class="mbg" data-close="scheduleLeadMeetingModal"></div>
+  <div class="mbox" style="max-width:540px">
+    <button class="mclose" data-close="scheduleLeadMeetingModal" title="Close" aria-label="Close modal">&times;</button>
+    <h3 id="schMeetingTitle">Schedule Discovery Meeting</h3>
+    <p class="msub">Book meeting with prospect and generate instant Google Meet video link.</p>
+
+    <input type="hidden" id="schLeadId">
+    
+    <div class="field">
+      <label for="schTitle">Meeting Title *</label>
+      <input id="schTitle" placeholder="e.g. Discovery &amp; Commercial Proposal Session" required>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="schDate">Date *</label>
+        <input id="schDate" type="date" required>
+      </div>
+      <div class="field">
+        <label for="schTime">Time *</label>
+        <input id="schTime" type="time" value="10:00" required>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="schDuration">Duration</label>
+        <select id="schDuration">
+          <option value="30">30 minutes</option>
+          <option value="45">45 minutes</option>
+          <option value="60" selected>1 hour</option>
+          <option value="90">1.5 hours</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="schLocation">Location</label>
+        <select id="schLocation">
+          <option value="Google Meet">Google Meet (Auto-generated)</option>
+          <option value="Jeota Studio">Jeota Studio</option>
+          <option value="Client Office">Client Office</option>
+          <option value="Phone Call">Phone Call</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="schAttendees">Attendees (Emails or names)</label>
+      <input id="schAttendees" placeholder="e.g. client@brand.co.ke, barny@jeotamedia.co.ke">
+    </div>
+
+    <div class="field">
+      <label for="schNotes">Meeting Agenda &amp; Scope</label>
+      <textarea id="schNotes" rows="2" placeholder="Agenda topics, presentation deck, or discussion points..."></textarea>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="scheduleLeadMeetingModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveSchMeetingBtn" onclick="window.submitScheduleMeeting()">Schedule &amp; Generate Meet</button>
+    </div>
+  </div>
+</div>
+
+<!-- F. Create Contact Modal -->
+<div class="modal" id="contactModal" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+  <div class="mbg" data-close="contactModal"></div>
+  <div class="mbox" style="max-width:540px">
+    <button class="mclose" data-close="contactModal" title="Close" aria-label="Close modal">&times;</button>
+    <h3 id="contactModalTitle">Add Contact</h3>
+    <p class="msub">Add an individual stakeholder or representative.</p>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="ctName">Contact Name *</label>
+        <input id="ctName" placeholder="e.g. Peter Karanja" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="ctCompany">Company / Account</label>
+        <input id="ctCompany" placeholder="e.g. Safari Park Hotel" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="ctTitle">Job Title</label>
+        <input id="ctTitle" placeholder="e.g. Marketing Director" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="ctOwner">Owner</label>
+        <input id="ctOwner" placeholder="e.g. Patrick M." value="Jeota Media" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="ctEmail">Email Address</label>
+        <input id="ctEmail" type="email" placeholder="e.g. peter@safari.co.ke" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="ctPhone">Phone Number</label>
+        <input id="ctPhone" type="tel" placeholder="e.g. +254 712 345 678" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="ctNotes">Notes</label>
+      <textarea id="ctNotes" rows="2" placeholder="Contact preferences, key responsibilities..."></textarea>
+    </div>
+
+<!-- G. Create / Edit Quotation Modal -->
+<div class="modal" id="quoteModal" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle">
+  <div class="mbg" data-close="quoteModal"></div>
+  <div class="mbox" style="max-width:720px;max-height:92vh;overflow-y:auto">
+    <button class="mclose" data-close="quoteModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:10.5px;font-weight:700">COMMERCIAL PROPOSAL</span>
+    </div>
+    <h3 id="quoteModalTitle">Generate Quotation</h3>
+    <p class="msub">Create an itemized quote with direct Email and WhatsApp dispatch.</p>
+
+    <input type="hidden" id="quoteFormId">
+    <input type="hidden" id="quoteLeadId">
+    <input type="hidden" id="quoteClientId">
+
+    <div class="grid2">
+      <div class="field">
+        <label for="quoteRecipient">Recipient / Client Name *</label>
+        <input id="quoteRecipient" placeholder="e.g. Safari Park Hotel" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="quoteTitle">Quote Title / Scope *</label>
+        <input id="quoteTitle" placeholder="e.g. Brand Commercial Video Production" required autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="quoteEmail">Recipient Email</label>
+        <input id="quoteEmail" type="email" placeholder="e.g. client@brand.co.ke" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="quotePhone">Recipient WhatsApp / Phone</label>
+        <input id="quotePhone" type="tel" placeholder="e.g. +254 712 345 678" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Line Items Table -->
+    <div style="margin:16px 0 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.5px">Quote Deliverables &amp; Line Items</label>
+        <button type="button" class="linkbtn" onclick="window.addQuoteItemRow()" style="font-size:11.5px">+ Add Deliverable</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--panel-2);color:var(--muted)">
+            <th style="padding:6px;text-align:left">Description</th>
+            <th style="padding:6px;width:70px;text-align:center">Qty</th>
+            <th style="padding:6px;width:120px;text-align:right">Rate (KES)</th>
+            <th style="padding:6px;width:120px;text-align:right">Amount</th>
+            <th style="padding:6px;width:30px"></th>
+          </tr>
+        </thead>
+        <tbody id="quoteItemsTableBody">
+          <!-- Dynamic row -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid3" style="align-items:end">
+      <div class="field">
+        <label for="quoteValidity">Validity (Days)</label>
+        <input id="quoteValidity" type="number" value="14">
+      </div>
+      <div class="field">
+        <label for="quoteDiscount">Discount (KES)</label>
+        <input id="quoteDiscount" type="number" value="0" oninput="window.calcQuoteTotals()">
+      </div>
+      <div class="field">
+        <label>Total Amount</label>
+        <div class="mono" id="quoteTotalDisplay" style="font-size:16px;font-weight:700;color:var(--red);padding:8px 0">KES 0</div>
+        <input type="hidden" id="quoteTotalAmount" value="0">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="quoteNotes">Deliverables Summary &amp; Production Notes</label>
+      <textarea id="quoteNotes" rows="2" placeholder="Brief scope breakdown, gear included, delivery formats..."></textarea>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="quoteModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveQuoteBtn" onclick="window.submitQuoteForm()">Save &amp; Generate Quote</button>
+    </div>
+  </div>
+</div>
+
+<!-- H. Quotation Detailed Preview & Dispatch Modal -->
+<div class="modal" id="quoteDetailModal" role="dialog" aria-modal="true" aria-labelledby="qdmTitle">
+  <div class="mbg" data-close="quoteDetailModal"></div>
+  <div class="mbox" style="max-width:680px;max-height:92vh;overflow-y:auto;padding:0">
+    <div style="background:linear-gradient(135deg, #182848 0%, #C52523 100%);padding:22px 24px;color:#fff;border-radius:16px 16px 0 0;position:relative">
+      <button class="mclose" data-close="quoteDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.85;font-weight:700">JEOTA MEDIA · COMMERCIAL QUOTATION</div>
+      <h3 id="qdmTitle" style="margin:4px 0 0;font-size:22px;color:#fff;font-family:'Poppins',sans-serif">Quotation Preview</h3>
+      <div style="font-size:12px;opacity:0.9;margin-top:4px" id="qdmSubtitle">Quote #QT-2026-001 · Prepared for Client</div>
+    </div>
+
+    <div style="padding:22px 26px">
+      <!-- Quick Dispatch Action Bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="badge" id="qdmStatusBadge" style="background:var(--panel-2);color:var(--muted);font-weight:700">Draft</span>
+          <span class="mono" id="qdmTotalBadge" style="font-size:15px;font-weight:700;color:var(--ink)">KES 0</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" id="qdmSendEmailBtn" onclick="window.dispatchQuoteEmail()" style="font-size:11.5px;padding:5px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send Email
+          </button>
+          <button type="button" class="btn" id="qdmSendWhatsAppBtn" onclick="window.dispatchQuoteWhatsApp()" style="font-size:11.5px;padding:5px 12px;background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3)">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>Send WhatsApp
+          </button>
+          <button type="button" class="btn primary" id="qdmUpgradeInvoiceBtn" onclick="window.openUpgradeQuoteModal()" style="font-size:11.5px;padding:5px 12px;background:var(--red);border-color:var(--red);font-weight:700">
+            <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>Upgrade to Invoice ➔
+          </button>
+        </div>
+      </div>
+
+      <input type="hidden" id="qdmQuoteId">
+
+      <!-- Quote Details Preview Table -->
+      <div id="qdmItemsContainer" style="margin-bottom:16px">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div id="qdmNotesBox" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;color:var(--ink);margin-bottom:16px">
+        <!-- Notes text -->
+      </div>
+
+      <div style="font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;justify-content:space-between">
+        <span id="qdmValidityText">Valid for 14 days</span>
+        <button type="button" class="linkbtn" style="color:var(--red)" onclick="window.deleteActiveQuote()">Delete Quote</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- I. Upgrade Quote to Official Invoice Dialog -->
+<div class="modal" id="upgradeQuoteModal" role="dialog" aria-modal="true" aria-labelledby="upgQuoteTitle">
+  <div class="mbg" data-close="upgradeQuoteModal"></div>
+  <div class="mbox" style="max-width:480px">
+    <button class="mclose" data-close="upgradeQuoteModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:rgba(197,37,35,0.12);color:var(--red);font-weight:700">NEGOTIATION WON</span>
+    </div>
+    <h3 id="upgQuoteTitle">Upgrade Quote to Invoice</h3>
+    <p class="msub">Convert this accepted quotation into an official invoice in JMOS.</p>
+
+    <input type="hidden" id="upgQuoteId">
+    
+    <div class="field">
+      <label for="upgInvoiceType">Invoice Milestone / Type</label>
+      <select id="upgInvoiceType" onchange="window.onUpgTypeChange(this.value)">
+        <option value="Deposit 60%">Deposit 60% (Recommended kickoff)</option>
+        <option value="Full Payment 100%">Full Payment 100%</option>
+        <option value="Milestone 50%">Milestone 50%</option>
+        <option value="Custom">Custom Negotiated Amount</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="upgAmount">Invoice Amount (KES) *</label>
+      <input id="upgAmount" type="number" required>
+    </div>
+
+    <div class="field">
+      <label for="upgDueDate">Due Date</label>
+      <input id="upgDueDate" placeholder="e.g. Oct 15" value="7 days">
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="upgradeQuoteModal">Cancel</button>
+      <button type="button" class="btn primary" id="upgSubmitBtn" onclick="window.submitUpgradeQuoteToInvoice()" style="background:var(--red);border-color:var(--red);font-weight:700">Convert to Invoice Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- J. Upload Document / Cloud Link Modal -->
+<div class="modal" id="documentModal" role="dialog" aria-modal="true" aria-labelledby="docModalTitle">
+  <div class="mbg" data-close="documentModal"></div>
+  <div class="mbox" style="max-width:540px">
+    <button class="mclose" data-close="documentModal" title="Close" aria-label="Close modal">&times;</button>
+    <h3 id="docModalTitle">Upload Document</h3>
+    <p class="msub">Add contracts, proposals, brand assets, or cloud drive links.</p>
+
+    <input type="hidden" id="docUploadType" value="file">
+
+    <div class="field">
+      <label for="docInputTitle">Document Title *</label>
+      <input id="docInputTitle" placeholder="e.g. Safari Park Hotel — Master Production Contract" required autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label for="docFolderSelect">Folder Category *</label>
+      <select id="docFolderSelect">
+        <option value="contracts">Contracts &amp; Legal</option>
+        <option value="proposals">Proposals &amp; Quotes</option>
+        <option value="brand_guides">Brand Guides &amp; Logos</option>
+        <option value="briefs">Production Briefs</option>
+        <option value="grants">Grant Applications</option>
+        <option value="general">General Assets</option>
+      </select>
+    </div>
+
+    <div class="field" id="docFileInputWrap">
+      <label for="docFileInput">File Attachment (PDF, DOCX, XLSX, MP4, PNG, ZIP)</label>
+      <input type="file" id="docFileInput">
+    </div>
+
+    <div class="field" id="docUrlInputWrap" style="display:none">
+      <label for="docUrlInput">Cloud Storage Link (Google Drive / Dropbox / Notion)</label>
+      <input type="url" id="docUrlInput" placeholder="https://drive.google.com/file/d/...">
+    </div>
+
+    <div class="field">
+      <label for="docInputNotes">Description / Version Notes</label>
+      <textarea id="docInputNotes" rows="2" placeholder="e.g. Final signed copy, v2.0 revision..."></textarea>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="documentModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveDocBtn" onclick="window.submitDocumentForm()">Save Document</button>
+    </div>
+  </div>
+</div>
+
+<!-- K. Create / Edit Impact Grant Opportunity Modal -->
+<div class="modal" id="fundraisingModal" role="dialog" aria-modal="true" aria-labelledby="frModalTitle">
+  <div class="mbg" data-close="fundraisingModal"></div>
+  <div class="mbox" style="max-width:580px">
+    <button class="mclose" data-close="fundraisingModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:rgba(43,138,90,0.15);color:#2B8A5A;font-weight:700">IMPACT FUNDING LEAD</span>
+    </div>
+    <h3 id="frModalTitle">Add Grant / Call Opportunity</h3>
+    <p class="msub">Log open funding calls, fellowships, and philanthropic grants.</p>
+
+    <input type="hidden" id="frFormId">
+
+    <div class="grid2">
+      <div class="field">
+        <label for="frOrg">Organization / Grantmaker *</label>
+        <input id="frOrg" placeholder="e.g. D-Prize" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="frProgram">Program / Particulars *</label>
+        <input id="frProgram" placeholder="e.g. Custom Solution Challenge" required autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="frLink">Application Portal Link</label>
+      <input type="url" id="frLink" placeholder="https://..." autocomplete="off">
+    </div>
+
+    <div class="grid3">
+      <div class="field">
+        <label for="frAmount">Amount (KES)</label>
+        <input id="frAmount" type="number" placeholder="e.g. 2500000" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="frDeadline">Deadline</label>
+        <input id="frDeadline" placeholder="e.g. Nov 15 or Rolling basis" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="frStatus">Status</label>
+        <select id="frStatus">
+          <option value="Identified">Identified</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Submitted">Submitted</option>
+          <option value="Won / Awarded">Won / Awarded</option>
+          <option value="Missed">Missed</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="frCategory">Category</label>
+        <select id="frCategory">
+          <option value="open_calls">Open Calls &amp; Grants</option>
+          <option value="partnerships">Partnership Exploration</option>
+          <option value="fellowships">Fellowships &amp; Residencies</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="frPartner">Partner Organization</label>
+        <input id="frPartner" placeholder="e.g. Pankaj Social Service, Kilimora" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="frNotes">Notes &amp; Criteria</label>
+      <textarea id="frNotes" rows="2" placeholder="Eligibility criteria, consortium requirements, pitch angle..."></textarea>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="fundraisingModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveFrBtn" onclick="window.submitFundraisingForm()">Save Opportunity</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     USER ACCOUNT & PROFILE SETTINGS MODAL
+     ========================================================================== -->
+<div class="modal" id="myProfileModal" role="dialog" aria-modal="true" aria-labelledby="myProfileTitle">
+  <div class="mbg" data-close="myProfileModal"></div>
+  <div class="mbox" style="max-width:580px;width:95%;max-height:92vh;overflow-y:auto">
+    <button class="mclose" data-close="myProfileModal" title="Close" aria-label="Close modal">&times;</button>
+    
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--red-soft);color:var(--red);display:grid;place-items:center">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <h2 id="myProfileTitle" style="font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;margin:0">My Profile &amp; Account</h2>
+        <p style="font-size:12px;color:var(--muted);margin:2px 0 0">Update your profile picture, personal details, and security credentials.</p>
+      </div>
+    </div>
+
+    <!-- Avatar Upload Section -->
+    <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:18px;display:flex;align-items:center;gap:18px">
+      <div id="mpAvatarPreviewBox" style="width:68px;height:68px;border-radius:50%;overflow:hidden;border:2px solid var(--line-strong);background:var(--red);color:#fff;display:grid;place-items:center;font-size:22px;font-weight:700;flex-shrink:0;box-shadow:var(--shadow-sm)">
+        <span id="mpAvatarInitials">BK</span>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Profile Picture</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px">JPG, PNG, GIF or WEBP. Max 10MB.</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <input type="file" id="mpAvatarFileInput" accept="image/*" style="display:none" onchange="window.onMyAvatarFileSelected(this)">
+          <button type="button" class="btn small primary" onclick="document.getElementById('mpAvatarFileInput').click()" style="font-size:11.5px;padding:5px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Upload New Photo
+          </button>
+          <button type="button" class="btn small danger" id="mpRemoveAvatarBtn" onclick="window.removeMyAvatar()" style="display:none;font-size:11.5px;padding:5px 10px">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal & Professional Data Form -->
+    <form id="myProfileForm" onsubmit="window.saveMyProfile(event)">
+      <div class="grid2">
+        <div class="field">
+          <label for="mpName">Full Name</label>
+          <input type="text" id="mpName" required placeholder="Your full name" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="mpTitle">Professional Title</label>
+          <input type="text" id="mpTitle" placeholder="e.g. Lead Cinematographer" autocomplete="organization-title">
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="mpDepartment">Department</label>
+          <input type="text" id="mpDepartment" placeholder="e.g. Production, IT, Sales" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="mpPhone">Phone Number</label>
+          <input type="tel" id="mpPhone" placeholder="+254 712 345 678" autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="mpEmail">Primary Login Email</label>
+          <input type="email" id="mpEmail" readonly style="background:var(--paper);opacity:0.75;cursor:not-allowed" autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="mpSecondaryEmail">Secondary Alert Email</label>
+          <input type="email" id="mpSecondaryEmail" placeholder="e.g. personal@gmail.com" autocomplete="email">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="mpBio">Bio / Specialization</label>
+        <textarea id="mpBio" rows="2" placeholder="Brief professional overview, equipment proficiencies, or creative focus..."></textarea>
+      </div>
+
+      <!-- Change Password Accordion -->
+      <details style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:16px">
+        <summary style="font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Change Account Password (Optional)
+        </summary>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px">
+          <div class="field" style="margin-bottom:0">
+            <label for="mpCurrentPass">Current Password</label>
+            <input type="password" id="mpCurrentPass" placeholder="Enter current password" autocomplete="current-password">
+          </div>
+          <div class="grid2" style="margin-bottom:0">
+            <div class="field" style="margin-bottom:0">
+              <label for="mpNewPass">New Password</label>
+              <input type="password" id="mpNewPass" placeholder="Min 4 characters" autocomplete="new-password">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label for="mpConfirmPass">Confirm New Password</label>
+              <input type="password" id="mpConfirmPass" placeholder="Repeat new password" autocomplete="new-password">
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="mfoot" style="margin-top:10px">
+        <button type="button" class="btn" data-close="myProfileModal">Cancel</button>
+        <button type="submit" class="btn primary" id="mpSaveBtn">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Toast Notification Container -->
 <div class="toasts" id="toasts"></div>
+
+

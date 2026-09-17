@@ -8,8 +8,11 @@
       <p>Your whole money picture — calculated inside JMOS.</p>
     </div>
     <div class="head-actions">
-      <button class="btn">
-        <svg viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4M4 21h16"/></svg>Export
+      <button type="button" class="btn" onclick="showView('statements')" title="View comprehensive financial statements &amp; client ledger">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>Financial Statements
+      </button>
+      <button type="button" class="btn primary" onclick="openModal('invoiceModal')" data-modal-open="invoiceModal">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New invoice
       </button>
     </div>
   </div>
@@ -116,8 +119,9 @@
 
   <!-- Recent Activity / Ledger Table -->
   <div class="tablecard">
-    <div class="card-h">
-      <h3 style="font-family:'Poppins', sans-serif;font-size:14px;font-weight:600">Recent activity</h3>
+    <div class="card-h" style="display:flex;align-items:center;justify-content:space-between">
+      <h3 style="font-family:'Poppins', sans-serif;font-size:14px;font-weight:600">Recent financial activity</h3>
+      <a href="#" onclick="event.preventDefault(); showView('statements');" style="font-size:12px;color:var(--red);text-decoration:none;font-weight:600">View Full Statements &rarr;</a>
     </div>
     <div class="tablewrap">
       <table>

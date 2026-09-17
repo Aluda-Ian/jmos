@@ -36,6 +36,8 @@ const JMOS_STATE = {
   apiToken: localStorage.getItem('jmos_api_token') || null,
   users: [],
   clients: [],
+  leads: [],
+  contacts: [],
   projects: [],
   pipeline: [],
   tasks: [],

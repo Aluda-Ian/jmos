@@ -137,6 +137,14 @@
         <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20v-11"/></svg>
         Pipeline
       </a>
+      <a class="item" href="#" data-view="fundraising" data-perm="owner finance sales manager">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M12 18v4M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        Fundraiser
+      </a>
+      <a class="item" href="#" data-view="documents" data-perm="owner finance sales manager editor crew">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Documents
+      </a>
       <a class="item" href="#" data-view="projects">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M10 4v16"/></svg>
         Projects
@@ -150,6 +158,10 @@
       <a class="item" href="#" data-view="finance" data-perm="owner finance">
         <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
         Finance
+      </a>
+      <a class="item" href="#" data-view="statements" data-perm="owner finance">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        Financial Statements
       </a>
       <a class="item" href="#" data-view="invoices" data-perm="owner finance">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
@@ -180,13 +192,14 @@
 
       <div class="nav-spacer"></div>
 
-      <!-- User Profile Chip -->
-      <div class="userchip">
+      <!-- User Profile Chip (Clickable to Edit Profile & Avatar) -->
+      <div class="userchip" id="userchip" onclick="window.openMyProfileModal()" style="cursor:pointer" title="Edit your profile, photo & account settings">
         <div class="av" id="userAv" style="background:var(--red)">BK</div>
-        <div>
-          <div class="nm" id="userNm">Barny Kiome</div>
+        <div style="flex:1;min-width:0">
+          <div class="nm" id="userNm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Barny Kiome</div>
           <div class="rl" id="userRl">Owner · full access</div>
         </div>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted);opacity:0.6;margin-left:auto"><path d="M9 18l6-6-6-6"/></svg>
       </div>
       <div style="padding:4px 16px 14px;font-size:10.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;opacity:0.7;display:flex;align-items:center;gap:6px">
         <span>JMOS</span>
@@ -206,12 +219,6 @@
           <input placeholder="Search clients, projects, invoices, tasks…">
         </div>
         <div class="spacer"></div>
-        <!-- Download / Install App Button -->
-        <button type="button" class="btn pwa-install-btn" id="headerInstallAppBtn" onclick="triggerDownloadApp()" title="Download &amp; install JMOS application for PC &amp; mobile" style="padding:5px 11px;font-size:11.5px;display:flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:8px;font-weight:600;color:var(--ink)">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-          <span class="pwa-btn-text">Download App</span>
-        </button>
-
         <button type="button" class="icon-btn" id="themeToggleBtn" title="Toggle dark mode" aria-label="Toggle dark mode" onclick="toggleTheme()">
           <!-- Sun icon (shown in dark mode) -->
           <svg class="theme-icon-light" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -331,6 +338,15 @@
         <!-- 14. SETTINGS VIEW (Super Admin & IT) -->
         @include('pages.settings')
 
+        <!-- 15. DOCUMENTS & ASSETS VIEW -->
+        @include('pages.documents')
+
+        <!-- 16. FUNDRAISER & IMPACT PROJECTS VIEW -->
+        @include('pages.fundraising')
+
+        <!-- 17. FINANCIAL STATEMENTS & CLIENT LEDGER VIEW -->
+        @include('pages.statements')
+
       </div>
     </main>
   </div>
@@ -352,6 +368,10 @@
   <script src="{{ asset('js/calendar.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/chat.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/notifications.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/leads-pipeline.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/quotes.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/documents.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/fundraising.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/settings.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/modals.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/app.js') }}?v={{ time() }}"></script>

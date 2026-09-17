@@ -5,12 +5,18 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\ClientController;
+use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DealController;
+use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\FinanceController;
+use App\Http\Controllers\Api\FundraisingController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\LeadCallController;
+use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\QuoteController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SystemUpgradeController;
@@ -37,6 +43,25 @@ Route::prefix('auth')->group(function () {
         Route::post('/password', [AuthController::class, 'updatePassword']);
     });
 });
+
+// Zoho CRM Lead Generation & Journey Engine
+Route::apiResource('leads', LeadController::class);
+Route::post('leads/{lead}/convert', [LeadController::class, 'convert']);
+Route::apiResource('lead-calls', LeadCallController::class)->only(['index', 'store', 'destroy']);
+Route::apiResource('contacts', ContactController::class);
+
+// Quotations Engine (Email & WhatsApp Dispatch + Invoice Upgrade)
+Route::apiResource('quotes', QuoteController::class);
+Route::post('quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
+Route::get('quotes/{quote}/whatsapp', [QuoteController::class, 'getWhatsAppLink']);
+Route::post('quotes/{quote}/upgrade-invoice', [QuoteController::class, 'upgradeToInvoice']);
+
+// Documents Repository (Contracts, Proposals, Brand Guides, Grants)
+Route::apiResource('documents', DocumentController::class);
+Route::get('documents/{document}/download', [DocumentController::class, 'download']);
+
+// Fundraising & Impact Grants Tracker
+Route::apiResource('fundraising', FundraisingController::class);
 
 // Public / Token-enabled CRUD Resources
 Route::apiResource('clients', ClientController::class);

@@ -306,6 +306,8 @@ class CalendarController extends Controller
             'all_day' => 'nullable|boolean',
             'location' => 'nullable|string|max:255',
             'attendees' => 'nullable|string|max:255',
+            'related_type' => 'nullable|string|max:50',
+            'related_id' => 'nullable|integer',
             'generate_meet' => 'nullable|boolean',
             'meet_link' => 'nullable|string|max:255',
         ]);
@@ -341,6 +343,8 @@ class CalendarController extends Controller
             'meet_link' => $meetLink,
             'attendees' => $validated['attendees'] ?? null,
             'google_event_id' => $googleEventId,
+            'related_type' => $validated['related_type'] ?? null,
+            'related_id' => $validated['related_id'] ?? null,
             'status' => 'confirmed',
             'created_by' => $user?->name ?? 'Admin',
         ]);

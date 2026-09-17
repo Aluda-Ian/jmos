@@ -1797,6 +1797,234 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
+/* ==========================================================================
+   ZOHO CRM LEAD GENERATION, JOURNEY & PIPELINE MODULE STYLES
+   ========================================================================== */
+
+.crm-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.crm-nav-tab:hover {
+  color: var(--ink);
+  background: var(--panel-2);
+}
+
+.crm-nav-tab.active {
+  color: var(--red);
+  background: var(--red-soft);
+  border-color: rgba(197, 37, 35, 0.2);
+}
+
+.crm-tab-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.crm-nav-tab.active .crm-tab-badge {
+  background: var(--red);
+  color: #fff;
+}
+
+/* Zoho Filter Sidebar */
+.zoho-filter-radio, .zoho-filter-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  transition: background 0.15s ease;
+}
+
+.zoho-filter-radio:hover, .zoho-filter-check:hover {
+  background: var(--panel-2);
+}
+
+.zoho-filter-radio input, .zoho-filter-check input {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--red);
+}
+
+/* Lead Journey Stepper */
+.lead-journey-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.lead-step-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.lead-step-btn:hover {
+  border-color: var(--red);
+  color: var(--ink);
+}
+
+.lead-step-btn.active {
+  background: var(--red-soft);
+  color: var(--red-deep);
+  border-color: var(--red);
+  box-shadow: 0 2px 6px rgba(197, 37, 35, 0.15);
+  font-weight: 700;
+}
+
+.lead-step-btn.completed {
+  background: var(--panel-2);
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.lead-step-btn.convert {
+  background: rgba(43, 138, 90, 0.1);
+  color: #2B8A5A;
+  border-color: rgba(43, 138, 90, 0.3);
+}
+
+.lead-step-btn.convert:hover, .lead-step-btn.convert.active {
+  background: #2B8A5A;
+  color: #fff;
+  border-color: #2B8A5A;
+}
+
+/* Call Log Items */
+.call-item-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  gap: 12px;
+}
+
+/* Documents Module — Left-Aligned Folder Navigation Sidebar */
+.zoho-filter-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+}
+
+.doc-folder-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.doc-folder-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  text-align: left !important;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ink) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  gap: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+
+.doc-folder-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0 !important;
+  stroke: var(--muted) !important;
+  fill: none !important;
+  stroke-width: 1.8 !important;
+}
+
+.doc-folder-btn:hover {
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+}
+
+.doc-folder-btn:hover svg {
+  stroke: var(--ink) !important;
+}
+
+.doc-folder-btn.active {
+  background: var(--red-soft) !important;
+  color: var(--red-deep) !important;
+  font-weight: 600 !important;
+  border-color: rgba(197, 37, 35, 0.15) !important;
+}
+
+.doc-folder-btn.active svg {
+  stroke: var(--red) !important;
+}
+
+.doc-folder-btn .crm-tab-badge {
+  font-size: 11px !important;
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-weight: 600 !important;
+  padding: 2px 7px !important;
+  border-radius: 10px !important;
+  background: var(--panel-2) !important;
+  color: var(--muted) !important;
+  margin-left: auto !important;
+}
+
+.doc-folder-btn.active .crm-tab-badge {
+  background: rgba(197, 37, 35, 0.15) !important;
+  color: var(--red-deep) !important;
+}
+
+@media (max-width: 900px) {
+  .zoho-crm-container {
+    grid-template-columns: 1fr !important;
+  }
+  .lead-journey-stepper {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* ---------- Dark Mode View Overrides ---------- */
 [data-theme="dark"] .search input {
   color: var(--ink);

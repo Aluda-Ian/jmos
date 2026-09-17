@@ -8,6 +8,8 @@ use App\Models\ChatParticipant;
 use App\Models\ChatThread;
 use App\Models\Client;
 use App\Models\FinanceSetting;
+use App\Models\Lead;
+use App\Models\LeadCall;
 use App\Models\Project;
 use App\Models\ServiceRecipe;
 use App\Models\SystemSetting;
@@ -295,5 +297,82 @@ class DatabaseSeeder extends Seeder
                 'notes' => 'Development of this system (JMOS): Central operating system for clients, live production, pipeline deals, finance, Google Meet video sync, and browser push notifications.',
             ]
         );
+
+        // 9. Initial Zoho CRM-style Sample Leads & Calls
+        if (Lead::count() === 0) {
+            $leadsData = [
+                [
+                    'first_name' => 'Ian',
+                    'last_name' => 'Aluda',
+                    'lead_name' => 'Ian Aluda',
+                    'company' => 'venda technologies',
+                    'title' => 'Chief Technology Officer',
+                    'email' => 'ianaluda27@students.uonbi.ac.ke',
+                    'phone' => '+254 712 345 678',
+                    'lead_source' => 'Web Research',
+                    'lead_status' => 'Qualified',
+                    'lead_owner' => 'Jeota Media',
+                    'rating' => 'Hot',
+                    'industry' => 'Tech',
+                    'annual_revenue' => 450000.00,
+                    'city' => 'Nairobi',
+                    'notes' => 'Looking for full-scale commercial brand video and product feature breakdown clips.',
+                ],
+                [
+                    'first_name' => 'Ian',
+                    'last_name' => 'Aluda',
+                    'lead_name' => 'Ian Aluda',
+                    'company' => 'venda technologies',
+                    'title' => 'Director',
+                    'email' => 'ianaluda27@gmail.com',
+                    'phone' => '+254 722 987 654',
+                    'lead_source' => 'LinkedIn',
+                    'lead_status' => 'In Discussion',
+                    'lead_owner' => 'Jeota Media',
+                    'rating' => 'Warm',
+                    'industry' => 'Tech',
+                    'annual_revenue' => 300000.00,
+                    'city' => 'Nairobi',
+                    'notes' => 'Inbound inquiry on social media reels package and corporate interviews.',
+                ],
+                [
+                    'first_name' => 'Ingashian',
+                    'last_name' => 'Gibendi',
+                    'lead_name' => 'Ingashian Gibendi',
+                    'company' => 'M-KOPA',
+                    'title' => 'Brand & Marketing Lead',
+                    'email' => 'igibendi@gmail.com',
+                    'phone' => '+254 701 112 233',
+                    'lead_source' => 'Web Research',
+                    'lead_status' => 'New',
+                    'lead_owner' => 'Jeota Media',
+                    'rating' => 'Hot',
+                    'industry' => 'Corporate',
+                    'annual_revenue' => 850000.00,
+                    'city' => 'Nairobi',
+                    'notes' => 'Identified high potential for regional solar & fintech customer success documentary series.',
+                ],
+            ];
+
+            foreach ($leadsData as $ld) {
+                $createdLead = Lead::create($ld);
+
+                // Add sample call for the lead
+                LeadCall::create([
+                    'lead_id' => $createdLead->id,
+                    'call_type' => 'Outbound',
+                    'call_status' => 'Completed',
+                    'purpose' => 'Discovery',
+                    'outcome' => 'Interested',
+                    'duration_minutes' => 12,
+                    'call_time' => now()->subDays(1),
+                    'logged_by' => 'Patrick Mwendwa',
+                    'notes' => 'Discussed production scope, timeline expectations, and budget parameters.',
+                ]);
+            }
+        }
+
+        // 10. Seed Fundraising Master Opportunities (from Excel Master File)
+        $this->call(FundraisingMasterSeeder::class);
     }
 }

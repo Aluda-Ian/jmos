@@ -35,7 +35,25 @@ function showView(view) {
     if (typeof window.loadCalendarSyncStatus === 'function') window.loadCalendarSyncStatus();
   }
   if (view === 'dashboard' && window.renderDashboardCalendar) window.renderDashboardCalendar();
-  if (view === 'chat' && window.fetchChatData) window.fetchChatData();
+  if (view === 'pipeline') {
+    if (typeof refreshCrmData === 'function') refreshCrmData();
+    if (typeof renderPipeline === 'function') renderPipeline();
+  }
+  if (view === 'documents' && typeof window.refreshDocuments === 'function') {
+    window.refreshDocuments();
+  }
+  if (view === 'fundraising' && typeof window.refreshFundraising === 'function') {
+    window.refreshFundraising();
+  }
+  if (view === 'finance' && typeof window.refreshFinanceData === 'function') {
+    window.refreshFinanceData();
+  }
+  if (view === 'statements' && typeof window.refreshFinanceData === 'function') {
+    window.refreshFinanceData();
+  }
+  if (view === 'invoices' && typeof window.renderInvoices === 'function') {
+    window.renderInvoices();
+  }
   if (view === 'settings' && typeof loadSettings === 'function') loadSettings();
 
   // Remember active view across refreshes

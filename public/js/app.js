@@ -45,7 +45,6 @@ function renderDashboard() {
       if (pList.length) {
         briefParts.push(`<b>${escHtml(pList[0].project_name)}</b> is at stage <b>${escHtml(pList[0].stage)}</b> (${escHtml(pList[0].status)}).`);
       }
-      briefParts.push(`Cash balance is <b>${fmtK(JMOS_STATE.finance.current_balance)}</b>.`);
       briefBody.innerHTML = briefParts.join(' ');
     }
   }
@@ -731,6 +730,9 @@ window.JMOS_PWA = {
       e.preventDefault();
       this.deferredPrompt = e;
       this.updateInstallButtons(true);
+      if (!this.isInstalled && !this.isStandalone && typeof openModal === 'function') {
+        openModal('pwaInstallModal');
+      }
     });
 
     // 3. Detect when app is successfully installed
@@ -738,6 +740,9 @@ window.JMOS_PWA = {
       this.isInstalled = true;
       this.deferredPrompt = null;
       this.updateInstallButtons(false, true);
+      if (typeof closeModal === 'function') {
+        closeModal('pwaInstallModal');
+      }
       if (typeof showToast === 'function') {
         showToast('App Installed 🎉', 'JMOS is now installed on your device!');
       }
@@ -754,6 +759,12 @@ window.JMOS_PWA = {
     if (this.isStandalone) {
       this.isInstalled = true;
       this.updateInstallButtons(false, true);
+    } else if (typeof openModal === 'function') {
+      setTimeout(() => {
+        if (!this.isInstalled && !this.isStandalone) {
+          openModal('pwaInstallModal');
+        }
+      }, 800);
     }
   },
 
@@ -773,6 +784,9 @@ window.JMOS_PWA = {
           this.isInstalled = true;
           this.deferredPrompt = null;
           this.updateInstallButtons(false, true);
+          if (typeof closeModal === 'function') {
+            closeModal('pwaInstallModal');
+          }
         }
       } catch (err) {
         console.warn('Install prompt error:', err);
@@ -791,14 +805,10 @@ window.JMOS_PWA = {
 
     btns.forEach(b => {
       if (isInstalled || this.isStandalone) {
-        b.innerHTML = `
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--green)"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>App Installed</span>
-        `;
-        b.disabled = true;
-        b.style.opacity = '0.85';
+        b.style.display = 'none';
       } else {
         b.disabled = false;
+        b.style.display = 'flex';
         b.style.opacity = '1';
       }
     });
