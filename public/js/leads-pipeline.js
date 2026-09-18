@@ -1078,7 +1078,67 @@
   };
 
   /**
-   * 12. Export Leads to CSV
+   * 12. Contact Form Management
+   */
+  window.openCreateContactModal = function () {
+    const nameInput = document.getElementById('ctName');
+    if (nameInput) nameInput.value = '';
+    const companyInput = document.getElementById('ctCompany');
+    if (companyInput) companyInput.value = '';
+    const titleInput = document.getElementById('ctTitle');
+    if (titleInput) titleInput.value = '';
+    const ownerInput = document.getElementById('ctOwner');
+    if (ownerInput) ownerInput.value = 'Jeota Media';
+    const emailInput = document.getElementById('ctEmail');
+    if (emailInput) emailInput.value = '';
+    const phoneInput = document.getElementById('ctPhone');
+    if (phoneInput) phoneInput.value = '';
+    const notesInput = document.getElementById('ctNotes');
+    if (notesInput) notesInput.value = '';
+
+    openModal('contactModal');
+  };
+
+  window.submitContactForm = async function () {
+    const name = document.getElementById('ctName')?.value.trim();
+    if (!name) {
+      showToast('Validation Error', 'Contact name is required.', true);
+      return;
+    }
+
+    const payload = {
+      contact_name: name,
+      company_name: document.getElementById('ctCompany')?.value.trim() || null,
+      title: document.getElementById('ctTitle')?.value.trim() || null,
+      owner: document.getElementById('ctOwner')?.value.trim() || 'Jeota Media',
+      email: document.getElementById('ctEmail')?.value.trim() || null,
+      phone: document.getElementById('ctPhone')?.value.trim() || null,
+      notes: document.getElementById('ctNotes')?.value.trim() || null
+    };
+
+    const saveBtn = document.getElementById('saveContactBtn');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+    }
+
+    try {
+      await JMOS_API.post('/contacts', payload);
+      closeModal('contactModal');
+      showToast('Contact Saved ✓', `Added "${name}" to contacts directory.`);
+      await window.refreshCrmData();
+    } catch (err) {
+      showToast('Error', err.message, true);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Contact';
+      }
+    }
+  };
+
+  /**
+   * 13. Export Leads to CSV
    */
   window.exportLeadsCsv = function () {
     if (CRM_STATE.leads.length === 0) {

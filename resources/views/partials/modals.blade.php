@@ -2120,6 +2120,13 @@
       <textarea id="ctNotes" rows="2" placeholder="Contact preferences, key responsibilities..."></textarea>
     </div>
 
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="contactModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveContactBtn" onclick="window.submitContactForm()">Save Contact</button>
+    </div>
+  </div>
+</div>
+
 <!-- G. Create / Edit Quotation Modal -->
 <div class="modal" id="quoteModal" role="dialog" aria-modal="true" aria-labelledby="quoteModalTitle">
   <div class="mbg" data-close="quoteModal"></div>

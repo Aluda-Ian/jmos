@@ -467,8 +467,22 @@ function initAuth() {
    ========================================================================== */
 
 window.openMyProfileModal = function () {
-  const user = JMOS_STATE.currentUser;
-  if (!user) return;
+  let user = JMOS_STATE.currentUser;
+  if (!user) {
+    try {
+      const stored = localStorage.getItem('jmos_user');
+      if (stored) user = JSON.parse(stored);
+    } catch (e) {}
+  }
+  if (!user) {
+    user = {
+      name: document.getElementById('userNm')?.textContent || 'Barny Kiome',
+      email: 'owner@jeotamedia.co.ke',
+      title: 'Managing Director & Lead Producer',
+      role: 'owner',
+      color: 'var(--red)'
+    };
+  }
 
   const modal = document.getElementById('myProfileModal');
   if (!modal) return;

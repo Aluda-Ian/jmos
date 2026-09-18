@@ -1,5 +1,5 @@
 /* ==========================================================================
-   JMOS — Fundraiser & Impact Projects Pipeline
+   JMOS — Fundraising & Impact Grants (Leads for Impact Projects)
    ========================================================================== */
 
 (function () {
@@ -8,40 +8,30 @@
   window.JMOS_FUNDRAISING = {
     opportunities: [],
     currentCategory: 'all',
-    currentStatus: 'all',
     searchQuery: '',
 
     init: function () {
       this.bindEvents();
+      this.loadOpportunities();
     },
 
     bindEvents: function () {
-      // Category tab switching
+      // Category tabs
       document.querySelectorAll('.fund-cat-tab').forEach(btn => {
         btn.addEventListener('click', (e) => {
-          e.preventDefault();
           document.querySelectorAll('.fund-cat-tab').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          this.currentCategory = btn.getAttribute('data-cat') || 'all';
-          this.render();
+          this.currentCategory = btn.getAttribute('data-fund-cat') || 'all';
+          this.renderList();
         });
       });
 
-      // Status filter dropdown
-      const statusSelect = document.getElementById('fundStatusFilter');
-      if (statusSelect) {
-        statusSelect.addEventListener('change', (e) => {
-          this.currentStatus = e.target.value;
-          this.render();
-        });
-      }
-
       // Search input
-      const searchInput = document.getElementById('fundSearchInput');
+      const searchInput = document.getElementById('frSearchInput');
       if (searchInput) {
         searchInput.addEventListener('input', (e) => {
           this.searchQuery = e.target.value.toLowerCase().trim();
-          this.render();
+          this.renderList();
         });
       }
     },
@@ -56,53 +46,54 @@
           }
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to fetch fundraising opportunities');
-
-        this.opportunities = data.data || [];
-        this.renderMetrics(data.stats);
-        this.render();
+        if (res.ok && data.data) {
+          this.opportunities = data.data;
+          this.updateMetrics(data.metrics);
+          this.renderList();
+        }
       } catch (err) {
-        console.error('Error loading fundraising opportunities:', err);
+        console.error('Error fetching fundraising data:', err);
       }
     },
 
-    renderMetrics: function (stats) {
-      if (!stats) {
-        const totalKes = this.opportunities.reduce((acc, o) => acc + (parseFloat(o.amount_kes) || 0), 0);
-        const submitted = this.opportunities.filter(o => o.status === 'Submitted' || o.status === 'Applied' || o.status === '1').length;
-        const awarded = this.opportunities.filter(o => o.status === 'Won / Awarded').length;
+    updateMetrics: function (metrics) {
+      if (!metrics) {
+        let totalVal = 0;
+        let openCount = 0;
+        let subCount = 0;
+        let partCount = 0;
 
-        if (document.getElementById('fundMetricPipeline')) {
-          document.getElementById('fundMetricPipeline').textContent = 'KES ' + (totalKes / 1000000).toFixed(1) + 'M';
-        }
-        if (document.getElementById('fundMetricActiveCount')) {
-          document.getElementById('fundMetricActiveCount').textContent = this.opportunities.length;
-        }
-        if (document.getElementById('fundMetricSubmittedCount')) {
-          document.getElementById('fundMetricSubmittedCount').textContent = submitted;
-        }
-        if (document.getElementById('fundMetricAwardedCount')) {
-          document.getElementById('fundMetricAwardedCount').textContent = awarded;
-        }
-        return;
+        this.opportunities.forEach(o => {
+          totalVal += (parseFloat(o.amount_kes) || 0);
+          if (o.status === 'Identified' || o.status === 'In Progress') openCount++;
+          if (o.status === 'Submitted') subCount++;
+          if (o.category === 'partnerships') partCount++;
+        });
+
+        metrics = {
+          total_pipeline_value: totalVal,
+          open_calls_count: openCount,
+          submitted_count: subCount,
+          partnerships_count: partCount
+        };
       }
 
-      if (document.getElementById('fundMetricPipeline')) {
-        document.getElementById('fundMetricPipeline').textContent = 'KES ' + (Number(stats.total_pipeline_kes) / 1000000).toFixed(1) + 'M';
-      }
-      if (document.getElementById('fundMetricActiveCount')) {
-        document.getElementById('fundMetricActiveCount').textContent = stats.total_opportunities;
-      }
-      if (document.getElementById('fundMetricSubmittedCount')) {
-        document.getElementById('fundMetricSubmittedCount').textContent = stats.submitted_count;
-      }
-      if (document.getElementById('fundMetricAwardedCount')) {
-        document.getElementById('fundMetricAwardedCount').textContent = stats.won_count;
-      }
+      const totalPipeEl = document.getElementById('frKpiTotalPipeline');
+      if (totalPipeEl) totalPipeEl.textContent = 'KES ' + Number(metrics.total_pipeline_value || 0).toLocaleString();
+
+      const openEl = document.getElementById('frKpiOpenCallsCount');
+      if (openEl) openEl.textContent = metrics.open_calls_count || 0;
+
+      const subEl = document.getElementById('frKpiSubmittedCount');
+      if (subEl) subEl.textContent = metrics.submitted_count || 0;
+
+      const partEl = document.getElementById('frKpiPartnershipsCount');
+      if (partEl) partEl.textContent = metrics.partnerships_count || 0;
     },
 
-    render: function () {
+    renderList: function () {
       const tbody = document.getElementById('fundraisingTableBody');
+      const countEl = document.getElementById('frCountBadge');
       if (!tbody) return;
 
       let filtered = this.opportunities;
@@ -111,25 +102,25 @@
         filtered = filtered.filter(o => o.category === this.currentCategory);
       }
 
-      if (this.currentStatus !== 'all') {
-        filtered = filtered.filter(o => o.status === this.currentStatus);
-      }
-
       if (this.searchQuery) {
-        filtered = filtered.filter(o => 
-          (o.program_title && o.program_title.toLowerCase().includes(this.searchQuery)) ||
+        filtered = filtered.filter(o =>
           (o.organization && o.organization.toLowerCase().includes(this.searchQuery)) ||
+          (o.program_title && o.program_title.toLowerCase().includes(this.searchQuery)) ||
           (o.partner_organization && o.partner_organization.toLowerCase().includes(this.searchQuery)) ||
           (o.notes && o.notes.toLowerCase().includes(this.searchQuery))
         );
       }
 
+      if (countEl) countEl.textContent = `${filtered.length} Opportunities`;
+
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">
-              <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" fill="none" style="margin-bottom:8px;opacity:0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              <div>No impact opportunities match your current filters.</div>
+            <td colspan="8" style="text-align:center;padding:48px 20px;color:var(--muted)">
+              <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" fill="none" stroke-width="1.5" style="margin-bottom:10px;opacity:0.4"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+              <div style="font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px">No opportunities match this filter</div>
+              <div style="font-size:12px;margin-bottom:14px">Log open grant calls, fellowships, or impact consortium partners.</div>
+              <button type="button" class="btn primary" onclick="window.openAddFundraisingModal()" style="font-size:11.5px;padding:5px 14px">+ Add Opportunity</button>
             </td>
           </tr>
         `;
@@ -137,36 +128,36 @@
       }
 
       tbody.innerHTML = filtered.map(item => {
-        const amountDisplay = item.amount_display || (item.amount_kes ? `KES ${Number(item.amount_kes).toLocaleString()}` : '—');
-        const deadlineDisplay = item.deadline || 'Rolling / TBD';
-        const linkBtn = item.application_link
-          ? `<a href="${item.application_link}" target="_blank" class="btn small" style="margin-right:6px">Apply / Portal</a>`
-          : '';
+        const amt = item.amount_kes ? `KES ${Number(item.amount_kes).toLocaleString()}` : (item.amount_display || 'Undisclosed');
+        const st = (item.status || 'Identified').toLowerCase();
+        let pillClass = 'tint-blue';
+        if (st.includes('won') || st.includes('awarded')) pillClass = 'tint-green';
+        if (st.includes('progress') || st.includes('submitted')) pillClass = 'tint-amber';
+        if (st.includes('missed') || st.includes('lost')) pillClass = 'tint-red';
 
-        const statusLabel = item.status || 'Identified';
-        const statusClass = `badge ${statusLabel.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        const catBadge = `<span class="badge" style="background:var(--panel-2);color:var(--muted);font-size:10.5px">${(item.category || 'open_calls').replace('_', ' ').toUpperCase()}</span>`;
+        const linkBtn = item.application_link 
+          ? `<a href="${item.application_link}" target="_blank" class="btn small" style="margin-right:6px;font-size:11px;padding:3px 8px">Portal ↗</a>`
+          : '';
 
         return `
           <tr>
             <td>
-              <div style="font-weight:600;color:var(--ink)">${item.program_title || item.organization}</div>
-              <div style="font-size:11px;color:var(--muted);display:flex;gap:8px;align-items:center;margin-top:2px">
-                <span class="badge ${item.category}">${item.category === 'open_calls' ? 'Open Call' : 'Partnership'}</span>
-                <span>${item.organization}</span>
-              </div>
+              <div style="font-weight:700;color:var(--ink);font-size:13px">${item.organization}</div>
+              <div style="font-size:11px;color:var(--muted)">${item.partner_organization ? 'Partner: ' + item.partner_organization : 'Direct Applicant'}</div>
             </td>
             <td>
-              <div style="font-size:12px;color:var(--ink)">${item.partner_organization || 'Jeota Media Direct'}</div>
-              <div style="font-size:11px;color:var(--muted)">${item.funding_type || item.partnership_entity_type || 'Grant'}</div>
+              <div style="font-weight:600;color:var(--ink);font-size:12.5px">${item.program_title}</div>
+              <div style="font-size:11px;color:var(--muted)">${item.notes ? (item.notes.length > 55 ? item.notes.substring(0, 55) + '…' : item.notes) : ''}</div>
             </td>
-            <td style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--green)">${amountDisplay}</td>
-            <td style="font-family:'IBM Plex Mono',monospace;font-size:12px">${deadlineDisplay}</td>
-            <td><span class="${statusClass}">${statusLabel}</span></td>
-            <td style="font-size:12px;color:var(--muted)">${item.lead_owner || 'Barny / Ian'}</td>
+            <td>${catBadge}</td>
+            <td class="mono" style="font-weight:700;color:var(--ink);font-size:12px">${amt}</td>
+            <td style="font-size:12px;color:var(--muted)">${item.deadline || 'Rolling'}</td>
+            <td><span class="pill ${pillClass}">${item.status || 'Identified'}</span></td>
             <td style="text-align:right">
               ${linkBtn}
-              <button type="button" class="btn small" onclick="window.JMOS_FUNDRAISING.editOpportunity(${item.id})" style="margin-right:4px">Edit</button>
-              <button type="button" class="btn small danger" onclick="window.JMOS_FUNDRAISING.deleteOpportunity(${item.id})">&times;</button>
+              <button type="button" class="btn small" onclick="window.editFundraisingOpportunity(${item.id})" style="margin-right:6px;font-size:11px;padding:3px 8px">Edit</button>
+              <button type="button" class="btn small danger" onclick="window.deleteFundraisingOpportunity(${item.id})" style="padding:3px 8px;font-size:11px">&times;</button>
             </td>
           </tr>
         `;
@@ -174,57 +165,67 @@
     },
 
     openCreateModal: function () {
-      const modal = document.getElementById('fundraisingModal');
-      if (!modal) return;
-      const form = document.getElementById('fundraisingForm');
-      if (form) form.reset();
-      document.getElementById('fundId').value = '';
-      document.getElementById('fundModalTitle').textContent = 'Add Fundraising Opportunity';
-      modal.classList.add('active');
+      document.getElementById('frFormId').value = '';
+      document.getElementById('frModalTitle').textContent = 'Add Grant / Call Opportunity';
+      document.getElementById('frOrg').value = '';
+      document.getElementById('frProgram').value = '';
+      document.getElementById('frLink').value = '';
+      document.getElementById('frAmount').value = '';
+      document.getElementById('frDeadline').value = '';
+      document.getElementById('frStatus').value = 'Identified';
+      document.getElementById('frCategory').value = this.currentCategory !== 'all' ? this.currentCategory : 'open_calls';
+      document.getElementById('frPartner').value = '';
+      document.getElementById('frNotes').value = '';
+
+      window.openModal('fundraisingModal');
     },
 
     editOpportunity: function (id) {
       const item = this.opportunities.find(o => o.id === id);
       if (!item) return;
 
-      const modal = document.getElementById('fundraisingModal');
-      if (!modal) return;
+      document.getElementById('frFormId').value = item.id;
+      document.getElementById('frModalTitle').textContent = 'Edit Grant / Call Opportunity';
+      document.getElementById('frOrg').value = item.organization || '';
+      document.getElementById('frProgram').value = item.program_title || '';
+      document.getElementById('frLink').value = item.application_link || '';
+      document.getElementById('frAmount').value = item.amount_kes || '';
+      document.getElementById('frDeadline').value = item.deadline || '';
+      document.getElementById('frStatus').value = item.status || 'Identified';
+      document.getElementById('frCategory').value = item.category || 'open_calls';
+      document.getElementById('frPartner').value = item.partner_organization || '';
+      document.getElementById('frNotes').value = item.notes || '';
 
-      document.getElementById('fundId').value = item.id;
-      document.getElementById('fundModalTitle').textContent = 'Edit Fundraising Opportunity';
-      if (document.getElementById('fundOrganization')) document.getElementById('fundOrganization').value = item.organization || '';
-      if (document.getElementById('fundProgramTitle')) document.getElementById('fundProgramTitle').value = item.program_title || '';
-      if (document.getElementById('fundCategory')) document.getElementById('fundCategory').value = item.category || 'open_calls';
-      if (document.getElementById('fundStatus')) document.getElementById('fundStatus').value = item.status || 'Identified';
-      if (document.getElementById('fundAmountKes')) document.getElementById('fundAmountKes').value = item.amount_kes || '';
-      if (document.getElementById('fundAmountDisplay')) document.getElementById('fundAmountDisplay').value = item.amount_display || '';
-      if (document.getElementById('fundDeadline')) document.getElementById('fundDeadline').value = item.deadline || '';
-      if (document.getElementById('fundPartnerOrg')) document.getElementById('fundPartnerOrg').value = item.partner_organization || '';
-      if (document.getElementById('fundFundingType')) document.getElementById('fundFundingType').value = item.funding_type || '';
-      if (document.getElementById('fundLeadOwner')) document.getElementById('fundLeadOwner').value = item.lead_owner || '';
-      if (document.getElementById('fundAppUrl')) document.getElementById('fundAppUrl').value = item.application_link || '';
-      if (document.getElementById('fundNotes')) document.getElementById('fundNotes').value = item.notes || '';
-
-      modal.classList.add('active');
+      window.openModal('fundraisingModal');
     },
 
-    saveOpportunity: async function (e) {
-      if (e) e.preventDefault();
-      const id = document.getElementById('fundId')?.value;
+    submitFundraisingForm: async function () {
+      const id = document.getElementById('frFormId')?.value;
+      const org = document.getElementById('frOrg')?.value.trim();
+      const program = document.getElementById('frProgram')?.value.trim();
+
+      if (!org || !program) {
+        alert('Please fill in the Organization and Program Title.');
+        return;
+      }
+
       const payload = {
-        organization: document.getElementById('fundOrganization')?.value || '',
-        program_title: document.getElementById('fundProgramTitle')?.value || document.getElementById('fundTitle')?.value || '',
-        category: document.getElementById('fundCategory')?.value || 'open_calls',
-        status: document.getElementById('fundStatus')?.value || 'Identified',
-        amount_kes: parseFloat(document.getElementById('fundAmountKes')?.value) || null,
-        amount_display: document.getElementById('fundAmountDisplay')?.value || null,
-        deadline: document.getElementById('fundDeadline')?.value || null,
-        partner_organization: document.getElementById('fundPartnerOrg')?.value || document.getElementById('fundLeadPartner')?.value || '',
-        funding_type: document.getElementById('fundFundingType')?.value || document.getElementById('fundStrategicFocus')?.value || '',
-        lead_owner: document.getElementById('fundLeadOwner')?.value || '',
-        application_link: document.getElementById('fundAppUrl')?.value || '',
-        notes: document.getElementById('fundNotes')?.value || ''
+        organization: org,
+        program_title: program,
+        application_link: document.getElementById('frLink')?.value.trim() || '',
+        amount_kes: parseFloat(document.getElementById('frAmount')?.value) || null,
+        deadline: document.getElementById('frDeadline')?.value.trim() || null,
+        status: document.getElementById('frStatus')?.value || 'Identified',
+        category: document.getElementById('frCategory')?.value || 'open_calls',
+        partner_organization: document.getElementById('frPartner')?.value.trim() || '',
+        notes: document.getElementById('frNotes')?.value.trim() || ''
       };
+
+      const saveBtn = document.getElementById('saveFrBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+      }
 
       try {
         const token = localStorage.getItem('jmos_api_token');
@@ -246,15 +247,18 @@
         if (!res.ok) throw new Error(data.message || 'Failed to save opportunity');
 
         if (window.showToast) {
-          window.showToast('Opportunity saved successfully', 'success');
-        } else {
-          alert('Opportunity saved successfully');
+          window.showToast('Grant opportunity saved successfully', 'success');
         }
 
-        document.getElementById('fundraisingModal').classList.remove('active');
+        window.closeModal('fundraisingModal');
         this.loadOpportunities();
       } catch (err) {
         alert('Error saving opportunity: ' + err.message);
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Opportunity';
+        }
       }
     },
 
@@ -271,8 +275,10 @@
           }
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to delete opportunity');
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Failed to delete opportunity');
+        }
 
         if (window.showToast) {
           window.showToast('Opportunity deleted', 'success');
@@ -289,18 +295,15 @@
         return;
       }
 
-      const headers = ['Organization', 'Program Title', 'Category', 'Status', 'Amount KES', 'Amount Display', 'Deadline', 'Funding Type', 'Partner Organization', 'Lead Owner', 'Application Link'];
+      const headers = ['Organization', 'Program Title', 'Category', 'Status', 'Amount KES', 'Deadline', 'Partner Organization', 'Application Link'];
       const rows = this.opportunities.map(o => [
         `"${(o.organization || '').replace(/"/g, '""')}"`,
         `"${(o.program_title || '').replace(/"/g, '""')}"`,
         `"${o.category}"`,
         `"${o.status}"`,
         o.amount_kes || '',
-        `"${(o.amount_display || '').replace(/"/g, '""')}"`,
         `"${(o.deadline || '').replace(/"/g, '""')}"`,
-        `"${(o.funding_type || '').replace(/"/g, '""')}"`,
         `"${(o.partner_organization || '').replace(/"/g, '""')}"`,
-        `"${(o.lead_owner || '').replace(/"/g, '""')}"`,
         `"${(o.application_link || '').replace(/"/g, '""')}"`
       ]);
 
@@ -313,6 +316,27 @@
       link.click();
       document.body.removeChild(link);
     }
+  };
+
+  // Global window bindings
+  window.openAddFundraisingModal = function () {
+    window.JMOS_FUNDRAISING.openCreateModal();
+  };
+
+  window.editFundraisingOpportunity = function (id) {
+    window.JMOS_FUNDRAISING.editOpportunity(id);
+  };
+
+  window.deleteFundraisingOpportunity = function (id) {
+    window.JMOS_FUNDRAISING.deleteOpportunity(id);
+  };
+
+  window.submitFundraisingForm = function () {
+    window.JMOS_FUNDRAISING.submitFundraisingForm();
+  };
+
+  window.exportFundraisingCsv = function () {
+    window.JMOS_FUNDRAISING.exportCsv();
   };
 
   window.refreshFundraising = function () {

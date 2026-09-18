@@ -21,18 +21,7 @@
     },
 
     init: function () {
-      this.bindEvents();
-    },
-
-    bindEvents: function () {
-      // Search input
-      const searchInput = document.getElementById('docSearchInput');
-      if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-          this.searchQuery = e.target.value.toLowerCase().trim();
-          this.renderList();
-        });
-      }
+      this.loadDocuments();
     },
 
     selectFolder: function (folder) {
@@ -60,11 +49,11 @@
           }
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to fetch documents');
-
-        this.documents = data.data || [];
-        this.updateFolderCounts(data.counts);
-        this.renderList();
+        if (res.ok && data.data) {
+          this.documents = data.data;
+          this.updateFolderCounts(data.counts);
+          this.renderList();
+        }
       } catch (err) {
         console.error('Error loading documents:', err);
       }
@@ -183,24 +172,78 @@
     },
 
     openUploadModal: function (mode) {
-      const modal = document.getElementById('documentModal');
-      if (!modal) return;
-      const form = document.getElementById('documentForm');
-      if (form) form.reset();
+      const typeInput = document.getElementById('docUploadType');
+      if (typeInput) typeInput.value = mode || 'file';
 
-      // Set default folder based on active view
+      const titleInput = document.getElementById('docInputTitle');
+      if (titleInput) titleInput.value = '';
+
+      const notesInput = document.getElementById('docInputNotes');
+      if (notesInput) notesInput.value = '';
+
+      const fileInput = document.getElementById('docFileInput');
+      if (fileInput) fileInput.value = '';
+
+      const urlInput = document.getElementById('docUrlInput');
+      if (urlInput) urlInput.value = '';
+
       const folderSelect = document.getElementById('docFolderSelect');
       if (folderSelect && this.currentFolder !== 'all') {
         folderSelect.value = this.currentFolder;
       }
 
-      modal.classList.add('active');
+      const fileWrap = document.getElementById('docFileInputWrap');
+      const urlWrap = document.getElementById('docUrlInputWrap');
+      const modalTitle = document.getElementById('docModalTitle');
+
+      if (mode === 'link') {
+        if (fileWrap) fileWrap.style.display = 'none';
+        if (urlWrap) urlWrap.style.display = 'block';
+        if (modalTitle) modalTitle.textContent = 'Add Cloud Document Link';
+      } else {
+        if (fileWrap) fileWrap.style.display = 'block';
+        if (urlWrap) urlWrap.style.display = 'none';
+        if (modalTitle) modalTitle.textContent = 'Upload Document';
+      }
+
+      window.openModal('documentModal');
     },
 
-    saveDocument: async function (e) {
-      if (e) e.preventDefault();
-      const form = document.getElementById('documentForm');
-      const formData = new FormData(form);
+    submitDocumentForm: async function () {
+      const title = document.getElementById('docInputTitle')?.value.trim();
+      const folder = document.getElementById('docFolderSelect')?.value || 'general';
+      const type = document.getElementById('docUploadType')?.value || 'file';
+      const notes = document.getElementById('docInputNotes')?.value.trim() || '';
+
+      if (!title) {
+        alert('Please enter a document title.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('folder', folder);
+      formData.append('notes', notes);
+
+      if (type === 'link') {
+        const url = document.getElementById('docUrlInput')?.value.trim();
+        if (!url) {
+          alert('Please enter a valid cloud link URL.');
+          return;
+        }
+        formData.append('external_url', url);
+      } else {
+        const fileInput = document.getElementById('docFileInput');
+        if (fileInput && fileInput.files && fileInput.files[0]) {
+          formData.append('file', fileInput.files[0]);
+        }
+      }
+
+      const saveBtn = document.getElementById('saveDocBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Uploading...';
+      }
 
       try {
         const token = localStorage.getItem('jmos_api_token');
@@ -219,14 +262,17 @@
 
         if (window.showToast) {
           window.showToast('Document saved successfully', 'success');
-        } else {
-          alert('Document saved successfully');
         }
 
-        document.getElementById('documentModal').classList.remove('active');
+        window.closeModal('documentModal');
         this.loadDocuments();
       } catch (err) {
-        alert('Error uploading document: ' + err.message);
+        alert('Error saving document: ' + err.message);
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Document';
+        }
       }
     },
 
@@ -243,8 +289,10 @@
           }
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Failed to delete document');
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Failed to delete document');
+        }
 
         if (window.showToast) {
           window.showToast('Document deleted', 'success');
@@ -256,13 +304,17 @@
     }
   };
 
-  // Global window aliases for inline onclick bindings
+  // Global window aliases
   window.selectDocFolder = function (folder) {
     window.JMOS_DOCUMENTS.selectFolder(folder);
   };
 
   window.openUploadDocumentModal = function (mode) {
     window.JMOS_DOCUMENTS.openUploadModal(mode);
+  };
+
+  window.submitDocumentForm = function () {
+    window.JMOS_DOCUMENTS.submitDocumentForm();
   };
 
   window.onDocSearchChange = function (val) {
