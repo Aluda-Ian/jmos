@@ -1880,7 +1880,7 @@
   <div class="mbox" style="max-width:580px">
     <button class="mclose" data-close="convertLeadModal" title="Close" aria-label="Close modal">&times;</button>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:10px;font-weight:700">ZOHO CRM ENGINE</span>
+      <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:10px;font-weight:700">CONVERSION ENGINE</span>
     </div>
     <h3 id="convertModalTitle">Convert Lead</h3>
     <p class="msub">Converting this lead creates an <b>Account (Client)</b>, a <b>Contact person</b>, and a <b>Pipeline Deal</b>.</p>

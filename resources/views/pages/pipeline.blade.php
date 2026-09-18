@@ -6,7 +6,7 @@
   <div class="page-head" style="margin-bottom:16px">
     <div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700">ZOHO CRM WORKFLOW</span>
+        <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700">CLIENT JOURNEY</span>
         <span class="badge" style="background:var(--panel-2);color:var(--muted);font-size:11px">LEAD TO CONVERSION</span>
       </div>
       <h1 class="pt">Lead Generation &amp; Pipeline</h1>
