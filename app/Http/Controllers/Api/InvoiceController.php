@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
+use App\Models\Client;
 use App\Models\Invoice;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -41,6 +44,8 @@ class InvoiceController extends Controller
 
         $invoice = Invoice::create($validated);
 
+        AuditLog::record('CREATE', "Created invoice {$invoice->invoice_no} for {$invoice->client} (KES ".number_format((float) $invoice->amount, 2).')', 'Invoice', $invoice->id, $validated, $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Invoice created.',
@@ -71,6 +76,8 @@ class InvoiceController extends Controller
 
         $invoice->update($validated);
 
+        AuditLog::record('UPDATE', "Updated invoice {$invoice->invoice_no}", 'Invoice', $invoice->id, $validated, $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Invoice '.$invoice->invoice_no.' updated.',
@@ -78,10 +85,13 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function destroy(Invoice $invoice): JsonResponse
+    public function destroy(Request $request, Invoice $invoice): JsonResponse
     {
         $invoiceNo = $invoice->invoice_no;
+        $id = $invoice->id;
         $invoice->delete();
+
+        AuditLog::record('DELETE', "Removed invoice {$invoiceNo}", 'Invoice', $id, [], $request);
 
         return response()->json([
             'status' => 'success',
@@ -100,10 +110,55 @@ class InvoiceController extends Controller
             'method' => $validated['method'] ?? ($invoice->method ?: 'M-Pesa'),
         ]);
 
+        AuditLog::record('PAYMENT', "Recorded payment for invoice {$invoice->invoice_no} (Method: {$invoice->method})", 'Invoice', $invoice->id, [], $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Payment recorded for '.$invoice->invoice_no,
             'data' => $invoice,
         ]);
+    }
+
+    /**
+     * Dispatch branded invoice / payment reminder email to client.
+     */
+    public function sendReminder(Request $request, Invoice $invoice): JsonResponse
+    {
+        $recipientEmail = $request->input('email');
+
+        if (empty($recipientEmail)) {
+            // Find client email from Clients table
+            $client = Client::where('client_name', $invoice->client)->first();
+            $recipientEmail = $client?->email;
+        }
+
+        if (empty($recipientEmail) || ! filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Valid recipient email address is required.',
+            ], 422);
+        }
+
+        $sent = NotificationService::sendInvoiceReminder([
+            'clientName' => $invoice->client,
+            'invoiceNo' => $invoice->invoice_no,
+            'invoiceType' => $invoice->type,
+            'amount' => (float) $invoice->amount,
+            'dueDate' => $invoice->due_date ?? 'Immediate',
+        ], $recipientEmail);
+
+        if ($sent) {
+            AuditLog::record('EMAIL', "Dispatched invoice reminder for {$invoice->invoice_no} to {$recipientEmail}", 'Invoice', $invoice->id, [], $request);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "Invoice reminder dispatched to {$recipientEmail}.",
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to dispatch email. Please check SMTP settings.',
+        ], 500);
     }
 }

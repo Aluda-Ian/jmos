@@ -58,18 +58,24 @@ class LeadController extends Controller
 
         $leads = $query->withCount(['calls', 'meetings'])->latest()->get();
 
-        // Calculate CRM KPIs
-        $allLeads = Lead::all();
+        // Calculate CRM KPIs with direct database aggregates
+        $totalLeads = Lead::count();
+        $convertedLeads = Lead::where('is_converted', true)->count();
+        $activeLeads = Lead::where('is_converted', false)->where('lead_status', '!=', 'Junk/Lost')->count();
+        $qualifiedLeads = Lead::where('lead_status', 'Qualified')->count();
+        $hotLeads = Lead::where('rating', 'Hot')->count();
+        $pipelinePotential = (float) Lead::where('is_converted', false)->sum('annual_revenue');
+
         $stats = [
-            'total_leads' => $allLeads->count(),
-            'active_leads' => $allLeads->where('is_converted', false)->where('lead_status', '!=', 'Junk/Lost')->count(),
-            'qualified_leads' => $allLeads->where('lead_status', 'Qualified')->count(),
-            'converted_leads' => $allLeads->where('is_converted', true)->count(),
-            'hot_leads' => $allLeads->where('rating', 'Hot')->count(),
-            'pipeline_potential' => (float) $allLeads->where('is_converted', false)->sum('annual_revenue'),
+            'total_leads' => $totalLeads,
+            'active_leads' => $activeLeads,
+            'qualified_leads' => $qualifiedLeads,
+            'converted_leads' => $convertedLeads,
+            'hot_leads' => $hotLeads,
+            'pipeline_potential' => $pipelinePotential,
             'total_calls_logged' => LeadCall::count(),
-            'conversion_rate' => $allLeads->count() > 0
-                ? round(($allLeads->where('is_converted', true)->count() / $allLeads->count()) * 100, 1)
+            'conversion_rate' => $totalLeads > 0
+                ? round(($convertedLeads / $totalLeads) * 100, 1)
                 : 0,
         ];
 
@@ -111,6 +117,22 @@ class LeadController extends Controller
         }
 
         $lead = Lead::create($validated);
+
+        // Auto-generate / sync a Contact for this Lead
+        Contact::updateOrCreate(
+            ['lead_id' => $lead->id],
+            [
+                'first_name' => $lead->first_name,
+                'last_name' => $lead->last_name,
+                'contact_name' => $lead->lead_name,
+                'company_name' => $lead->company,
+                'title' => $lead->title ?? 'Prospect',
+                'email' => $lead->email,
+                'phone' => $lead->phone,
+                'owner' => $lead->lead_owner ?? 'Jeota Media',
+                'notes' => $lead->notes ?? 'Generated from CRM Lead capture',
+            ]
+        );
 
         AuditLog::record('CREATE', "Captured new lead '{$lead->lead_name}'".($lead->company ? " from {$lead->company}" : ''), 'Lead', $lead->id, [], $request);
 
@@ -167,6 +189,18 @@ class LeadController extends Controller
 
         $lead->update($validated);
 
+        // Keep synced contact up-to-date
+        Contact::where('lead_id', $lead->id)->update([
+            'first_name' => $lead->first_name,
+            'last_name' => $lead->last_name,
+            'contact_name' => $lead->lead_name,
+            'company_name' => $lead->company,
+            'title' => $lead->title ?? 'Prospect',
+            'email' => $lead->email,
+            'phone' => $lead->phone,
+            'owner' => $lead->lead_owner ?? 'Jeota Media',
+        ]);
+
         AuditLog::record('UPDATE', "Updated lead record '{$lead->lead_name}'", 'Lead', $lead->id, $validated, $request);
 
         return response()->json([
@@ -183,6 +217,9 @@ class LeadController extends Controller
     {
         $name = $lead->lead_name;
         $id = $lead->id;
+
+        // Clean up unassigned lead contact
+        Contact::where('lead_id', $lead->id)->whereNull('client_id')->delete();
 
         $lead->delete();
 
@@ -258,22 +295,24 @@ class LeadController extends Controller
             }
         }
 
-        // 2. Contact Creation
+        // 2. Contact Creation or Linking
         if ($createContact) {
             $contactName = ! empty($validated['contact_name']) ? $validated['contact_name'] : $lead->lead_name;
-            $contact = Contact::create([
-                'first_name' => $lead->first_name,
-                'last_name' => $lead->last_name,
-                'contact_name' => $contactName,
-                'company_name' => $client ? $client->client_name : $lead->company,
-                'client_id' => $client ? $client->id : null,
-                'lead_id' => $lead->id,
-                'title' => $validated['contact_title'] ?? $lead->title,
-                'email' => $validated['contact_email'] ?? $lead->email,
-                'phone' => $validated['contact_phone'] ?? $lead->phone,
-                'owner' => $lead->lead_owner ?: 'Jeota Media',
-                'notes' => $lead->notes,
-            ]);
+            $contact = Contact::updateOrCreate(
+                ['lead_id' => $lead->id],
+                [
+                    'first_name' => $lead->first_name,
+                    'last_name' => $lead->last_name,
+                    'contact_name' => $contactName,
+                    'company_name' => $client ? $client->client_name : $lead->company,
+                    'client_id' => $client ? $client->id : null,
+                    'title' => $validated['contact_title'] ?? $lead->title,
+                    'email' => $validated['contact_email'] ?? $lead->email,
+                    'phone' => $validated['contact_phone'] ?? $lead->phone,
+                    'owner' => $lead->lead_owner ?: 'Jeota Media',
+                    'notes' => $lead->notes,
+                ]
+            );
         }
 
         // 3. Pipeline Deal Creation

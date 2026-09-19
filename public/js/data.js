@@ -170,8 +170,20 @@ const JMOS_API = {
         this.get('/services').catch(() => [])
       ]);
 
-      if (Array.isArray(users) && users.length) {
-        JMOS_STATE.users = users.map((u, i) => ({
+      function unwrapList(res) {
+        if (Array.isArray(res)) return res;
+        if (res && Array.isArray(res.data)) return res.data;
+        if (res && typeof res === 'object') {
+          for (const k of ['projects', 'clients', 'tasks', 'invoices', 'expenses', 'services', 'deals', 'users']) {
+            if (Array.isArray(res[k])) return res[k];
+          }
+        }
+        return null;
+      }
+
+      const uList = unwrapList(users);
+      if (uList && uList.length) {
+        JMOS_STATE.users = uList.map((u, i) => ({
           id: u.id,
           name: u.name,
           title: u.title || 'Team',
@@ -187,17 +199,6 @@ const JMOS_API = {
           color: u.color || JMOS_COLORS[i % JMOS_COLORS.length],
           ini: u.initials || getInitials(u.name)
         }));
-      }
-
-      function unwrapList(res) {
-        if (Array.isArray(res)) return res;
-        if (res && Array.isArray(res.data)) return res.data;
-        if (res && typeof res === 'object') {
-          for (const k of ['projects', 'clients', 'tasks', 'invoices', 'expenses', 'services', 'deals', 'users']) {
-            if (Array.isArray(res[k])) return res[k];
-          }
-        }
-        return null;
       }
 
       const cList = unwrapList(clients);

@@ -205,7 +205,7 @@
       const program = document.getElementById('frProgram')?.value.trim();
 
       if (!org || !program) {
-        alert('Please fill in the Organization and Program Title.');
+        if (window.showToast) window.showToast('Validation Error', 'Please fill in the Organization and Program Title', true);
         return;
       }
 
@@ -247,13 +247,13 @@
         if (!res.ok) throw new Error(data.message || 'Failed to save opportunity');
 
         if (window.showToast) {
-          window.showToast('Grant opportunity saved successfully', 'success');
+          window.showToast('Grant Saved', 'Opportunity saved successfully');
         }
 
         window.closeModal('fundraisingModal');
         this.loadOpportunities();
       } catch (err) {
-        alert('Error saving opportunity: ' + err.message);
+        if (window.showToast) window.showToast('Save Error', err.message, true);
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;
@@ -263,7 +263,22 @@
     },
 
     deleteOpportunity: async function (id) {
-      if (!confirm('Are you sure you want to delete this fundraising opportunity?')) return;
+      const opp = this.opportunities.find(o => String(o.id) === String(id));
+      const orgName = opp ? opp.organization : 'this record';
+      
+      const confirmed = await window.showConfirmDialog({
+        title: 'Delete Grant Opportunity?',
+        subtitle: 'Fundraising Pipeline',
+        type: 'danger',
+        confirmText: 'Delete Opportunity',
+        message: `Are you sure you want to delete the opportunity from <b>${escHtml(orgName)}</b>?`,
+        bullets: [
+          'This record will be permanently deleted from the pipeline.',
+          'This action cannot be undone.'
+        ]
+      });
+      if (!confirmed) return;
+
       try {
         const token = localStorage.getItem('jmos_api_token');
         const res = await fetch(`/api/fundraising/${id}`, {
@@ -281,17 +296,17 @@
         }
 
         if (window.showToast) {
-          window.showToast('Opportunity deleted', 'success');
+          window.showToast('Opportunity Deleted', 'Grant opportunity removed');
         }
         this.loadOpportunities();
       } catch (err) {
-        alert('Error deleting opportunity: ' + err.message);
+        if (window.showToast) window.showToast('Delete Error', err.message, true);
       }
     },
 
     exportCsv: function () {
       if (this.opportunities.length === 0) {
-        alert('No data to export.');
+        if (window.showToast) window.showToast('Export Notice', 'No data available to export', true);
         return;
       }
 

@@ -61,6 +61,14 @@ class Lead extends Model
     }
 
     /**
+     * Associated individual contact records
+     */
+    public function contacts(): HasMany
+    {
+        return $this->hasMany(Contact::class, 'lead_id');
+    }
+
+    /**
      * Converted client/account record
      */
     public function convertedClient(): BelongsTo

@@ -471,13 +471,12 @@
     if (finProfit) finProfit.textContent = fmt(profit);
     if (finUnpaid) finUnpaid.textContent = fmt(unpaid);
 
-    // KRA / Gava Tax Metrics
+    // KRA / Gava Tax Metrics (Professional Services: 0% VAT Exempt, 5% WHT Compliance)
     const invList = JMOS_STATE.invoices || [];
     const grossInvoiced = invList.reduce((acc, inv) => acc + (Number(inv.amount) || 0), 0) || moneyIn;
-    const outputVat = Math.round(grossInvoiced * 0.16 / 1.16);
     const directExpenses = moneyOut;
-    const inputVatClaim = Math.round(directExpenses * 0.16 / 1.16);
-    const netTax = Math.max(0, outputVat - inputVatClaim);
+    const whtRate = 0.05; // 5% WHT on professional services
+    const estimatedWht = Math.round(grossInvoiced * whtRate);
 
     const kraGrossInvoiced = document.getElementById('kraGrossInvoiced');
     const kraOutputVat = document.getElementById('kraOutputVat');
@@ -486,10 +485,10 @@
     const kraNetTax = document.getElementById('kraNetTax');
 
     if (kraGrossInvoiced) kraGrossInvoiced.textContent = fmt(grossInvoiced);
-    if (kraOutputVat) kraOutputVat.textContent = fmt(outputVat);
+    if (kraOutputVat) kraOutputVat.textContent = '0% (Exempt)';
     if (kraDirectExpenses) kraDirectExpenses.textContent = fmt(directExpenses);
-    if (kraInputVatClaim) kraInputVatClaim.textContent = 'Claimable VAT: ' + fmt(inputVatClaim);
-    if (kraNetTax) kraNetTax.textContent = fmt(netTax);
+    if (kraInputVatClaim) kraInputVatClaim.textContent = 'Tax Deductible';
+    if (kraNetTax) kraNetTax.textContent = fmt(estimatedWht);
 
     // Render active tab contents
     window.renderActiveFinanceTab();
@@ -502,8 +501,6 @@
   window.openKraTaxReconciliation = function () {
     if (window.showToast) {
       window.showToast('Gava iTax & eTIMS Synced', 'Direct expenses and invoice income successfully reconciled with KRA portal');
-    } else {
-      alert('Direct expenses and invoice income successfully reconciled with KRA portal');
     }
   };
 
@@ -532,7 +529,7 @@
 
           window.recomputeFinance();
         } catch (err) {
-          alert('Payment failed: ' + err.message);
+          if (window.showToast) window.showToast('Payment Failed', err.message, true);
           payBtn.disabled = false;
           payBtn.textContent = 'Record payment';
         }

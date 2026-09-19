@@ -524,16 +524,37 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
+  max-width: 100%;
 }
 
-.tablewrap {
+.tablewrap,
+.table-responsive,
+.crm-pane .tablewrap,
+.fin-tab-pane .tablewrap {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  display: block;
+}
+
+/* Touch scrollbar indicator */
+.tablewrap::-webkit-scrollbar {
+  height: 6px;
+}
+.tablewrap::-webkit-scrollbar-track {
+  background: var(--paper, #faf7f6);
+}
+.tablewrap::-webkit-scrollbar-thumb {
+  background: var(--line-strong, #dcd4d1);
+  border-radius: 4px;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 640px;
+  min-width: 600px;
 }
 
 th {

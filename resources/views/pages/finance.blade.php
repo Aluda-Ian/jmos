@@ -81,7 +81,7 @@
             <h3 style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;margin:0">Connect Gava · KRA eTIMS &amp; Tax Compliance</h3>
             <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:10.5px">PIN: P051782390X (Active)</span>
           </div>
-          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Live KRA tracking: direct expenses ETR deductions vs invoice income output VAT.</p>
+          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Live KRA tracking: direct expenses ETR deductions, 0% VAT service exemption, &amp; 5% WHT compliance.</p>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -100,19 +100,19 @@
         <div class="sub">100% recorded to eTIMS</div>
       </div>
       <div class="kpi" style="padding:14px">
-        <div class="lbl">Output VAT (16%)</div>
-        <div class="val" id="kraOutputVat" style="color:var(--amber);font-size:17px">KES 0</div>
-        <div class="sub">Collected from clients</div>
+        <div class="lbl">VAT Status (0%)</div>
+        <div class="val" id="kraOutputVat" style="color:var(--green);font-size:17px">0% (Exempt)</div>
+        <div class="sub">Professional Service</div>
       </div>
       <div class="kpi" style="padding:14px">
         <div class="lbl">Direct Expenses (ETR Verified)</div>
         <div class="val" id="kraDirectExpenses" style="color:var(--ink);font-size:17px">KES 0</div>
-        <div class="sub" id="kraInputVatClaim">Claimable VAT: KES 0</div>
+        <div class="sub" id="kraInputVatClaim">Tax Deductible</div>
       </div>
       <div class="kpi" style="padding:14px">
-        <div class="lbl">Net Tax Obligation</div>
-        <div class="val" id="kraNetTax" style="color:var(--green);font-size:17px">KES 0</div>
-        <div class="sub">VAT Output − Input Claim</div>
+        <div class="lbl">Withholding Tax (5% WHT)</div>
+        <div class="val" id="kraNetTax" style="color:var(--blue);font-size:17px">KES 0</div>
+        <div class="sub">Tracked on service fees</div>
       </div>
     </div>
   </div>

@@ -144,4 +144,61 @@ class LeadGenerationJourneyTest extends TestCase
         // Ensure 8 tasks created
         $this->assertDatabaseCount('tasks', 8);
     }
+
+    /**
+     * Test contacts are automatically generated upon Lead addition
+     */
+    public function test_contact_is_automatically_generated_on_lead_addition(): void
+    {
+        $response = $this->postJson('/api/leads', [
+            'first_name' => 'Sarah',
+            'last_name' => 'Mwangi',
+            'company' => 'Apex Brands',
+            'title' => 'Brand Director',
+            'email' => 'sarah@apexbrands.co.ke',
+            'phone' => '+254 722 111 222',
+            'lead_source' => 'LinkedIn',
+            'lead_owner' => 'Jeota Media',
+            'rating' => 'Hot',
+            'lead_status' => 'New',
+        ]);
+
+        $response->assertStatus(201);
+        $leadId = $response->json('data.id');
+
+        $this->assertDatabaseHas('contacts', [
+            'lead_id' => $leadId,
+            'contact_name' => 'Sarah Mwangi',
+            'company_name' => 'Apex Brands',
+            'email' => 'sarah@apexbrands.co.ke',
+            'phone' => '+254 722 111 222',
+        ]);
+    }
+
+    /**
+     * Test contacts are automatically generated upon Client addition
+     */
+    public function test_contact_is_automatically_generated_on_client_addition(): void
+    {
+        $response = $this->postJson('/api/clients', [
+            'client_name' => 'Kifaru Hospitality Group',
+            'client_type' => 'Hospitality',
+            'contact_person' => 'David Kimani',
+            'email' => 'david@kifaruhotels.com',
+            'phone' => '+254 733 999 888',
+            'project_status' => 'Active',
+            'project_value' => 850000.00,
+        ]);
+
+        $response->assertStatus(201);
+        $clientId = $response->json('data.id');
+
+        $this->assertDatabaseHas('contacts', [
+            'client_id' => $clientId,
+            'contact_name' => 'David Kimani',
+            'company_name' => 'Kifaru Hospitality Group',
+            'email' => 'david@kifaruhotels.com',
+            'phone' => '+254 733 999 888',
+        ]);
+    }
 }

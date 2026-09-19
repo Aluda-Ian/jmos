@@ -3,17 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\TaskAssignedMail;
 use App\Models\AppNotification;
 use App\Models\AuditLog;
 use App\Models\CalendarEvent;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class ProjectController extends Controller
 {
@@ -184,18 +183,17 @@ class ProjectController extends Controller
             ]);
 
             if ($user->email) {
-                try {
-                    Mail::to($user->email)->send(new TaskAssignedMail([
-                        'userName' => $user->name,
-                        'taskTitle' => 'Project Lead: '.$project->project_name,
-                        'projectName' => $project->project_name,
-                        'deadline' => $project->deadline ?? 'To be scheduled',
-                        'role' => 'Project Manager',
-                        'actionUrl' => url('/'),
-                    ]));
-                } catch (\Throwable $e) {
-                    Log::warning('Failed to send project assignment email: '.$e->getMessage());
-                }
+                NotificationService::sendTaskAssigned([
+                    'assigneeName' => $user->name,
+                    'userName' => $user->name,
+                    'taskTitle' => 'Project Lead: '.$project->project_name,
+                    'projectName' => $project->project_name,
+                    'stage' => $project->stage,
+                    'deadline' => $project->deadline ?? 'To be scheduled',
+                    'role' => 'Project Manager',
+                    'assignedBy' => auth('sanctum')->user()?->name ?? 'Leadership',
+                    'actionUrl' => url('/'),
+                ], $user->email);
             }
         }
     }
@@ -204,6 +202,8 @@ class ProjectController extends Controller
     {
         $name = $project->project_name;
         $id = $project->id;
+
+        CalendarEvent::where('related_type', 'project')->where('related_id', $project->id)->delete();
         $project->delete();
 
         AuditLog::record(

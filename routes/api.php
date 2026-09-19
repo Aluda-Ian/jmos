@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\LeadController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\QuoteController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SystemUpgradeController;
@@ -77,6 +78,7 @@ Route::apiResource('tasks', TaskController::class);
 Route::get('invoices/next-number', [InvoiceController::class, 'nextNumber']);
 Route::apiResource('invoices', InvoiceController::class);
 Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay']);
+Route::post('invoices/{invoice}/send-reminder', [InvoiceController::class, 'sendReminder']);
 
 Route::post('expenses/upload-receipt', [ExpenseController::class, 'uploadReceipt']);
 Route::apiResource('expenses', ExpenseController::class);
@@ -84,6 +86,10 @@ Route::apiResource('expenses', ExpenseController::class);
 Route::get('finance/overview', [FinanceController::class, 'overview']);
 Route::apiResource('users', UserController::class);
 Route::post('users/{user}', [UserController::class, 'update']);
+Route::post('users/{user}/permissions', [RoleController::class, 'assignUserPermissions']);
+Route::apiResource('roles', RoleController::class);
+Route::post('roles/{role}', [RoleController::class, 'update']);
+Route::get('roles-permissions/catalog', [RoleController::class, 'permissionsCatalog']);
 Route::apiResource('services', ServiceController::class)->only(['index', 'store', 'destroy']);
 
 // System Settings & SMTP (Super Admin / IT)
@@ -127,10 +133,8 @@ Route::get('chat/unread-count', [ChatController::class, 'unreadCount']);
 Route::post('chat/upload', [ChatController::class, 'uploadAttachment']);
 
 // Notifications & Operational Alerts
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('notifications', [NotificationController::class, 'index']);
-    Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
-    Route::post('notifications/{notification}/unread', [NotificationController::class, 'markUnread']);
-    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
-    Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
-});
+Route::get('notifications', [NotificationController::class, 'index']);
+Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead']);
+Route::post('notifications/{notification}/unread', [NotificationController::class, 'markUnread']);
+Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);

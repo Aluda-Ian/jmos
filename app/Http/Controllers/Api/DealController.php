@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
+use App\Models\AuditLog;
 use App\Models\Deal;
 use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -14,7 +18,7 @@ class DealController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(Deal::all());
+        return response()->json(Deal::latest()->get());
     }
 
     public function store(Request $request): JsonResponse
@@ -28,6 +32,8 @@ class DealController extends Controller
         ]);
 
         $deal = Deal::create($validated);
+
+        AuditLog::record('CREATE', "Created pipeline deal '{$deal->title}' ({$deal->client_name})", 'Deal', $deal->id, $validated, $request);
 
         return response()->json([
             'status' => 'success',
@@ -48,6 +54,8 @@ class DealController extends Controller
 
         $deal->update($validated);
 
+        AuditLog::record('UPDATE', "Updated pipeline deal '{$deal->title}'", 'Deal', $deal->id, $validated, $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Deal updated.',
@@ -58,7 +66,7 @@ class DealController extends Controller
     /**
      * Win & Spin Up Project Cascade Flow
      */
-    public function win(Deal $deal): JsonResponse
+    public function win(Request $request, Deal $deal): JsonResponse
     {
         $deal->update([
             'stage' => 'won',
@@ -74,7 +82,7 @@ class DealController extends Controller
             'stage' => 'brief',
             'status' => 'On track',
             'priority' => 'High',
-            'deadline' => 'Sep 30',
+            'deadline' => now()->addDays(30)->format('M d'),
             'budget' => $deal->value,
             'progress_pct' => 10,
             'waiting_on' => 'us',
@@ -109,6 +117,37 @@ class DealController extends Controller
             'due_date' => now()->addDays(7)->format('M d'),
         ]);
 
+        // 4. Notifications & Emails
+        $owners = User::whereIn('role', ['owner', 'admin'])->get();
+        foreach ($owners as $ownerUser) {
+            AppNotification::create([
+                'user_id' => $ownerUser->id,
+                'type' => 'deal',
+                'title' => '🎉 Deal Won!',
+                'message' => "Deal '{$deal->title}' for {$deal->client_name} won! KES ".number_format((float) $deal->value).' added to operations.',
+                'link' => 'projects',
+                'read' => false,
+            ]);
+
+            if ($ownerUser->email) {
+                NotificationService::sendDealWonAlert([
+                    'dealTitle' => $deal->title,
+                    'clientName' => $deal->client_name,
+                    'value' => (float) $deal->value,
+                ], $ownerUser->email);
+            }
+        }
+
+        // 5. Audit Log
+        AuditLog::record(
+            'WIN',
+            "Won deal '{$deal->title}' for {$deal->client_name} (Value: KES ".number_format((float) $deal->value).') — Live project created & tasks generated',
+            'Deal',
+            $deal->id,
+            ['project_id' => $project->id, 'invoice_id' => $depositInvoice->id],
+            $request
+        );
+
         return response()->json([
             'status' => 'success',
             'message' => 'Deal won! Project created, 8 tasks generated, and invoice drafted.',
@@ -117,9 +156,13 @@ class DealController extends Controller
         ]);
     }
 
-    public function destroy(Deal $deal): JsonResponse
+    public function destroy(Request $request, Deal $deal): JsonResponse
     {
+        $title = $deal->title;
+        $id = $deal->id;
         $deal->delete();
+
+        AuditLog::record('DELETE', "Removed pipeline deal '{$title}'", 'Deal', $id, [], $request);
 
         return response()->json([
             'status' => 'success',

@@ -230,15 +230,18 @@ async function setAuthenticatedSession(user, token, isRestore = false) {
   startIdleTracker();
 
   if (!isRestore) {
-    // New login: pull fresh database state, render, and go to dashboard
+    // New login: navigate to intended destination from notification/link, or default to dashboard
+    const redirectView = sessionStorage.getItem('jmos_redirect_view') || (typeof resolveTargetViewFromUrl === 'function' ? resolveTargetViewFromUrl() : null) || 'dashboard';
+    sessionStorage.removeItem('jmos_redirect_view');
+
     await JMOS_API.fetchAll();
     if (typeof renderAllViews === 'function') renderAllViews();
-    if (typeof showView === 'function') showView('dashboard');
+    if (typeof showView === 'function') showView(redirectView);
     if (typeof showToast === 'function') showToast('Signed in', `Welcome back, ${user.name}`);
   } else {
-    // Session restored from page refresh: preserve user view
-    const savedView = localStorage.getItem('jmos_active_view') || 'dashboard';
-    if (typeof showView === 'function') showView(savedView);
+    // Session restored from page refresh or direct notification click
+    const targetView = (typeof resolveTargetViewFromUrl === 'function' ? resolveTargetViewFromUrl() : null) || localStorage.getItem('jmos_active_view') || 'dashboard';
+    if (typeof showView === 'function') showView(targetView);
 
     // Fetch fresh database state in background and re-render views
     JMOS_API.fetchAll().then(() => {
@@ -312,6 +315,14 @@ function initAuth() {
   const loginNotice = document.getElementById('loginNotice');
   const demoContainer = document.getElementById('demoAccts');
 
+  // Capture target view from incoming notification or deep link
+  const targetFromUrl = typeof resolveTargetViewFromUrl === 'function' ? resolveTargetViewFromUrl() : null;
+  if (targetFromUrl) {
+    try {
+      sessionStorage.setItem('jmos_redirect_view', targetFromUrl);
+    } catch (_) {}
+  }
+
   // Check and restore existing session across page refresh
   const storedToken = localStorage.getItem('jmos_api_token');
   const storedUserRaw = localStorage.getItem('jmos_user');
@@ -334,7 +345,8 @@ function initAuth() {
 
   // Load team members for demo pills from database
   JMOS_API.get('/users')
-    .then(users => {
+    .then(res => {
+      const users = Array.isArray(res) ? res : (res && Array.isArray(res.data) ? res.data : []);
       if (Array.isArray(users) && users.length) {
         JMOS_STATE.users = users.map((u, i) => ({
           id: u.id,
@@ -349,8 +361,8 @@ function initAuth() {
           role: u.role || 'team',
           type: u.type || 'Full-time',
           pay: u.pay || '—',
-          color: u.color || JMOS_COLORS[i % JMOS_COLORS.length],
-          ini: u.initials || getInitials(u.name)
+          color: u.color || (typeof JMOS_COLORS !== 'undefined' ? JMOS_COLORS[i % JMOS_COLORS.length] : '#C52523'),
+          ini: u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : 'TM')
         }));
         renderDemoAccounts();
       }
@@ -536,7 +548,7 @@ window.onMyAvatarFileSelected = function (input) {
   const removeBtn = document.getElementById('mpRemoveAvatarBtn');
 
   if (file.size > 10 * 1024 * 1024) {
-    alert('File size exceeds 10MB limit. Please choose a smaller photo.');
+    if (window.showToast) window.showToast('File Too Large', 'Avatar size exceeds 10MB limit. Please choose a smaller photo.', true);
     input.value = '';
     return;
   }
@@ -553,7 +565,14 @@ window.onMyAvatarFileSelected = function (input) {
 };
 
 window.removeMyAvatar = async function () {
-  if (!confirm('Remove your custom profile picture and use initials avatar?')) return;
+  const confirmed = await window.showConfirmDialog({
+    title: 'Remove Profile Photo?',
+    subtitle: 'Account Avatar Customization',
+    type: 'danger',
+    confirmText: 'Remove Photo',
+    message: 'Remove your custom profile picture and revert to initial avatar badge?'
+  });
+  if (!confirmed) return;
 
   try {
     const res = await JMOS_API.post('/auth/avatar/remove', {});
@@ -562,10 +581,10 @@ window.removeMyAvatar = async function () {
       localStorage.setItem('jmos_user', JSON.stringify(JMOS_STATE.currentUser));
       applyAuthenticatedUI(JMOS_STATE.currentUser);
       window.updateMyAvatarPreviewDisplay(null, JMOS_STATE.currentUser.name, JMOS_STATE.currentUser.color);
-      if (window.showToast) window.showToast('Profile picture removed', 'Default initials restored');
+      if (window.showToast) window.showToast('Profile photo removed', 'Default initials restored');
     }
   } catch (err) {
-    alert('Failed to remove photo: ' + err.message);
+    if (window.showToast) window.showToast('Remove Failed', err.message, true);
   }
 };
 
@@ -641,11 +660,9 @@ window.saveMyProfile = async function (e) {
     closeModal('myProfileModal');
     if (window.showToast) {
       window.showToast('Profile updated', 'Your personal details and avatar have been saved successfully');
-    } else {
-      alert('Profile updated successfully');
     }
   } catch (err) {
-    alert('Error updating profile: ' + err.message);
+    if (window.showToast) window.showToast('Profile Error', err.message, true);
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;

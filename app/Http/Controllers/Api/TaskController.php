@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\TaskAssignedMail;
 use App\Models\AppNotification;
+use App\Models\AuditLog;
 use App\Models\CalendarEvent;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class TaskController extends Controller
 {
@@ -38,6 +38,8 @@ class TaskController extends Controller
 
         $this->syncTaskCalendarEvent($task);
         $this->notifyTaskAssignee($task);
+
+        AuditLog::record('CREATE', "Created task '{$task->title}'".($task->project ? " on {$task->project->project_name}" : ''), 'Task', $task->id, $validated, $request);
 
         return response()->json([
             'status' => 'success',
@@ -69,6 +71,8 @@ class TaskController extends Controller
         if (! empty($validated['assigned_to']) && $validated['assigned_to'] !== $oldAssignee) {
             $this->notifyTaskAssignee($task);
         }
+
+        AuditLog::record('UPDATE', "Updated task '{$task->title}' (Stage: {$task->stage})", 'Task', $task->id, $validated, $request);
 
         return response()->json([
             'status' => 'success',
@@ -127,26 +131,30 @@ class TaskController extends Controller
             ]);
 
             if ($user->email) {
-                try {
-                    Mail::to($user->email)->send(new TaskAssignedMail([
-                        'userName' => $user->name,
-                        'taskTitle' => $task->title,
-                        'projectName' => $projName,
-                        'deadline' => $task->due_date ?? 'Immediate',
-                        'role' => 'Assignee',
-                        'actionUrl' => url('/'),
-                    ]));
-                } catch (\Throwable $e) {
-                    Log::warning('Failed sending task assignment email: '.$e->getMessage());
-                }
+                NotificationService::sendTaskAssigned([
+                    'assigneeName' => $user->name,
+                    'userName' => $user->name,
+                    'taskTitle' => $task->title,
+                    'projectName' => $projName,
+                    'stage' => $task->stage,
+                    'deadline' => $task->due_date ?? 'Immediate',
+                    'role' => 'Assignee',
+                    'assignedBy' => auth('sanctum')->user()?->name ?? 'Production Lead',
+                    'actionUrl' => url('/'),
+                ], $user->email);
             }
         }
     }
 
-    public function destroy(Task $task): JsonResponse
+    public function destroy(Request $request, Task $task): JsonResponse
     {
+        $title = $task->title;
+        $id = $task->id;
+
         CalendarEvent::where('related_type', 'task')->where('related_id', $task->id)->delete();
         $task->delete();
+
+        AuditLog::record('DELETE', "Removed task '{$title}'", 'Task', $id, [], $request);
 
         return response()->json([
             'status' => 'success',

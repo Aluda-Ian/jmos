@@ -464,9 +464,18 @@ window.executeGoogleCalendarSync = async function(accountEmail) {
 };
 
 window.disconnectPersonalGoogleCalendar = async function() {
-  if (!confirm('Disconnect your personal Google Calendar? Scheduled events will no longer sync with your Google account.')) {
-    return;
-  }
+  const confirmed = await window.showConfirmDialog({
+    title: 'Disconnect Google Calendar?',
+    subtitle: 'Google Workspace Integration',
+    type: 'warning',
+    confirmText: 'Disconnect Account',
+    message: 'Are you sure you want to disconnect your personal Google Calendar account?',
+    bullets: [
+      'Scheduled meetings will no longer sync bidirectionally with your Google account.',
+      'Existing system records in JMOS will remain safe and intact.'
+    ]
+  });
+  if (!confirmed) return;
 
   try {
     const res = await JMOS_API.post('/calendar/disconnect', {});
@@ -933,7 +942,18 @@ function initCalendar() {
     const delEventBtn = e.target.closest('[data-del-event]');
     if (delEventBtn) {
       const dbId = delEventBtn.getAttribute('data-del-event');
-      if (confirm('Remove this event from calendar?')) {
+      const confirmed = await window.showConfirmDialog({
+        title: 'Delete Calendar Event?',
+        subtitle: 'Schedule Modification',
+        type: 'danger',
+        confirmText: 'Remove Event',
+        message: 'Remove this scheduled event from the central calendar?',
+        bullets: [
+          'All attendees will be notified of cancellation.',
+          'Synchronized Google Calendar events will be removed.'
+        ]
+      });
+      if (confirmed) {
         delEventBtn.disabled = true;
         try {
           await JMOS_API.delete(`/calendar/events/${dbId}`);
@@ -1136,7 +1156,18 @@ window.openEventDetailModal = function(eventId) {
     if (event.source === 'calendar' && event.db_id) {
       delBtn.style.display = 'inline-flex';
       delBtn.onclick = async () => {
-        if (confirm('Remove this event from calendar?')) {
+        const confirmed = await window.showConfirmDialog({
+          title: 'Delete Calendar Event?',
+          subtitle: 'Schedule Modification',
+          type: 'danger',
+          confirmText: 'Remove Event',
+          message: `Remove "<b>${escHtml(event.title || 'Event')}</b>" from the central calendar?`,
+          bullets: [
+            'All attendees will be notified of cancellation.',
+            'Synchronized Google Calendar events will be removed.'
+          ]
+        });
+        if (confirmed) {
           delBtn.disabled = true;
           try {
             await JMOS_API.delete(`/calendar/events/${event.db_id}`);

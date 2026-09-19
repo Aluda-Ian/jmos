@@ -40,7 +40,7 @@ class ContactController extends Controller
         $validated = $request->validate([
             'first_name' => 'nullable|string|max:100',
             'last_name' => 'nullable|string|max:100',
-            'contact_name' => 'required|string|max:255',
+            'contact_name' => 'nullable|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'client_id' => 'nullable|exists:clients,id',
             'lead_id' => 'nullable|exists:leads,id',
@@ -50,6 +50,11 @@ class ContactController extends Controller
             'owner' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
+
+        if (empty($validated['contact_name'])) {
+            $nameParts = array_filter([$validated['first_name'] ?? '', $validated['last_name'] ?? '']);
+            $validated['contact_name'] = ! empty($nameParts) ? implode(' ', $nameParts) : 'New Contact';
+        }
 
         $contact = Contact::create($validated);
 

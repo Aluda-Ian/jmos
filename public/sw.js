@@ -2,7 +2,7 @@
    JMOS — Service Worker for Offline Caching, PWA & Web Push Notifications
    ========================================================================== */
 
-const CACHE_NAME = 'jmos-cache-v1';
+const CACHE_NAME = 'jmos-cache-v2.5.1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -107,13 +107,19 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = event.notification.data?.url || '/';
+  let rawUrl = event.notification.data?.url || '/';
+  let targetUrl = '/';
+  try {
+    targetUrl = new URL(rawUrl, self.location.origin).href;
+  } catch (_) {
+    targetUrl = self.location.origin + '/';
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          if (targetUrl && targetUrl !== '/') {
+          if ('navigate' in client && targetUrl !== client.url) {
             client.navigate(targetUrl);
           }
           return client.focus();

@@ -27,7 +27,7 @@ class SystemUpgradeController extends Controller
             return true; // Local or token-less development fallback
         }
 
-        return in_array($user->role, ['owner', 'admin'], true);
+        return in_array($user->role, ['owner', 'admin', 'manager'], true);
     }
 
     /**

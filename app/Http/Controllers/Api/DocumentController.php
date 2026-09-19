@@ -41,15 +41,22 @@ class DocumentController extends Controller
             $query->where('lead_id', $request->integer('lead_id'));
         }
 
-        $allDocs = Document::all();
+        $groupedCounts = Document::query()
+            ->selectRaw('folder, count(*) as total')
+            ->groupBy('folder')
+            ->pluck('total', 'folder')
+            ->toArray();
+
+        $totalCount = Document::count();
+
         $folderCounts = [
-            'all' => $allDocs->count(),
-            'contracts' => $allDocs->where('folder', 'contracts')->count(),
-            'proposals' => $allDocs->where('folder', 'proposals')->count(),
-            'brand_guides' => $allDocs->where('folder', 'brand_guides')->count(),
-            'briefs' => $allDocs->where('folder', 'briefs')->count(),
-            'grants' => $allDocs->where('folder', 'grants')->count(),
-            'general' => $allDocs->where('folder', 'general')->count(),
+            'all' => $totalCount,
+            'contracts' => (int) ($groupedCounts['contracts'] ?? 0),
+            'proposals' => (int) ($groupedCounts['proposals'] ?? 0),
+            'brand_guides' => (int) ($groupedCounts['brand_guides'] ?? 0),
+            'briefs' => (int) ($groupedCounts['briefs'] ?? 0),
+            'grants' => (int) ($groupedCounts['grants'] ?? 0),
+            'general' => (int) ($groupedCounts['general'] ?? 0),
         ];
 
         return response()->json([
@@ -129,7 +136,7 @@ class DocumentController extends Controller
         return response()->download(Storage::disk('public')->path($document->file_path), $document->file_name ?? $document->title);
     }
 
-    public function destroy(Document $document): JsonResponse
+    public function destroy(Request $request, Document $document): JsonResponse
     {
         $title = $document->title;
         $id = $document->id;
@@ -140,7 +147,7 @@ class DocumentController extends Controller
 
         $document->delete();
 
-        AuditLog::record('DELETE', "Removed document '{$title}'", 'Document', $id);
+        AuditLog::record('DELETE', "Removed document '{$title}'", 'Document', $id, [], $request);
 
         return response()->json([
             'status' => 'success',

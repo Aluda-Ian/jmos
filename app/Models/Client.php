@@ -26,6 +26,11 @@ class Client extends Model
         'notes',
     ];
 
+    protected $casts = [
+        'project_value' => 'decimal:2',
+        'projects' => 'integer',
+    ];
+
     public function projectsList(): HasMany
     {
         return $this->hasMany(Project::class, 'client', 'client_name');

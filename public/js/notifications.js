@@ -135,13 +135,49 @@ window.toggleNotificationPanel = function(e) {
   }
 };
 
+function positionNotificationPanel() {
+  const panel = document.getElementById('notifPanel');
+  if (!panel) return;
+
+  const isMobile = window.innerWidth <= 860;
+  if (isMobile) {
+    panel.style.setProperty('position', 'fixed', 'important');
+    panel.style.setProperty('top', '50%', 'important');
+    panel.style.setProperty('left', '50%', 'important');
+    panel.style.setProperty('right', 'auto', 'important');
+    panel.style.setProperty('bottom', 'auto', 'important');
+    panel.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+    panel.style.setProperty('width', 'calc(100vw - 28px)', 'important');
+    panel.style.setProperty('max-width', '420px', 'important');
+    panel.style.setProperty('max-height', 'calc(100vh - 50px)', 'important');
+    panel.style.setProperty('margin', '0', 'important');
+    panel.style.setProperty('z-index', '999999', 'important');
+    panel.style.setProperty('box-shadow', '0 24px 70px rgba(0, 0, 0, 0.75), 0 0 0 100vmax rgba(0, 0, 0, 0.65)', 'important');
+  } else {
+    panel.style.removeProperty('position');
+    panel.style.removeProperty('top');
+    panel.style.removeProperty('left');
+    panel.style.removeProperty('right');
+    panel.style.removeProperty('bottom');
+    panel.style.removeProperty('transform');
+    panel.style.removeProperty('width');
+    panel.style.removeProperty('max-width');
+    panel.style.removeProperty('max-height');
+    panel.style.removeProperty('margin');
+    panel.style.removeProperty('z-index');
+    panel.style.removeProperty('box-shadow');
+  }
+}
+
 window.openNotificationPanel = function() {
   const panel = document.getElementById('notifPanel');
   const bell = document.getElementById('notifBellBtn');
   if (!panel) return;
 
+  positionNotificationPanel();
   panel.classList.add('open');
   if (bell) bell.classList.add('active');
+  renderNotificationItems();
   fetchNotifications(window.JMOS_NOTIFS.currentFilter || 'all');
 };
 
@@ -152,9 +188,20 @@ window.closeNotificationPanel = function() {
   if (bell) bell.classList.remove('active');
 };
 
-window.openNotificationModal = function() {
-  window.toggleNotificationPanel();
+window.openNotificationModal = function(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+  }
+  window.openNotificationPanel();
 };
+
+window.addEventListener('resize', () => {
+  const panel = document.getElementById('notifPanel');
+  if (panel && panel.classList.contains('open')) {
+    positionNotificationPanel();
+  }
+});
 
 // 6. Filter Notifications Tab
 window.filterNotifications = function(filter) {
@@ -495,29 +542,6 @@ window.JMOS_PUSH = {
         btn.style.opacity = '1';
       }
     });
-  }
-};
-
-window.triggerTestPushNotification = function() {
-  if (window.JMOS_PUSH.permission !== 'granted') {
-    window.JMOS_PUSH.requestPermission().then(granted => {
-      if (granted) {
-        window.JMOS_PUSH.send({
-          title: '🎬 Shoot Confirmed: Westlands Studio',
-          body: 'Production shoot call sheet generated for Moyo Honey Commercial. Crew: Amos, Stephen.',
-          url: 'calendar'
-        });
-      }
-    });
-  } else {
-    window.JMOS_PUSH.send({
-      title: '🎬 Production Shoot Alert',
-      body: 'Production shoot call sheet synced with Google Meet for tomorrow at 10:00 AM.',
-      url: 'calendar'
-    });
-    if (typeof showToast === 'function') {
-      showToast('Push Sent', 'Test push notification dispatched to your browser.');
-    }
   },
 
   scheduleDailyFirstVisitPrompt() {
@@ -605,6 +629,29 @@ window.triggerTestPushNotification = function() {
   }
 };
 
+window.triggerTestPushNotification = function() {
+  if (window.JMOS_PUSH.permission !== 'granted') {
+    window.JMOS_PUSH.requestPermission().then(granted => {
+      if (granted) {
+        window.JMOS_PUSH.send({
+          title: '🎬 Shoot Confirmed: Westlands Studio',
+          body: 'Production shoot call sheet generated for Moyo Honey Commercial. Crew: Amos, Stephen.',
+          url: 'calendar'
+        });
+      }
+    });
+  } else {
+    window.JMOS_PUSH.send({
+      title: '🎬 Production Shoot Alert',
+      body: 'Production shoot call sheet synced with Google Meet for tomorrow at 10:00 AM.',
+      url: 'calendar'
+    });
+    if (typeof showToast === 'function') {
+      showToast('Push Sent', 'Test push notification dispatched to your browser.');
+    }
+  }
+};
+
 // 13. Initialize Background Polling
 function initNotifications() {
   // Update Push UI state
@@ -636,7 +683,7 @@ document.addEventListener('click', (e) => {
   const panel = document.getElementById('notifPanel');
   const bell = document.getElementById('notifBellBtn');
   if (panel && panel.classList.contains('open')) {
-    if (!panel.contains(e.target) && !bell?.contains(e.target)) {
+    if (!panel.contains(e.target) && !bell?.contains(e.target) && !e.target.closest('#notifBellBtn') && !e.target.closest('#notifPanel')) {
       closeNotificationPanel();
     }
   }

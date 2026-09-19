@@ -258,6 +258,32 @@
 
   <div data-perm="owner manager">
   <div class="settings-grid">
+    <!-- Roles & Granular Access Rights Card -->
+    <div class="card" style="padding:24px;grid-column:1 / -1;margin-bottom:10px" id="rolesAccessControlCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:8px;background:rgba(197,37,35,0.12);color:var(--red);display:grid;place-items:center">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="3"/><path d="M12 14v3"/></svg>
+          </div>
+          <div>
+            <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">User Roles &amp; Granular Access Control</h3>
+            <p style="font-size:12px;color:var(--muted)">Create custom user roles and configure modular permission access rights for each functional area of JMOS.</p>
+          </div>
+        </div>
+        <button type="button" class="btn primary" onclick="openCreateRoleModal()" style="font-size:12px;padding:8px 14px;display:flex;align-items:center;gap:6px">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Custom Role
+        </button>
+      </div>
+
+      <!-- Roles Grid / List Container -->
+      <div id="rolesListContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(310px, 1fr));gap:14px;margin-top:12px">
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:12.5px;grid-column:1/-1">
+          Loading workspace roles &amp; permissions...
+        </div>
+      </div>
+    </div>
+
     <!-- 1. SMTP Email Gateway Configuration -->
     <div class="card" style="padding:24px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
@@ -472,7 +498,7 @@
               <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">Connect Gava (KRA / eTIMS &amp; iTax Gateway)</h3>
               <span class="badge" style="background:var(--green-soft);color:var(--green)">eTIMS Active</span>
             </div>
-            <p style="font-size:12px;color:var(--muted)">Government of Kenya tax synchronization for direct expenses, claimable VAT input, and real-time invoice income tracking.</p>
+            <p style="font-size:12px;color:var(--muted)">Government of Kenya tax synchronization for professional creative services, claimable direct expense ETRs, 5% WHT deductions, and real-time income tracking.</p>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -500,8 +526,8 @@
 
       <div class="grid3" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:14px">
         <div class="field">
-          <label for="cfg_kra_vat_rate">Standard VAT Rate (%)</label>
-          <input id="cfg_kra_vat_rate" type="number" placeholder="16" value="16" autocomplete="off">
+          <label for="cfg_kra_vat_rate">VAT Rate (%) — Service (0% Exempt)</label>
+          <input id="cfg_kra_vat_rate" type="number" placeholder="0" value="0" autocomplete="off">
         </div>
         <div class="field">
           <label for="cfg_kra_wht_rate">Withholding Tax (WHT %)</label>
@@ -520,7 +546,7 @@
       <div id="kraSyncNotice" style="margin-top:12px;padding:10px 14px;border-radius:8px;font-size:12px;background:var(--panel-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="color:var(--green);font-weight:700">✓</span>
-          <span style="color:var(--ink)"><b>eTIMS &amp; iTax Synced:</b> All direct project expenses with ETR are tax-deductible; issued invoices track 16% output VAT.</span>
+          <span style="color:var(--ink)"><b>eTIMS &amp; iTax Synced:</b> Professional creative services operate at 0% VAT (Exempt); all direct project expenses with ETR are tax-deductible with 5% WHT compliance.</span>
         </div>
         <span class="mono" style="font-size:11px;color:var(--muted)">Verified KRA PIN</span>
       </div>

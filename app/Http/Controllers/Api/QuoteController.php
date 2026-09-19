@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\Quote;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -160,6 +161,8 @@ class QuoteController extends Controller
         }
 
         try {
+            NotificationService::applySmtpSettings();
+
             $itemsHtml = '';
             foreach ($quote->items ?? [] as $item) {
                 $desc = htmlspecialchars($item['description'] ?? '');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\DealWonAlertMail;
 use App\Mail\InvoiceReminderMail;
 use App\Mail\MeetingReminderMail;
+use App\Mail\NewChatMessageMail;
 use App\Mail\TaskAssignedMail;
 use App\Models\SystemSetting;
 use App\Services\NotificationService;
@@ -149,6 +150,17 @@ class SettingsController extends Controller
                     'value' => 380000,
                 ]));
                 $msg = "Branded Deal-Won Notification email successfully delivered to {$recipient} via {$host}:{$port}.";
+            } elseif ($template === 'chat') {
+                Mail::to($recipient)->send(new NewChatMessageMail([
+                    'recipientName' => 'Team Member',
+                    'senderName' => 'Barny Kiome',
+                    'senderRole' => 'Lead Producer',
+                    'threadTitle' => '#production',
+                    'isDirect' => false,
+                    'messageText' => 'Camera package (Sony FX6 + DZOFilm Vespid Primes) prepped for tomorrow morning shoot.',
+                    'sentAt' => now()->format('M j, Y H:i'),
+                ]));
+                $msg = "Branded Chat Message Notification email successfully delivered to {$recipient} via {$host}:{$port}.";
             } else {
                 Mail::raw("Hello from JMOS!\n\nThis is a live test notification confirming that your SMTP email gateway ({$host}:{$port}) is connected, authenticated, and operating properly.\n\nFrom: {$fromName} <{$fromAddress}>\nRecipient: {$recipient}\nTimestamp: ".now()->toDateTimeString(), function ($message) use ($recipient, $fromAddress, $fromName) {
                     $message->to($recipient)

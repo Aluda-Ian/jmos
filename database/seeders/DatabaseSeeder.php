@@ -25,7 +25,6 @@ class DatabaseSeeder extends Seeder
         $users = [
             ['name' => 'Barny Kiome', 'title' => 'Founder & Executive Producer', 'email' => 'barny@jeotamedia.co.ke', 'role' => 'owner', 'type' => 'Full-time', 'pay' => '60,000/mo', 'color' => '#C52523', 'initials' => 'BK'],
             ['name' => 'Ian Aluda', 'title' => 'IT Specialist & System Manager', 'email' => 'ian@jeotamedia.co.ke', 'role' => 'manager', 'type' => 'Full-time', 'pay' => '—', 'color' => '#2B8A5A', 'initials' => 'IA'],
-            ['name' => 'Matthew Muange', 'title' => 'Finance & Accounting', 'email' => 'matthew@jeotamedia.co.ke', 'role' => 'finance', 'type' => 'Full-time', 'pay' => '—', 'color' => '#2B6E8A', 'initials' => 'MM'],
             ['name' => 'Patrick Mwendwa', 'title' => 'Sales & Business Development', 'email' => 'patrick@jeotamedia.co.ke', 'role' => 'sales', 'type' => 'Per-project', 'pay' => '—', 'color' => '#8A5A2B', 'initials' => 'PM'],
             ['name' => 'Stephen Otieno', 'title' => 'Lead Video Editor', 'email' => 'stephen@jeotamedia.co.ke', 'role' => 'team', 'type' => 'Full-time', 'pay' => '30,000/mo', 'color' => '#5A7A2B', 'initials' => 'SO'],
             ['name' => 'Amos Muthama', 'title' => 'Cinematographer & Drone Pilot', 'email' => 'amos@jeotamedia.co.ke', 'role' => 'team', 'type' => 'Per-project', 'pay' => '5,000/day', 'color' => '#6E2B8A', 'initials' => 'AM'],
@@ -97,7 +96,7 @@ class DatabaseSeeder extends Seeder
             ['group' => 'kra', 'key' => 'kra_taxpayer_name', 'value' => 'Jeota Media Ltd', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_etims_branch_id', 'value' => '00', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_etims_device_id', 'value' => 'JMOS-ETIMS-01', 'is_secret' => false],
-            ['group' => 'kra', 'key' => 'kra_vat_rate', 'value' => '16', 'is_secret' => false],
+            ['group' => 'kra', 'key' => 'kra_vat_rate', 'value' => '0', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_wht_rate', 'value' => '5', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_status', 'value' => 'connected', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_last_synced_at', 'value' => now()->toIso8601String(), 'is_secret' => false],

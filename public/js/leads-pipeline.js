@@ -195,10 +195,10 @@
   };
 
   /**
-   * 4. Lead Filters & Search Handlers
+   * 4. Lead Filters, Search & Selection Handlers
    */
   window.onLeadSearchChange = function (val) {
-    CRM_STATE.filter.search = val.trim().toLowerCase();
+    CRM_STATE.filter.search = (val || '').trim().toLowerCase();
     window.renderLeadsTable();
   };
 
@@ -210,10 +210,10 @@
     CRM_STATE.filter.ratings = ratingChks;
 
     const srcSel = document.getElementById('leadSourceFilter');
-    CRM_STATE.filter.source = srcSel ? srcSel.value : '';
+    CRM_STATE.filter.source = srcSel ? srcSel.value.trim() : '';
 
     const ownerSel = document.getElementById('leadOwnerFilter');
-    CRM_STATE.filter.owner = ownerSel ? ownerSel.value : '';
+    CRM_STATE.filter.owner = ownerSel ? ownerSel.value.trim() : '';
 
     window.renderLeadsTable();
   };
@@ -244,6 +244,32 @@
     window.renderLeadsTable();
   };
 
+  window.toggleSelectAllLeads = function (checked) {
+    const chks = document.querySelectorAll('.lead-row-chk');
+    chks.forEach(chk => {
+      chk.checked = checked;
+      const id = parseInt(chk.value, 10);
+      if (checked) {
+        CRM_STATE.selectedLeadIds.add(id);
+      } else {
+        CRM_STATE.selectedLeadIds.delete(id);
+      }
+    });
+  };
+
+  window.onLeadRowCheckChange = function (id, checked) {
+    const leadId = parseInt(id, 10);
+    if (checked) {
+      CRM_STATE.selectedLeadIds.add(leadId);
+    } else {
+      CRM_STATE.selectedLeadIds.delete(leadId);
+    }
+    const allChks = document.querySelectorAll('.lead-row-chk');
+    const allSelected = allChks.length > 0 && Array.from(allChks).every(c => c.checked);
+    const selectAll = document.getElementById('selectAllLeadsChk');
+    if (selectAll) selectAll.checked = allSelected;
+  };
+
   /**
    * 5. Filter & Render Leads Table
    */
@@ -255,27 +281,35 @@
     let filtered = [...CRM_STATE.leads];
 
     // Status filter
-    if (CRM_STATE.filter.status === 'active') {
-      filtered = filtered.filter(l => !l.is_converted && l.lead_status !== 'Junk/Lost');
-    } else if (CRM_STATE.filter.status === 'converted') {
+    const status = (CRM_STATE.filter.status || 'all').toLowerCase();
+    if (status === 'active') {
+      filtered = filtered.filter(l => !l.is_converted && (l.lead_status || '').toLowerCase() !== 'junk/lost');
+    } else if (status === 'converted') {
       filtered = filtered.filter(l => l.is_converted);
-    } else if (CRM_STATE.filter.status !== 'all') {
-      filtered = filtered.filter(l => l.lead_status === CRM_STATE.filter.status);
+    } else if (status === 'new') {
+      filtered = filtered.filter(l => !l.is_converted && (l.lead_status || '').toLowerCase() === 'new');
+    } else if (status === 'qualified') {
+      filtered = filtered.filter(l => (l.lead_status || '').toLowerCase() === 'qualified');
+    } else if (status !== 'all') {
+      filtered = filtered.filter(l => (l.lead_status || '').toLowerCase() === status);
     }
 
-    // Rating filter
+    // Rating filter (Hot, Warm, Cold)
     if (CRM_STATE.filter.ratings && CRM_STATE.filter.ratings.length > 0) {
-      filtered = filtered.filter(l => CRM_STATE.filter.ratings.includes(l.rating));
+      const activeRatings = CRM_STATE.filter.ratings.map(r => r.toLowerCase());
+      filtered = filtered.filter(l => activeRatings.includes((l.rating || '').toLowerCase()));
     }
 
     // Source filter
     if (CRM_STATE.filter.source) {
-      filtered = filtered.filter(l => l.lead_source === CRM_STATE.filter.source);
+      const src = CRM_STATE.filter.source.toLowerCase();
+      filtered = filtered.filter(l => (l.lead_source || '').toLowerCase().includes(src) || src.includes((l.lead_source || '').toLowerCase()));
     }
 
     // Owner filter
     if (CRM_STATE.filter.owner) {
-      filtered = filtered.filter(l => l.lead_owner === CRM_STATE.filter.owner);
+      const own = CRM_STATE.filter.owner.toLowerCase();
+      filtered = filtered.filter(l => (l.lead_owner || '').toLowerCase().includes(own) || own.includes((l.lead_owner || '').toLowerCase()));
     }
 
     // Search filter
@@ -286,7 +320,10 @@
         (l.company && l.company.toLowerCase().includes(q)) ||
         (l.email && l.email.toLowerCase().includes(q)) ||
         (l.phone && l.phone.toLowerCase().includes(q)) ||
-        (l.title && l.title.toLowerCase().includes(q))
+        (l.title && l.title.toLowerCase().includes(q)) ||
+        (l.notes && l.notes.toLowerCase().includes(q)) ||
+        (l.city && l.city.toLowerCase().includes(q)) ||
+        (l.industry && l.industry.toLowerCase().includes(q))
       );
     }
 
@@ -921,18 +958,41 @@
   };
 
   /**
-   * 11. Render Contacts, Accounts, Calls & Meetings Tables
+   * 11. Render & Filter Contacts, Accounts, Calls & Meetings Tables
    */
+  window.filterContacts = function (query) {
+    window._contactsQuery = (query || '').trim().toLowerCase();
+    window.renderContactsTable();
+  };
+
   window.renderContactsTable = function () {
     const tbody = document.getElementById('crmContactsTableBody');
+    const countPill = document.getElementById('crmContactsCountPill');
     if (!tbody) return;
 
-    if (CRM_STATE.contacts.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--muted)">No contacts recorded yet. Convert a lead to automatically create one!</td></tr>`;
+    let list = [...CRM_STATE.contacts];
+    const q = window._contactsQuery || '';
+    if (q) {
+      list = list.filter(c =>
+        (c.contact_name && c.contact_name.toLowerCase().includes(q)) ||
+        (c.company_name && c.company_name.toLowerCase().includes(q)) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.phone && c.phone.toLowerCase().includes(q)) ||
+        (c.title && c.title.toLowerCase().includes(q)) ||
+        (c.notes && c.notes.toLowerCase().includes(q))
+      );
+    }
+
+    if (countPill) {
+      countPill.textContent = `${list.length} of ${CRM_STATE.contacts.length} Records`;
+    }
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--muted)">${q ? 'No contacts match your search query.' : 'No contacts recorded yet. Add a contact or convert a lead.'}</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = CRM_STATE.contacts.map(c => `
+    tbody.innerHTML = list.map(c => `
       <tr>
         <td>
           <div style="font-weight:700;color:var(--ink);font-size:13px">${esc(c.contact_name)}</div>
@@ -950,23 +1010,45 @@
           ${c.phone ? `<span class="mono">${esc(c.phone)}</span>` : '—'}
         </td>
         <td>
-          <span style="font-size:12px;color:var(--muted)">${esc(c.notes || 'Converted Contact')}</span>
+          <span style="font-size:12px;color:var(--muted)">${esc(c.notes || 'Contact')}</span>
         </td>
         <td style="text-align:right">
-          <button type="button" class="linkbtn" onclick="window.openLogCallModal()" style="font-size:11.5px">Call</button>
+          <button type="button" class="linkbtn" onclick="window.openLogCallModal(${c.lead_id || 'null'})" style="font-size:11.5px">Call</button>
         </td>
       </tr>
     `).join('');
   };
 
+  window.filterAccounts = function (query) {
+    window._accountsQuery = (query || '').trim().toLowerCase();
+    window.renderAccountsTable();
+  };
+
   window.renderAccountsTable = function () {
     const tbody = document.getElementById('crmAccountsTableBody');
+    const countPill = document.getElementById('crmAccountsCountPill');
     if (!tbody) return;
 
-    const clients = (window.JMOS_STATE && JMOS_STATE.clients) ? JMOS_STATE.clients : [];
+    let clients = (window.JMOS_STATE && JMOS_STATE.clients) ? [...JMOS_STATE.clients] : [];
+    const q = window._accountsQuery || '';
+    if (q) {
+      clients = clients.filter(cl =>
+        (cl.client_name && cl.client_name.toLowerCase().includes(q)) ||
+        (cl.client_type && cl.client_type.toLowerCase().includes(q)) ||
+        (cl.contact_person && cl.contact_person.toLowerCase().includes(q)) ||
+        (cl.owner && cl.owner.toLowerCase().includes(q)) ||
+        (cl.email && cl.email.toLowerCase().includes(q)) ||
+        (cl.phone && cl.phone.toLowerCase().includes(q))
+      );
+    }
+
+    const totalClients = (window.JMOS_STATE && JMOS_STATE.clients) ? JMOS_STATE.clients.length : 0;
+    if (countPill) {
+      countPill.textContent = `${clients.length} of ${totalClients} Accounts`;
+    }
 
     if (clients.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--muted)">No corporate accounts found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--muted)">${q ? 'No accounts match your search.' : 'No corporate accounts found.'}</td></tr>`;
       return;
     }
 
@@ -1000,16 +1082,40 @@
     `).join('');
   };
 
+  window.filterCalls = function (query) {
+    window._callsQuery = (query || '').trim().toLowerCase();
+    window.renderCallsTable();
+  };
+
   window.renderCallsTable = function () {
     const tbody = document.getElementById('crmCallsTableBody');
+    const countPill = document.getElementById('crmCallsCountPill');
     if (!tbody) return;
 
-    if (CRM_STATE.calls.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--muted)">No phone calls logged yet.</td></tr>`;
+    let calls = [...CRM_STATE.calls];
+    const q = window._callsQuery || '';
+    if (q) {
+      calls = calls.filter(c =>
+        (c.call_type && c.call_type.toLowerCase().includes(q)) ||
+        (c.purpose && c.purpose.toLowerCase().includes(q)) ||
+        (c.outcome && c.outcome.toLowerCase().includes(q)) ||
+        (c.logged_by && c.logged_by.toLowerCase().includes(q)) ||
+        (c.notes && c.notes.toLowerCase().includes(q)) ||
+        (c.lead && c.lead.lead_name && c.lead.lead_name.toLowerCase().includes(q)) ||
+        (c.client && c.client.client_name && c.client.client_name.toLowerCase().includes(q))
+      );
+    }
+
+    if (countPill) {
+      countPill.textContent = `${calls.length} of ${CRM_STATE.calls.length} Calls`;
+    }
+
+    if (calls.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--muted)">${q ? 'No call logs match your query.' : 'No phone calls logged yet.'}</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = CRM_STATE.calls.map(c => `
+    tbody.innerHTML = calls.map(c => `
       <tr>
         <td>
           <div style="font-size:11.5px;color:var(--ink)">${c.call_time ? new Date(c.call_time).toLocaleString() : 'Recent'}</div>
@@ -1041,16 +1147,37 @@
     `).join('');
   };
 
+  window.filterMeetings = function (query) {
+    window._meetingsQuery = (query || '').trim().toLowerCase();
+    window.renderMeetingsTable();
+  };
+
   window.renderMeetingsTable = function () {
     const tbody = document.getElementById('crmMeetingsTableBody');
+    const countPill = document.getElementById('crmMeetingsCountPill');
     if (!tbody) return;
 
-    if (CRM_STATE.meetings.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--muted)">No discovery meetings scheduled yet.</td></tr>`;
+    let meetings = [...CRM_STATE.meetings];
+    const q = window._meetingsQuery || '';
+    if (q) {
+      meetings = meetings.filter(m =>
+        (m.title && m.title.toLowerCase().includes(q)) ||
+        (m.attendees && m.attendees.toLowerCase().includes(q)) ||
+        (m.location && m.location.toLowerCase().includes(q)) ||
+        (m.description && m.description.toLowerCase().includes(q))
+      );
+    }
+
+    if (countPill) {
+      countPill.textContent = `${meetings.length} of ${CRM_STATE.meetings.length} Meetings`;
+    }
+
+    if (meetings.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="padding:30px;text-align:center;color:var(--muted)">${q ? 'No meetings match your query.' : 'No discovery meetings scheduled yet.'}</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = CRM_STATE.meetings.map(m => `
+    tbody.innerHTML = meetings.map(m => `
       <tr>
         <td>
           <div style="font-weight:700;color:var(--ink);font-size:13px">${esc(m.title)}</div>

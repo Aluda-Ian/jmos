@@ -320,6 +320,10 @@ window.clearChatAttachment = function() {
     URL.revokeObjectURL(CHAT_STATE.stagedAttachment.previewUrl);
   }
   CHAT_STATE.stagedAttachment = null;
+  const fileInput = document.getElementById('chatFileInput');
+  if (fileInput) fileInput.value = '';
+  const camInput = document.getElementById('chatCameraInput');
+  if (camInput) camInput.value = '';
   renderStagedAttachment();
 };
 
@@ -385,18 +389,9 @@ window.sendActiveChatMessage = async function() {
       const formData = new FormData();
       formData.append('file', staged.file);
 
-      const uploadRes = await fetch('/api/chat/upload', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          ...(JMOS_STATE.apiToken ? { 'Authorization': `Bearer ${JMOS_STATE.apiToken}` } : {})
-        },
-        body: formData
-      });
-
-      const uploadJson = await uploadRes.json();
-      if (!uploadRes.ok || uploadJson.status !== 'success') {
-        throw new Error(uploadJson.message || 'File upload failed');
+      const uploadJson = await JMOS_API.upload('/chat/upload', formData);
+      if (!uploadJson || uploadJson.status !== 'success') {
+        throw new Error((uploadJson && uploadJson.message) || 'File upload failed');
       }
 
       attachmentName = uploadJson.attachment_name;

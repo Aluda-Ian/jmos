@@ -192,14 +192,36 @@
   };
 
   // Submit quote create / update
-  window.submitQuoteForm = async function () {
+  // Submit quote create / update
+  window.submitQuoteForm = async function (dispatchMode = null) {
     const quoteId = document.getElementById('quoteFormId')?.value;
     const recipient = document.getElementById('quoteRecipient')?.value.trim();
     const title = document.getElementById('quoteTitle')?.value.trim();
+    let email = document.getElementById('quoteEmail')?.value.trim();
+    let phone = document.getElementById('quotePhone')?.value.trim();
 
     if (!recipient || !title) {
-      alert('Please fill in the Recipient and Quote Title.');
+      if (window.showToast) window.showToast('Validation Error', 'Please fill in the Recipient and Quote Title', true);
       return;
+    }
+
+    if (dispatchMode === 'email' && (!email || !email.includes('@'))) {
+      const promptEmail = prompt('Enter recipient email address to send quotation:', email || '');
+      if (promptEmail && promptEmail.includes('@')) {
+        email = promptEmail.trim();
+        if (document.getElementById('quoteEmail')) document.getElementById('quoteEmail').value = email;
+      } else {
+        if (window.showToast) window.showToast('Email Required', 'Valid recipient email address is required to dispatch via Email', true);
+        return;
+      }
+    }
+
+    if (dispatchMode === 'whatsapp' && !phone) {
+      const promptPhone = prompt(`Enter ${recipient}'s WhatsApp phone number:`, '+254');
+      if (promptPhone) {
+        phone = promptPhone.trim();
+        if (document.getElementById('quotePhone')) document.getElementById('quotePhone').value = phone;
+      }
     }
 
     const rows = document.querySelectorAll('.quote-line-row');
@@ -223,7 +245,7 @@
     });
 
     if (items.length === 0) {
-      alert('Please add at least one line item with a rate.');
+      if (window.showToast) window.showToast('Line Items Required', 'Please add at least one line item with a rate', true);
       return;
     }
 
@@ -233,8 +255,8 @@
     const payload = {
       title: title,
       recipient_name: recipient,
-      recipient_email: document.getElementById('quoteEmail')?.value.trim() || null,
-      recipient_phone: document.getElementById('quotePhone')?.value.trim() || null,
+      recipient_email: email || null,
+      recipient_phone: phone || null,
       lead_id: document.getElementById('quoteLeadId')?.value || null,
       client_id: document.getElementById('quoteClientId')?.value || null,
       subtotal: subtotal,
@@ -271,21 +293,54 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to save quotation');
 
-      if (window.showToast) {
+      const savedQuote = data.data || data.quote;
+      window.closeModal('quoteModal');
+
+      // Dispatch directly if requested
+      if (dispatchMode === 'email' && email && savedQuote?.id) {
+        try {
+          await fetch(`/api/quotes/${savedQuote.id}/send-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            body: JSON.stringify({ email: email })
+          });
+          if (window.showToast) {
+            window.showToast('Quote Generated & Emailed', `Quotation dispatched to ${email} successfully! 📧`);
+          }
+        } catch (_) {}
+      } else if (dispatchMode === 'whatsapp' && savedQuote?.id) {
+        try {
+          const waRes = await fetch(`/api/quotes/${savedQuote.id}/whatsapp`, {
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : ''
+            }
+          });
+          const waData = await waRes.json();
+          if (waData.whatsapp_url) {
+            window.open(waData.whatsapp_url, '_blank');
+          }
+          if (window.showToast) {
+            window.showToast('Quote Saved & WhatsApp Opened', `Quotation ready for WhatsApp delivery! 💬`);
+          }
+        } catch (_) {}
+      } else if (window.showToast) {
         window.showToast('Quotation generated successfully', 'success');
       }
-
-      window.closeModal('quoteModal');
 
       if (typeof window.refreshFinanceData === 'function') window.refreshFinanceData();
       if (typeof window.refreshCrmData === 'function') window.refreshCrmData();
       window.JMOS_QUOTES.loadQuotes();
     } catch (err) {
-      alert('Error saving quote: ' + err.message);
+      if (window.showToast) window.showToast('Save Error', err.message, true);
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save & Generate Quote';
+        saveBtn.textContent = 'Save & Send to Email';
       }
     }
   };
@@ -317,26 +372,28 @@
       if (itemsWrap) {
         const items = Array.isArray(q.items) ? q.items : [];
         itemsWrap.innerHTML = `
-          <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:12px">
-            <thead>
-              <tr style="background:var(--panel-2);color:var(--muted);text-align:left">
-                <th style="padding:8px 10px">Deliverable</th>
-                <th style="padding:8px 10px;text-align:center">Qty</th>
-                <th style="padding:8px 10px;text-align:right">Rate (KES)</th>
-                <th style="padding:8px 10px;text-align:right">Total (KES)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${items.map(it => `
-                <tr style="border-bottom:1px solid var(--line)">
-                  <td style="padding:8px 10px;font-weight:600;color:var(--ink)">${it.description}</td>
-                  <td style="padding:8px 10px;text-align:center">${it.quantity}</td>
-                  <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace">${Number(it.rate || it.unit_price).toLocaleString()}</td>
-                  <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700">${Number(it.amount || (it.quantity * (it.rate || it.unit_price))).toLocaleString()}</td>
+          <div class="tablewrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
+            <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:12px;min-width:460px">
+              <thead>
+                <tr style="background:var(--panel-2);color:var(--muted);text-align:left">
+                  <th style="padding:8px 10px">Deliverable</th>
+                  <th style="padding:8px 10px;text-align:center">Qty</th>
+                  <th style="padding:8px 10px;text-align:right">Rate (KES)</th>
+                  <th style="padding:8px 10px;text-align:right">Total (KES)</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${items.map(it => `
+                  <tr style="border-bottom:1px solid var(--line)">
+                    <td style="padding:8px 10px;font-weight:600;color:var(--ink)">${it.description}</td>
+                    <td style="padding:8px 10px;text-align:center">${it.quantity}</td>
+                    <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace">${Number(it.rate || it.unit_price).toLocaleString()}</td>
+                    <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700">${Number(it.amount || (it.quantity * (it.rate || it.unit_price))).toLocaleString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         `;
       }
 
@@ -361,7 +418,7 @@
 
       window.openModal('quoteDetailModal');
     } catch (err) {
-      alert('Error previewing quote: ' + err.message);
+      if (window.showToast) window.showToast('Preview Error', err.message, true);
     }
   };
 
@@ -370,7 +427,30 @@
     const q = window.JMOS_QUOTES.activeQuote;
     if (!q) return;
 
-    if (!confirm(`Send official quotation "${q.quote_number}" directly to ${q.recipient_email || q.recipient_name}?`)) return;
+    let targetEmail = q.recipient_email;
+    if (!targetEmail || !targetEmail.includes('@')) {
+      const promptEmail = prompt(`Enter email address for ${q.recipient_name}:`, '');
+      if (promptEmail && promptEmail.includes('@')) {
+        targetEmail = promptEmail.trim();
+      } else {
+        if (window.showToast) window.showToast('Email Required', 'A valid email address is required to dispatch quotation', true);
+        return;
+      }
+    }
+
+    const confirmed = await window.showConfirmDialog({
+      title: 'Dispatch Quotation Email?',
+      subtitle: `Quotation #${q.quote_number}`,
+      type: 'info',
+      confirmText: 'Send Quotation Email',
+      message: `Send official commercial quotation <b>${escHtml(q.quote_number)}</b> directly to <b>${escHtml(targetEmail)}</b>?`,
+      bullets: [
+        `Recipient: ${q.recipient_name || 'Client'}`,
+        `Quotation Value: KES ${parseFloat(q.total_amount || 0).toLocaleString()}`,
+        'Official branded HTML quotation email with line-item breakdown will be delivered.'
+      ]
+    });
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem('jmos_api_token');
@@ -381,19 +461,18 @@
           'Accept': 'application/json',
           'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
           'Authorization': token ? `Bearer ${token}` : ''
-        }
+        },
+        body: JSON.stringify({ email: targetEmail })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to dispatch email');
 
       if (window.showToast) {
-        window.showToast('Quotation sent via email', 'success');
-      } else {
-        alert(data.message || 'Quotation sent via email');
+        window.showToast('Quotation Sent via Email', `Quotation dispatched to ${targetEmail} 📧`);
       }
     } catch (err) {
-      alert('Error sending email: ' + err.message);
+      if (window.showToast) window.showToast('Email Error', err.message, true);
     }
   };
 
@@ -416,11 +495,14 @@
 
       if (data.whatsapp_url) {
         window.open(data.whatsapp_url, '_blank');
+        if (window.showToast) {
+          window.showToast('WhatsApp Opened', 'Quotation summary prepared for WhatsApp! 💬');
+        }
       } else {
-        alert('Could not generate WhatsApp dispatch URL. Please ensure phone number is valid.');
+        if (window.showToast) window.showToast('WhatsApp Error', 'Could not generate WhatsApp dispatch URL. Check phone number.', true);
       }
     } catch (err) {
-      alert('WhatsApp error: ' + err.message);
+      if (window.showToast) window.showToast('WhatsApp Error', err.message, true);
     }
   };
 
@@ -465,7 +547,7 @@
     const invoiceType = document.getElementById('upgInvoiceType')?.value || 'Deposit 60%';
 
     if (amount <= 0) {
-      alert('Please enter a valid invoice amount.');
+      if (window.showToast) window.showToast('Validation Error', 'Please enter a valid invoice amount', true);
       return;
     }
 
@@ -496,7 +578,7 @@
       if (!res.ok) throw new Error(data.message || 'Failed to upgrade quote to invoice');
 
       if (window.showToast) {
-        window.showToast('Quote upgraded to invoice successfully!', 'success');
+        window.showToast('Invoice Created', 'Quote upgraded to live invoice successfully! 🧾');
       }
 
       window.closeModal('upgradeQuoteModal');
@@ -507,7 +589,7 @@
       if (typeof window.ensureInvoices === 'function') window.ensureInvoices();
       window.JMOS_QUOTES.loadQuotes();
     } catch (err) {
-      alert('Error upgrading to invoice: ' + err.message);
+      if (window.showToast) window.showToast('Upgrade Error', err.message, true);
     } finally {
       if (upgBtn) {
         upgBtn.disabled = false;
@@ -520,7 +602,18 @@
     const q = window.JMOS_QUOTES.activeQuote;
     if (!q) return;
 
-    if (!confirm(`Delete quotation "${q.quote_number}"? This action cannot be undone.`)) return;
+    const confirmed = await window.showConfirmDialog({
+      title: 'Delete Quotation?',
+      subtitle: `Quotation #${q.quote_number}`,
+      type: 'danger',
+      confirmText: 'Delete Quotation',
+      message: `Permanently delete quotation <b>${escHtml(q.quote_number)}</b> (${escHtml(q.title || 'Quotation')})?`,
+      bullets: [
+        'This record will be permanently purged from the database.',
+        'This action cannot be undone.'
+      ]
+    });
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem('jmos_api_token');
@@ -538,13 +631,13 @@
         throw new Error(data.message || 'Failed to delete quotation');
       }
 
-      if (window.showToast) window.showToast('Quotation deleted', 'success');
+      if (window.showToast) window.showToast('Quotation Deleted', 'Quotation record removed');
       window.closeModal('quoteDetailModal');
 
       if (typeof window.refreshFinanceData === 'function') window.refreshFinanceData();
       window.JMOS_QUOTES.loadQuotes();
     } catch (err) {
-      alert('Delete error: ' + err.message);
+      if (window.showToast) window.showToast('Delete Error', err.message, true);
     }
   };
 

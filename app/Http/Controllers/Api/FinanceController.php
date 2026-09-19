@@ -15,37 +15,51 @@ class FinanceController extends Controller
         $settingBf = FinanceSetting::where('key', 'brought_forward')->first();
         $broughtForward = $settingBf ? (float) $settingBf->numeric_value : 0.00;
 
-        $invoices = Invoice::all();
-        $expenses = Expense::all();
-
-        $moneyIn = $invoices->where('status', 'Paid')->sum('amount');
-        $moneyOut = $expenses->sum('amount');
-        $unpaid = $invoices->where('status', '!=', 'Paid')->sum('amount');
-        $overdueCount = $invoices->where('status', 'Overdue')->count();
+        $moneyIn = (float) Invoice::where('status', 'Paid')->sum('amount');
+        $moneyOut = (float) Expense::sum('amount');
+        $unpaid = (float) Invoice::where('status', '!=', 'Paid')->sum('amount');
+        $overdueCount = Invoice::where('status', 'Overdue')->count();
 
         $balance = $broughtForward + $moneyIn - $moneyOut;
         $profit = $moneyIn - $moneyOut;
 
         // Build unified ledger
+        $paidInvoices = Invoice::where('status', 'Paid')->latest('created_at')->get();
+        $allExpenses = Expense::latest('created_at')->get();
+
         $ledger = [];
-        foreach ($invoices->where('status', 'Paid') as $inv) {
+        foreach ($paidInvoices as $inv) {
             $ledger[] = [
                 'item' => "{$inv->invoice_no} — {$inv->client}",
                 'type' => 'Invoice paid',
                 'in' => (float) $inv->amount,
                 'out' => null,
                 'created_at' => $inv->created_at ? $inv->created_at->toIso8601String() : null,
+                'timestamp' => $inv->created_at ? $inv->created_at->timestamp : 0,
             ];
         }
-        foreach ($expenses as $exp) {
+        foreach ($allExpenses as $exp) {
             $ledger[] = [
                 'item' => $exp->name,
                 'type' => $exp->category,
                 'in' => null,
                 'out' => (float) $exp->amount,
                 'created_at' => $exp->created_at ? $exp->created_at->toIso8601String() : null,
+                'timestamp' => $exp->created_at ? $exp->created_at->timestamp : 0,
             ];
         }
+
+        // Sort unified ledger chronologically (newest first)
+        usort($ledger, function ($a, $b) {
+            return $b['timestamp'] <=> $a['timestamp'];
+        });
+
+        // Strip internal sort key
+        $ledger = array_map(function ($item) {
+            unset($item['timestamp']);
+
+            return $item;
+        }, $ledger);
 
         return response()->json([
             'status' => 'success',
@@ -56,7 +70,7 @@ class FinanceController extends Controller
             'profit' => (float) $profit,
             'unpaid_total' => (float) $unpaid,
             'overdue_count' => $overdueCount,
-            'ledger' => $ledger,
+            'ledger' => array_values($ledger),
         ]);
     }
 }

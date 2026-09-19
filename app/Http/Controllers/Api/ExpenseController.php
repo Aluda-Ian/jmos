@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Expense;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -58,6 +59,8 @@ class ExpenseController extends Controller
 
         $expense = Expense::create($validated);
 
+        AuditLog::record('CREATE', "Logged expense '{$expense->name}' (KES ".number_format((float) $expense->amount, 2).") in category '{$expense->category}'", 'Expense', $expense->id, $validated, $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Expense logged successfully.',
@@ -101,6 +104,8 @@ class ExpenseController extends Controller
 
         $expense->update($validated);
 
+        AuditLog::record('UPDATE', "Updated expense '{$expense->name}'", 'Expense', $expense->id, $validated, $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Expense updated successfully.',
@@ -118,6 +123,7 @@ class ExpenseController extends Controller
         $originalName = $file->getClientOriginalName();
         $extension = strtolower($file->getClientOriginalExtension());
         $mime = $file->getMimeType();
+        $fileSize = $file->getSize() ?: 0;
 
         $isImage = str_starts_with($mime, 'image/') || in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
         $uploadDir = public_path('uploads/expenses');
@@ -136,13 +142,17 @@ class ExpenseController extends Controller
             'receipt_name' => $originalName,
             'receipt_url' => $url,
             'is_image' => $isImage,
-            'size' => $file->getSize() ?: 0,
+            'size' => $fileSize,
         ]);
     }
 
-    public function destroy(Expense $expense): JsonResponse
+    public function destroy(Request $request, Expense $expense): JsonResponse
     {
+        $name = $expense->name;
+        $id = $expense->id;
         $expense->delete();
+
+        AuditLog::record('DELETE', "Removed expense record '{$name}'", 'Expense', $id, [], $request);
 
         return response()->json([
             'status' => 'success',

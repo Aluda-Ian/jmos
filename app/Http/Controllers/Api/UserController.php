@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,7 +14,17 @@ class UserController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(User::all());
+        $users = User::with('roleModel')->orderBy('name')->get()->map(function ($u) {
+            $data = $u->toArray();
+            $data['permissions'] = $u->allPermissions();
+
+            return $data;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $users,
+        ]);
     }
 
     public function show(User $user): JsonResponse
@@ -30,7 +42,9 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'title' => 'nullable|string|max:255',
             'department' => 'nullable|string|max:255',
-            'role' => 'required|in:owner,finance,sales,team',
+            'role' => 'required|string|max:100',
+            'role_id' => 'nullable|exists:roles,id',
+            'custom_permissions' => 'nullable|array',
             'type' => 'required|string|max:100',
             'pay' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:50',
@@ -63,13 +77,22 @@ class UserController extends Controller
         $words = preg_split('/\s+/', trim($validated['name']));
         $initials = strtoupper(substr($words[0] ?? '', 0, 1).substr($words[1] ?? '', 0, 1));
 
+        $roleSlug = $validated['role'];
+        $roleId = $validated['role_id'] ?? null;
+        if (! $roleId) {
+            $matchedRole = Role::where('slug', $roleSlug)->first();
+            $roleId = $matchedRole?->id;
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => strtolower($validated['email']),
             'password' => Hash::make($validated['password'] ?? 'jeota2024'),
             'title' => $validated['title'] ?? 'Team',
             'department' => $validated['department'] ?? 'Production',
-            'role' => $validated['role'],
+            'role' => $roleSlug,
+            'role_id' => $roleId,
+            'custom_permissions' => $validated['custom_permissions'] ?? null,
             'type' => $validated['type'],
             'pay' => $validated['pay'] ?? '—',
             'phone' => $validated['phone'] ?? null,
@@ -78,10 +101,15 @@ class UserController extends Controller
             'initials' => $validated['initials'] ?? $initials,
         ]);
 
+        AuditLog::record('CREATE', "Added team member '{$user->name}' ({$user->role})", 'User', $user->id, ['role' => $user->role, 'department' => $user->department], $request);
+
+        $userData = $user->toArray();
+        $userData['permissions'] = $user->allPermissions();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Person added to team.',
-            'data' => $user,
+            'data' => $userData,
         ], 201);
     }
 
@@ -92,7 +120,9 @@ class UserController extends Controller
             'email' => 'sometimes|required|email|unique:users,email,'.$user->id,
             'title' => 'nullable|string|max:255',
             'department' => 'nullable|string|max:255',
-            'role' => 'sometimes|required|in:owner,finance,sales,team',
+            'role' => 'sometimes|required|string|max:100',
+            'role_id' => 'nullable|exists:roles,id',
+            'custom_permissions' => 'nullable|array',
             'type' => 'sometimes|required|string|max:100',
             'pay' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:50',
@@ -110,6 +140,13 @@ class UserController extends Controller
                     'status' => 'error',
                     'message' => 'Cannot demote the last owner account. Promote another owner first.',
                 ], 422);
+            }
+        }
+
+        if (isset($validated['role']) && empty($validated['role_id'])) {
+            $matchedRole = Role::where('slug', $validated['role'])->first();
+            if ($matchedRole) {
+                $validated['role_id'] = $matchedRole->id;
             }
         }
 
@@ -145,6 +182,8 @@ class UserController extends Controller
 
         $user->update($validated);
 
+        AuditLog::record('UPDATE', "Updated team member '{$user->name}'", 'User', $user->id, $request->except(['password', 'avatar']), $request);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Team member updated successfully.',
@@ -162,7 +201,11 @@ class UserController extends Controller
             ], 422);
         }
 
+        $name = $user->name;
+        $id = $user->id;
         $user->delete();
+
+        AuditLog::record('DELETE', "Removed team member '{$name}'", 'User', $id, [], $request);
 
         return response()->json([
             'status' => 'success',

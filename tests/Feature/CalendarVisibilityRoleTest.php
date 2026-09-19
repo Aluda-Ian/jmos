@@ -35,7 +35,7 @@ class CalendarVisibilityRoleTest extends TestCase
         ]);
 
         $owner = User::where('role', 'owner')->first();
-        $finance = User::where('role', 'finance')->first();
+        $finance = User::where('role', 'finance')->first() ?? User::factory()->create(['role' => 'finance', 'name' => 'Finance Lead', 'email' => 'finance-test@jeotamedia.co.ke']);
         $manager = User::where('role', 'manager')->first(); // Ian Aluda
         $team = User::where('role', 'team')->first(); // Stephen Otieno
 

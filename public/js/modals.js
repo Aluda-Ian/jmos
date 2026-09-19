@@ -344,6 +344,29 @@ window.openModal = function(id) {
     if (nsStages) nsStages.value = 'brief, concept, pre-pro, shoot, edit, review, delivery';
   }
 
+  // Calculate dynamic z-index for stacking overlays (ensures action & danger modals always appear on top)
+  const openModals = Array.from(document.querySelectorAll('.modal.on, .cascade.on')).filter(el => el !== m);
+  let topZ = 99999;
+  openModals.forEach(om => {
+    const z = parseInt(window.getComputedStyle(om).zIndex, 10);
+    if (!isNaN(z) && z > topZ) topZ = z;
+  });
+
+  const isActionOrDanger = m.id === 'confirmModal' || 
+                           m.classList.contains('confirm-modal') || 
+                           m.classList.contains('danger-modal') || 
+                           m.classList.contains('action-modal') ||
+                           m.classList.contains('secondary-modal') ||
+                           ['convertLeadModal', 'upgradeQuoteModal', 'logLeadCallModal', 'scheduleLeadMeetingModal'].includes(m.id);
+
+  if (openModals.length > 0) {
+    m.style.zIndex = isActionOrDanger ? String(Math.max(topZ, 1000000) + 10) : String(topZ + 5);
+  } else if (isActionOrDanger) {
+    m.style.zIndex = '1000005';
+  } else {
+    m.style.zIndex = '';
+  }
+
   m.classList.add('on');
   m.style.display = 'flex';
   document.body.style.overflow = 'hidden';
@@ -360,6 +383,7 @@ window.closeModal = function(id) {
   if (m) {
     m.classList.remove('on');
     m.style.display = 'none';
+    m.style.zIndex = '';
     if (m.id === 'invoiceModal') {
       const editId = document.getElementById('editInvoiceId');
       if (editId) editId.value = '';
@@ -1691,28 +1715,104 @@ function initModals() {
 }
 
 // 7. Global Reusable Custom Confirm Dialog (connects to #confirmModal)
-window.showConfirmDialog = function({ title = 'Remove item?', message = 'Are you sure you want to remove this record?', confirmText = 'Remove & delete', isDanger = true } = {}) {
+window.showConfirmDialog = function({
+  title = 'Confirm Action',
+  subtitle = '',
+  message = 'Are you sure you want to proceed?',
+  bullets = [],
+  confirmText = 'Confirm & Proceed',
+  cancelText = 'Cancel',
+  type = 'danger',
+  isDanger = null
+} = {}) {
   return new Promise((resolve) => {
     const modal = document.getElementById('confirmModal');
     const titleEl = document.getElementById('confirmTitle');
+    const subEl = document.getElementById('confirmSubtitle');
     const msgEl = document.getElementById('confirmMsg');
+    const bulletsEl = document.getElementById('confirmBullets');
+    const iconWrap = document.getElementById('confirmIconWrap');
+    const iconSvg = document.getElementById('confirmIconSvg');
     const yesBtn = document.getElementById('confirmYes');
+    const yesText = document.getElementById('confirmYesText') || yesBtn;
+    const cancelBtn = document.getElementById('confirmCancelBtn');
 
     if (!modal || !yesBtn) {
-      // Fallback if modal is absent
       const ok = window.confirm(`${title}\n\n${message}`);
       return resolve(ok);
     }
 
+    // Determine type & style
+    let finalType = type;
+    if (isDanger === true) finalType = 'danger';
+    else if (isDanger === false && type === 'danger') finalType = 'info';
+
+    // Update Title & Subtitle
     if (titleEl) titleEl.textContent = title;
+    if (subEl) {
+      if (subtitle) {
+        subEl.textContent = subtitle;
+        subEl.style.display = 'block';
+      } else {
+        subEl.textContent = finalType === 'danger' ? 'Permanent database action' : 'Please verify before proceeding';
+        subEl.style.display = 'block';
+      }
+    }
+
+    // Update Message
     if (msgEl) msgEl.innerHTML = message;
-    yesBtn.textContent = confirmText;
-    if (isDanger) {
-      yesBtn.style.background = 'var(--red)';
-      yesBtn.style.borderColor = 'var(--red)';
+
+    // Update Bullets
+    if (bulletsEl) {
+      if (Array.isArray(bullets) && bullets.length > 0) {
+        bulletsEl.innerHTML = bullets.map(b => `
+          <div class="confirm-bullet-item">
+            <span class="confirm-bullet-dot" style="${finalType === 'upgrade' ? 'background:var(--red)' : ''}"></span>
+            <span>${escHtml(b)}</span>
+          </div>
+        `).join('');
+        bulletsEl.style.display = 'flex';
+      } else {
+        bulletsEl.innerHTML = '';
+        bulletsEl.style.display = 'none';
+      }
+    }
+
+    // Update Button Labels & Styling
+    if (yesText) yesText.textContent = confirmText;
+    if (cancelBtn) cancelBtn.textContent = cancelText;
+
+    if (iconWrap) {
+      iconWrap.className = `confirm-icon-wrap ${finalType}`;
+    }
+
+    if (iconSvg) {
+      if (finalType === 'upgrade') {
+        iconSvg.innerHTML = `<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4.5c1.47-1.49 4.5-2 4.5-2"></path><path d="M15 9v5s3.03-.55 4.5-2c1.49-1.47 2-4.5 2-4.5"></path>`;
+      } else if (finalType === 'warning') {
+        iconSvg.innerHTML = `<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>`;
+      } else if (finalType === 'success') {
+        iconSvg.innerHTML = `<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>`;
+      } else if (finalType === 'info' || finalType === 'primary') {
+        iconSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>`;
+      } else {
+        // default danger / delete
+        iconSvg.innerHTML = `<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>`;
+      }
+    }
+
+    if (finalType === 'danger' || finalType === 'upgrade') {
+      yesBtn.style.background = 'var(--red, #C52523)';
+      yesBtn.style.borderColor = 'var(--red, #C52523)';
+      yesBtn.style.color = '#ffffff';
+    } else if (finalType === 'success') {
+      yesBtn.style.background = 'var(--green, #1C7A4E)';
+      yesBtn.style.borderColor = 'var(--green, #1C7A4E)';
+      yesBtn.style.color = '#ffffff';
     } else {
-      yesBtn.style.background = 'var(--brand)';
-      yesBtn.style.borderColor = 'var(--brand)';
+      yesBtn.style.background = 'var(--brand, #2B6E8A)';
+      yesBtn.style.borderColor = 'var(--brand, #2B6E8A)';
+      yesBtn.style.color = '#ffffff';
     }
 
     let resolved = false;
@@ -1720,6 +1820,7 @@ window.showConfirmDialog = function({ title = 'Remove item?', message = 'Are you
     const cleanup = () => {
       yesBtn.removeEventListener('click', onYes);
       modal.querySelectorAll('[data-close="confirmModal"]').forEach(b => b.removeEventListener('click', onCancel));
+      document.removeEventListener('keydown', onKeyDown);
     };
 
     const onYes = () => {
@@ -1742,14 +1843,23 @@ window.showConfirmDialog = function({ title = 'Remove item?', message = 'Are you
       resolve(false);
     };
 
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      }
+    };
+
     yesBtn.addEventListener('click', onYes);
     modal.querySelectorAll('[data-close="confirmModal"]').forEach(b => b.addEventListener('click', onCancel));
+    document.addEventListener('keydown', onKeyDown);
 
     modal.style.display = 'flex';
     requestAnimationFrame(() => modal.classList.add('on'));
     document.body.style.overflow = 'hidden';
   });
 };
+
+window.jmosConfirm = window.showConfirmDialog;
 
 // 8. Action Card Triggers for Manage & Delete
 window.triggerCleanupProjects = async function() {

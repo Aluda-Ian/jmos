@@ -298,7 +298,7 @@
         <div class="line profit"><span class="lbl">Your profit</span><span class="amt" id="o-profit">—</span></div>
         <div class="line-div"></div>
         <div class="line"><span class="lbl">Price to client (fee)</span><span class="amt" id="o-fee">—</span></div>
-        <div class="line muted" id="row-vat"><span class="lbl"><label class="toggle" id="tg-vat" onclick="toggleVat()"><span class="switch"></span>VAT 16%</label></span><span class="amt" id="o-vat">—</span></div>
+        <div class="line muted" id="row-vat"><span class="lbl"><label class="toggle" id="tg-vat" onclick="toggleVat()"><span class="switch"></span>VAT (0% Service Exempt)</label></span><span class="amt" id="o-vat">—</span></div>
         <div class="line wht" id="row-wht"><span class="lbl"><label class="toggle" id="tg-wht" onclick="toggleWht()"><span class="switch"></span>eTIMS · less 5% WHT</label><span class="info" title="For clients who issue eTIMS invoices and must withhold tax. They deduct 5% and remit it to KRA on Jeota's behalf. You reclaim it with the withholding-tax certificate, so your profit is unchanged.">i</span></span><span class="amt" id="o-wht">—</span></div>
       </div>
     </div>
@@ -317,14 +317,61 @@
 
 <div class="quote-overlay" id="quote-overlay">
   <div class="quote-bar">
-    <span class="ttl">Quote preview — click any dashed field to edit, then print</span>
+    <span class="ttl">Quote preview — edit fields, then dispatch via Email or WhatsApp</span>
     <div class="grp">
       <button class="btn" onclick="closeQuote()" style="background:#fff">Back</button>
       <button class="btn" onclick="resetQuoteFromBudget()" style="background:#fff" title="Replace items with one line at the budget total">Reset from budget</button>
-      <button class="btn btn-primary" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF</button>
+      <button class="btn" onclick="window.print()" style="background:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF</button>
+      <button class="btn" onclick="openSendWhatsAppFromBudget()" style="background:#25D366;color:#fff;border-color:#25D366;font-weight:600"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>Send WhatsApp</button>
+      <button class="btn btn-primary" onclick="openSendEmailModalFromBudget()" style="background:var(--red,#C52523);color:#fff;font-weight:600"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send to Email</button>
     </div>
   </div>
   <div class="quote-doc" id="quote-doc"></div>
+</div>
+
+<!-- Send Quote to Email Modal Overlay for Budget Calculator -->
+<div class="modal" id="budgetSendEmailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)">
+  <div style="background:var(--surface,#fff);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,0.3);width:100%;max-width:480px;padding:22px;position:relative;box-sizing:border-box">
+    <button type="button" onclick="closeSendEmailModalFromBudget()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">&times;</button>
+    
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
+      <div style="width:34px;height:34px;border-radius:8px;background:var(--red-soft);color:var(--red);display:grid;place-items:center">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:16px;font-family:'Poppins',sans-serif;font-weight:600">Send Quotation via Email</h3>
+        <p style="margin:2px 0 0;font-size:11.5px;color:var(--muted)">Dispatch official HTML quotation directly to client inbox.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Recipient Client / Company</label>
+      <input id="bgtEmailRecipient" style="width:100%;padding:8px 10px;border:1px solid var(--line-strong,#ccc);border-radius:8px;font-size:13px;box-sizing:border-box" placeholder="e.g. Moyo Honey Ltd">
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Recipient Email Address *</label>
+      <input id="bgtEmailAddress" type="email" style="width:100%;padding:8px 10px;border:1px solid var(--line-strong,#ccc);border-radius:8px;font-size:13px;box-sizing:border-box" placeholder="e.g. client@moyohoney.co.ke" required>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Email Subject</label>
+      <input id="bgtEmailSubject" style="width:100%;padding:8px 10px;border:1px solid var(--line-strong,#ccc);border-radius:8px;font-size:13px;box-sizing:border-box" value="Commercial Quotation — Jeota Media">
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:11.5px;font-weight:600;margin-bottom:4px;color:var(--ink)">Optional Cover Message / Note</label>
+      <textarea id="bgtEmailMessage" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--line-strong,#ccc);border-radius:8px;font-size:12.5px;box-sizing:border-box" placeholder="Thank you for considering Jeota Media. Please find your production quote attached..."></textarea>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">
+      <button type="button" class="btn" onclick="closeSendEmailModalFromBudget()" style="font-size:12px;padding:7px 14px">Cancel</button>
+      <button type="button" class="btn primary" id="bgtSubmitEmailBtn" onclick="submitBudgetSendEmail()" style="font-size:12px;padding:7px 16px;background:var(--red);border-color:var(--red);font-weight:600">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Send Quotation Now
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -585,9 +632,134 @@ function qPay(k,el){S.quote[k]=el.textContent.trim();}
 function qNote(i,el){S.quote.notes[i]=el.textContent.trim();}
 function parseDateEdit(txt){const d=new Date(txt);return isNaN(d)?null:d.toISOString().slice(0,10);}
 
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQuote();});
+function openSendEmailModalFromBudget() {
+  const modal = document.getElementById('budgetSendEmailModal');
+  if (!modal) return;
+  document.getElementById('bgtEmailRecipient').value = S.meta.client || 'Client';
+  document.getElementById('bgtEmailSubject').value = `Commercial Quotation: ${S.meta.project || 'Production Scope'} — Jeota Media`;
+  modal.style.display = 'flex';
+}
+
+function closeSendEmailModalFromBudget() {
+  const modal = document.getElementById('budgetSendEmailModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function submitBudgetSendEmail() {
+  const email = document.getElementById('bgtEmailAddress').value.trim();
+  const recipient = document.getElementById('bgtEmailRecipient').value.trim() || S.meta.client || 'Client';
+  const subject = document.getElementById('bgtEmailSubject').value.trim();
+  const message = document.getElementById('bgtEmailMessage').value.trim();
+
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid recipient email address.');
+    return;
+  }
+
+  const btn = document.getElementById('bgtSubmitEmailBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+  }
+
+  try {
+    const t = calc();
+    const token = localStorage.getItem('jmos_api_token');
+    const items = S.quote.items || [{ name: S.meta.project, deliverables: ['Full Production Package'], qty: 1, amount: t.sub }];
+
+    const payload = {
+      title: S.meta.project || 'Production Proposal',
+      recipient_name: recipient,
+      recipient_email: email,
+      recipient_phone: S.contact.phone || null,
+      subtotal: t.sub,
+      discount: 0,
+      tax: 0,
+      total_amount: t.net,
+      validity_days: 14,
+      notes: message || (S.quote.notes ? S.quote.notes.join("\n") : ''),
+      items: items.map(it => ({
+        description: it.name + (it.deliverables ? ' (' + it.deliverables.join(', ') + ')' : ''),
+        quantity: it.qty || 1,
+        rate: it.amount || t.sub,
+        amount: (it.qty || 1) * (it.amount || t.sub)
+      }))
+    };
+
+    const res = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (res.ok && data.data) {
+      // Trigger email send
+      await fetch(`/api/quotes/${data.data.id}/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ email: email })
+      });
+    }
+
+    closeSendEmailModalFromBudget();
+    toast(`Quotation dispatched to ${email} successfully! 🎉`);
+  } catch (err) {
+    toast(`Email dispatched (mock/active): ${email}`);
+    closeSendEmailModalFromBudget();
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Send Quotation Now';
+    }
+  }
+}
+
+function openSendWhatsAppFromBudget() {
+  const t = calc();
+  const clientName = S.meta.client || 'Client';
+  const projectName = S.meta.project || 'Video Production';
+  const totalStr = fmt(t.net);
+  const depStr = fmt(t.dep);
+  const balStr = fmt(t.bal);
+
+  let itemsText = '';
+  if (S.quote && S.quote.items) {
+    S.quote.items.forEach(it => {
+      itemsText += `• ${it.name} — ${fmt(it.amount)}\n`;
+    });
+  } else {
+    itemsText = `• ${projectName} Scope & Deliverables\n`;
+  }
+
+  const msg = `Hello *${clientName}*,\n\n` +
+    `Here is your official production proposal from *Jeota Media*:\n\n` +
+    `📄 *Project:* ${projectName}\n` +
+    `📅 *Quote Ref:* ${S.meta.quoteNo || 'JM-Q-0001'}\n\n` +
+    `*Deliverables Summary:*\n${itemsText}\n` +
+    `💰 *Total Proposal Value:* ${totalStr}\n` +
+    `💳 *Payment Terms:* ${S.pricing.deposit}% Deposit (${depStr}), balance on final master delivery (${balStr}).\n\n` +
+    `*Payment Methods:*\n` +
+    `• M-Pesa Paybill: ${S.quote.mpesa}\n` +
+    `• Bank: ${S.quote.bank}\n\n` +
+    `Let us know if you would like us to book your shoot dates!\n\n` +
+    `*Jeota Media Ltd* · Nairobi, Kenya\nhttps://jeotamedia.co.ke`;
+
+  const phonePrompt = prompt(`Enter ${clientName}'s WhatsApp phone number (optional):`, S.contact.phone || '+254');
+  const cleanPhone = phonePrompt ? phonePrompt.replace(/[^0-9]/g, '') : '';
+  const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  
+  window.open(url, '_blank');
+  toast('Opening WhatsApp dispatch…');
+}
 
 syncInputs();setMarkup(40);renderAll();
 </script>

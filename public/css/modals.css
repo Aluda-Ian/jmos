@@ -4,13 +4,61 @@
 
 /* Standard Modal Overlay & Dialog */
 .modal {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+/* Action, Danger, Confirmation & Cascading Dialogs — Highest Stacking Priority */
+#confirmModal,
+.modal.confirm-modal,
+.modal.danger-modal,
+.modal.action-modal,
+.modal.secondary-modal,
+#convertLeadModal,
+#upgradeQuoteModal,
+#logLeadCallModal,
+#scheduleLeadMeetingModal,
+.cascade {
+  z-index: 1000005 !important;
+}
+
+#confirmModal .mbg,
+.modal.confirm-modal .mbg,
+.modal.danger-modal .mbg,
+.modal.action-modal .mbg,
+.modal.secondary-modal .mbg,
+#convertLeadModal .mbg,
+#upgradeQuoteModal .mbg,
+#logLeadCallModal .mbg,
+#scheduleLeadMeetingModal .mbg,
+.cascade .cbg {
+  z-index: 1000006 !important;
+}
+
+#confirmModal .mbox,
+.modal.confirm-modal .mbox,
+.modal.danger-modal .mbox,
+.modal.action-modal .mbox,
+.modal.secondary-modal .mbox,
+#convertLeadModal .mbox,
+#upgradeQuoteModal .mbox,
+#logLeadCallModal .mbox,
+#scheduleLeadMeetingModal .mbox,
+.cascade .cbox {
+  z-index: 1000007 !important;
 }
 
 .modal.on {
@@ -18,33 +66,81 @@
 }
 
 .mbg {
-  position: absolute;
-  inset: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   background: rgba(28, 22, 20, .65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  z-index: 1 !important;
 }
 
 .mbox {
-  position: relative;
+  position: relative !important;
   background: var(--surface, #ffffff);
   border-radius: 16px;
-  box-shadow: 0 24px 60px -22px rgba(28, 22, 20, .36);
-  width: 60vw;
-  min-width: 580px;
-  max-width: 90vw;
-  padding: 28px;
-  max-height: 90vh;
-  overflow-y: auto;
-  z-index: 2;
+  box-shadow: 0 24px 60px -22px rgba(28, 22, 20, .36), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  width: 100% !important;
+  max-width: 620px !important;
+  min-width: 0 !important;
+  margin: auto !important;
+  padding: 28px !important;
+  max-height: calc(100vh - 40px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
   animation: modalPop .22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (max-width: 768px) {
+.mbox.wide,
+.mbox-wide,
+#clientDetailModal .mbox,
+#leadDetailModal .mbox,
+#dealDetailModal .mbox,
+#projectDetailModal .mbox,
+#quoteDetailModal .mbox,
+#roleModal .mbox {
+  max-width: 780px !important;
+}
+
+@media (max-width: 860px) {
+  .modal {
+    padding: 12px 10px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
   .mbox {
-    width: 95vw;
-    min-width: 0;
-    padding: 20px;
+    width: 100% !important;
+    max-width: calc(100vw - 20px) !important;
+    min-width: 0 !important;
+    margin: auto !important;
+    padding: 20px 16px !important;
+    border-radius: 14px !important;
+    max-height: calc(100vh - 30px) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+  .grid2, .grid3, .grid4, .grid-4, .settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .mfoot {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+  }
+  .mfoot .btn,
+  .mfoot button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .mclose {
+    top: 12px !important;
+    right: 12px !important;
   }
 }
 
@@ -149,10 +245,22 @@
   gap: 12px;
 }
 
-@media (max-width: 600px) {
-  .grid2 {
-    grid-template-columns: 1fr;
-    gap: 0;
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .grid2, .grid3, .grid4 {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
   }
 }
 
@@ -165,15 +273,110 @@
   border-top: 1px solid var(--line, #ECE6E4);
 }
 
+/* ==========================================================================
+   JMOS — Branded Confirmation & Action Modal
+   ========================================================================== */
+.confirm-mbox {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--line, #ece6e4);
+  box-shadow: 0 24px 60px -15px rgba(28, 22, 20, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.confirm-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all .2s ease;
+}
+
+.confirm-icon-wrap.danger {
+  background: rgba(197, 37, 35, 0.12);
+  color: var(--red, #C52523);
+  border: 1px solid rgba(197, 37, 35, 0.25);
+}
+
+.confirm-icon-wrap.upgrade {
+  background: linear-gradient(135deg, rgba(197, 37, 35, 0.15), rgba(235, 94, 40, 0.2));
+  color: var(--red, #C52523);
+  border: 1px solid rgba(197, 37, 35, 0.3);
+}
+
+.confirm-icon-wrap.warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.confirm-icon-wrap.info,
+.confirm-icon-wrap.primary {
+  background: rgba(43, 110, 138, 0.14);
+  color: #2B6E8A;
+  border: 1px solid rgba(43, 110, 138, 0.3);
+}
+
+.confirm-icon-wrap.success {
+  background: rgba(28, 122, 78, 0.14);
+  color: #1C7A4E;
+  border: 1px solid rgba(28, 122, 78, 0.3);
+}
+
+.confirm-bullets {
+  background: var(--paper, #faf7f6);
+  border: 1px solid var(--line, #ece6e4);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.confirm-bullet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink, #1c1614);
+  line-height: 1.45;
+}
+
+.confirm-bullet-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--red, #C52523);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+[data-theme="dark"] .confirm-mbox {
+  background: var(--surface, #1e1816);
+  border-color: var(--line, #2c2421);
+}
+
+[data-theme="dark"] .confirm-bullets {
+  background: var(--paper, #141110);
+  border-color: var(--line, #2c2421);
+}
+
+[data-theme="dark"] .confirm-bullet-item {
+  color: var(--ink, #ffffff);
+}
+
 /* Deal-Won Cascade Sequence Modal */
 .cascade {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
   display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
 }
 
 .cascade.on {
@@ -181,22 +384,30 @@
 }
 
 .cbg {
-  position: absolute;
-  inset: 0;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
   background: rgba(28, 22, 20, .65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 .cbox {
-  position: relative;
+  position: relative !important;
   background: var(--surface, #ffffff);
   border-radius: 18px;
   box-shadow: 0 24px 60px -22px rgba(28, 22, 20, .36);
-  width: 450px;
-  max-width: 100%;
+  width: 100% !important;
+  max-width: 480px !important;
+  margin: auto !important;
   padding: 26px;
   overflow: hidden;
+  box-sizing: border-box !important;
+  z-index: 2 !important;
   animation: modalPop .22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -402,11 +613,11 @@
   border: 1px solid var(--line, #2c2421);
   border-radius: 14px;
   box-shadow: 0 16px 44px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  z-index: 1000;
+  z-index: 99999;
   display: none;
   flex-direction: column;
   overflow: hidden;
-  max-height: min(560px, calc(100vh - 80px));
+  max-height: min(580px, calc(100vh - 80px));
   transform-origin: top right;
   animation: notifPopoverDrop .2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -438,6 +649,41 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+/* Centered Modal Positioning on Mobile / Narrow Viewports */
+@media (max-width: 860px) {
+  .notif-popover-panel {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: calc(100vw - 28px) !important;
+    max-width: 420px !important;
+    max-height: calc(100vh - 50px) !important;
+    margin: 0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75), 0 0 0 100vmax rgba(0, 0, 0, 0.65) !important;
+    z-index: 999999 !important;
+    animation: notifModalPopCenter .22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .notif-popover-panel::before {
+    display: none !important;
+  }
+}
+
+@keyframes notifModalPopCenter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 

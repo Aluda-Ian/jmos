@@ -54,12 +54,34 @@ function showView(view) {
   if (view === 'invoices' && typeof window.renderInvoices === 'function') {
     window.renderInvoices();
   }
+  if (view === 'people') {
+    if (typeof ensurePeople === 'function') {
+      ensurePeople();
+    } else if (typeof renderPeople === 'function') {
+      renderPeople();
+    }
+  }
   if (view === 'settings' && typeof loadSettings === 'function') loadSettings();
 
   // Remember active view across refreshes
   try {
     localStorage.setItem('jmos_active_view', view);
   } catch (_) {}
+}
+
+function resolveTargetViewFromUrl() {
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  const validViews = ['dashboard', 'pipeline', 'leads', 'clients', 'projects', 'tasks', 'calendar', 'quotes', 'finance', 'statements', 'invoices', 'documents', 'fundraising', 'people', 'settings', 'chat'];
+
+  if (validViews.includes(path)) return path;
+  if (validViews.includes(hash)) return hash;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramView = urlParams.get('view');
+  if (paramView && validViews.includes(paramView)) return paramView;
+
+  return null;
 }
 
 function applyRole(role) {

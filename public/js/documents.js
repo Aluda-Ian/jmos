@@ -216,7 +216,7 @@
       const notes = document.getElementById('docInputNotes')?.value.trim() || '';
 
       if (!title) {
-        alert('Please enter a document title.');
+        if (window.showToast) window.showToast('Title Required', 'Please enter a document title', true);
         return;
       }
 
@@ -228,7 +228,7 @@
       if (type === 'link') {
         const url = document.getElementById('docUrlInput')?.value.trim();
         if (!url) {
-          alert('Please enter a valid cloud link URL.');
+          if (window.showToast) window.showToast('Link Required', 'Please enter a valid cloud link URL', true);
           return;
         }
         formData.append('external_url', url);
@@ -261,13 +261,13 @@
         if (!res.ok) throw new Error(data.message || 'Failed to upload document');
 
         if (window.showToast) {
-          window.showToast('Document saved successfully', 'success');
+          window.showToast('Document Saved', 'File uploaded successfully');
         }
 
         window.closeModal('documentModal');
         this.loadDocuments();
       } catch (err) {
-        alert('Error saving document: ' + err.message);
+        if (window.showToast) window.showToast('Upload Error', err.message, true);
       } finally {
         if (saveBtn) {
           saveBtn.disabled = false;
@@ -277,7 +277,22 @@
     },
 
     deleteDocument: async function (id) {
-      if (!confirm('Are you sure you want to delete this document?')) return;
+      const doc = this.documents.find(d => String(d.id) === String(id));
+      const docTitle = doc ? doc.title : 'this document';
+
+      const confirmed = await window.showConfirmDialog({
+        title: 'Delete Document?',
+        subtitle: 'Document Archive',
+        type: 'danger',
+        confirmText: 'Delete Document',
+        message: `Permanently remove <b>${escHtml(docTitle)}</b> from file vault?`,
+        bullets: [
+          'The document file and all cloud links will be permanently deleted.',
+          'This action cannot be undone.'
+        ]
+      });
+      if (!confirmed) return;
+
       try {
         const token = localStorage.getItem('jmos_api_token');
         const res = await fetch(`/api/documents/${id}`, {
@@ -295,11 +310,11 @@
         }
 
         if (window.showToast) {
-          window.showToast('Document deleted', 'success');
+          window.showToast('Document Deleted', 'File removed from vault');
         }
         this.loadDocuments();
       } catch (err) {
-        alert('Error deleting document: ' + err.message);
+        if (window.showToast) window.showToast('Delete Error', err.message, true);
       }
     }
   };

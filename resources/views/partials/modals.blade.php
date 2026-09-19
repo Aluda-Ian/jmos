@@ -1123,6 +1123,7 @@
           <option value="team">Team member</option>
           <option value="sales">Sales</option>
           <option value="finance">Finance</option>
+          <option value="manager">Manager (Operations &amp; IT)</option>
           <option value="owner">Owner (full access)</option>
         </select>
       </div>
@@ -1500,16 +1501,38 @@
   </div>
 </div>
 
-<!-- 11. Confirm Removal Modal -->
+<!-- 11. Branded Confirmation & Action Modal -->
 <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
   <div class="mbg" data-close="confirmModal"></div>
-  <div class="mbox" style="max-width:420px">
+  <div class="mbox confirm-mbox" style="max-width:480px;padding:26px 28px;position:relative;border-radius:18px">
     <button class="mclose" data-close="confirmModal" title="Close" aria-label="Close modal">&times;</button>
-    <h3 id="confirmTitle">Remove item?</h3>
-    <p class="msub" id="confirmMsg">Are you sure you want to remove this record?</p>
-    <div class="mfoot">
-      <button type="button" class="btn" data-close="confirmModal">Cancel</button>
-      <button type="button" class="btn primary" id="confirmYes" style="background:var(--red);border-color:var(--red)">Remove &amp; delete</button>
+    
+    <div class="confirm-head-wrap" style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
+      <div id="confirmIconWrap" class="confirm-icon-wrap danger">
+        <svg id="confirmIconSvg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div style="flex:1;min-width:0">
+        <h3 id="confirmTitle" style="font-family:'Poppins',sans-serif;font-size:17.5px;font-weight:700;margin:0 0 3px;color:var(--ink);line-height:1.25">Confirm Action</h3>
+        <p id="confirmSubtitle" class="msub" style="margin:0;font-size:12px;color:var(--muted);line-height:1.4">Please verify before proceeding.</p>
+      </div>
+    </div>
+
+    <div id="confirmBodyWrap" style="margin-bottom:20px">
+      <div id="confirmMsg" style="font-size:13.5px;color:var(--ink);line-height:1.55">
+        Are you sure you want to proceed?
+      </div>
+      <div id="confirmBullets" style="margin-top:12px;display:none;flex-direction:column;gap:8px" class="confirm-bullets"></div>
+    </div>
+
+    <div class="mfoot" style="margin-top:0;padding-top:16px;border-top:1px solid var(--line,#ece6e4);display:flex;justify-content:flex-end;gap:10px">
+      <button type="button" class="btn" id="confirmCancelBtn" data-close="confirmModal" style="padding:8px 16px;font-size:13px;font-weight:500">Cancel</button>
+      <button type="button" class="btn primary" id="confirmYes" style="padding:8px 18px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+        <span id="confirmYesText">Confirm &amp; Proceed</span>
+      </button>
     </div>
   </div>
 </div>
@@ -1532,49 +1555,113 @@
   </div>
 </div>
 
-<!-- 12. PWA App Installation & Download Modal -->
+<!-- 12. PWA App Installation & Download Modal (Unified 2-Step Flow: Notifications -> Download) -->
 <div class="modal" id="pwaInstallModal" role="dialog" aria-modal="true" aria-labelledby="pwaInstallTitle">
   <div class="mbg" data-close="pwaInstallModal"></div>
-  <div class="mbox" style="max-width:480px">
+  <div class="mbox" style="max-width:520px;padding:24px">
     <button class="mclose" data-close="pwaInstallModal" title="Close" aria-label="Close modal">&times;</button>
     
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <img src="{{ asset('assets/img/jeota-logo.png') }}" alt="JMOS App" style="width:48px;height:48px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.12)">
-      <div>
-        <h3 id="pwaInstallTitle" style="margin:0;font-size:17px">Install JMOS as an App</h3>
-        <p style="margin:2px 0 0;font-size:12px;color:var(--muted)">Run standalone on Windows, macOS, Android, &amp; iPhone</p>
+    <!-- Modal Header -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:14px">
+      <img src="{{ asset('assets/img/jeota-logo.png') }}" alt="JMOS App" style="width:46px;height:46px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.18)">
+      <div style="flex:1">
+        <h3 id="pwaInstallTitle" style="margin:0;font-size:17px;font-weight:700;letter-spacing:-0.2px">JMOS Application Setup</h3>
+        <p style="margin:2px 0 0;font-size:12px;color:var(--muted)">Operational Push Alerts &amp; Standalone Device App</p>
       </div>
     </div>
 
-    <!-- Quick instructions for Android/Chrome/Edge -->
-    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px">
-      <div style="font-weight:600;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        PC / Laptop (Chrome, Edge, Brave)
-      </div>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Click the button below or look for the Install icon in your browser address bar:</p>
-      <button type="button" class="btn primary pwa-install-btn" onclick="triggerDownloadApp()" style="width:100%;font-size:12px;padding:8px 12px;display:flex;align-items:center;justify-content:center;gap:6px">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-        Download &amp; Install on this Device
+    <!-- Step Progress Indicator Tabs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
+      <button type="button" id="pwaTabStep1" onclick="window.JMOS_PWA.setStep(1)" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--red);background:var(--red-soft);color:var(--red);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s ease">
+        <span style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:currentColor;color:var(--surface,#1e1715);font-size:10.5px;font-weight:700">1</span>
+        <span>Push Alerts</span>
+      </button>
+      <button type="button" id="pwaTabStep2" onclick="window.JMOS_PWA.setStep(2)" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s ease">
+        <span style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--line);color:var(--ink);font-size:10.5px;font-weight:700">2</span>
+        <span>Download App</span>
       </button>
     </div>
 
-    <!-- Instructions for iPhone / iPad (Safari) -->
-    <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
-      <div style="font-weight:600;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-        iPhone &amp; iPad (Apple Safari)
+    <!-- ================= STEP 1: Push Notifications ================= -->
+    <div id="pwaStep1Notifications" style="display:block">
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-weight:700;font-size:13.5px;color:var(--ink);display:flex;align-items:center;gap:8px">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            Step 1: Real-Time Operational Alerts
+          </div>
+          <span id="pwaNotifStatusBadge" class="badge" style="font-size:10.5px;padding:2px 8px;border-radius:6px;background:rgba(217,119,6,0.15);color:var(--amber);font-weight:600">Action Required</span>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 12px">
+          Stay continuously informed on your mobile device &amp; PC even when JMOS is minimized or closed.
+        </p>
+
+        <!-- Feature Points -->
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:11.5px;color:var(--ink);margin-bottom:14px">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <span style="color:var(--red);font-size:13px;line-height:1">⚡</span>
+            <span><b>Production &amp; Shoots:</b> Instant call sheets, schedule sync &amp; crew assignments.</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <span style="color:var(--blue);font-size:13px;line-height:1">💬</span>
+            <span><b>Live Team Chat:</b> Direct alerts when clients or team members send messages.</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <span style="color:var(--green);font-size:13px;line-height:1">💳</span>
+            <span><b>Finance &amp; Deals:</b> Live notifications when quotes are approved &amp; invoices paid.</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn primary" id="pwaAllowNotifsBtn" onclick="window.JMOS_PWA.enableNotificationsAndProceed()" style="width:100%;font-size:12.5px;padding:10px 14px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Allow Live Alerts &amp; Continue
+        </button>
       </div>
-      <ol style="margin:0;padding-left:18px;font-size:12px;color:var(--muted);line-height:1.6">
-        <li>Tap the <b>Share</b> button <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's bottom toolbar.</li>
-        <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
-        <li>Tap <b>Add</b> in the top right. JMOS will launch full-screen!</li>
-      </ol>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <button type="button" class="btn secondary" data-close="pwaInstallModal" style="font-size:11.5px;padding:6px 12px">Cancel</button>
+        <button type="button" class="linkbtn" onclick="window.JMOS_PWA.setStep(2)" style="font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer">Skip to Download &rarr;</button>
+      </div>
     </div>
 
-    <div class="mfoot" style="margin-top:14px">
-      <button type="button" class="btn" data-close="pwaInstallModal">Close</button>
+    <!-- ================= STEP 2: Download & Install App ================= -->
+    <div id="pwaStep2Download" style="display:none">
+      <!-- Quick instructions for Android/Chrome/Edge/PC -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-weight:700;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--blue)"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            PC / Mac / Android (Direct Install)
+          </div>
+          <span class="badge pwa-status-badge" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(2,132,199,0.15);color:var(--blue);font-weight:600">Ready</span>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.45">Install JMOS as a standalone application on Windows, macOS, or Android for full-screen offline productivity:</p>
+        <button type="button" class="btn primary pwa-install-btn" onclick="window.JMOS_PWA.triggerInstall()" style="width:100%;font-size:12.5px;padding:9px 14px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Download &amp; Install on this Device
+        </button>
+      </div>
+
+      <!-- Instructions for iPhone / iPad (Safari iOS) -->
+      <div style="background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--purple,#a855f7)"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          iPhone &amp; iPad (Apple Safari)
+        </div>
+        <ol style="margin:0;padding-left:18px;font-size:11.5px;color:var(--muted);line-height:1.6">
+          <li>Tap the <b>Share</b> button <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:middle"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's bottom toolbar.</li>
+          <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
+          <li>Tap <b>Add</b> in the top right. JMOS will launch in full-screen standalone mode!</li>
+        </ol>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <button type="button" class="btn" onclick="window.JMOS_PWA.setStep(1)" style="font-size:11.5px;padding:6px 12px">← Back to Alerts</button>
+        <button type="button" class="btn secondary" data-close="pwaInstallModal" style="font-size:11.5px;padding:6px 12px">Done</button>
+      </div>
     </div>
+
   </div>
 </div>
 
@@ -2170,20 +2257,22 @@
         <label style="font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.5px">Quote Deliverables &amp; Line Items</label>
         <button type="button" class="linkbtn" onclick="window.addQuoteItemRow()" style="font-size:11.5px">+ Add Deliverable</button>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead>
-          <tr style="background:var(--panel-2);color:var(--muted)">
-            <th style="padding:6px;text-align:left">Description</th>
-            <th style="padding:6px;width:70px;text-align:center">Qty</th>
-            <th style="padding:6px;width:120px;text-align:right">Rate (KES)</th>
-            <th style="padding:6px;width:120px;text-align:right">Amount</th>
-            <th style="padding:6px;width:30px"></th>
-          </tr>
-        </thead>
-        <tbody id="quoteItemsTableBody">
-          <!-- Dynamic row -->
-        </tbody>
-      </table>
+      <div class="tablewrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:540px">
+          <thead>
+            <tr style="background:var(--panel-2);color:var(--muted)">
+              <th style="padding:6px;text-align:left">Description</th>
+              <th style="padding:6px;width:70px;text-align:center">Qty</th>
+              <th style="padding:6px;width:120px;text-align:right">Rate (KES)</th>
+              <th style="padding:6px;width:120px;text-align:right">Amount</th>
+              <th style="padding:6px;width:30px"></th>
+            </tr>
+          </thead>
+          <tbody id="quoteItemsTableBody">
+            <!-- Dynamic row -->
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <div class="grid3" style="align-items:end">
@@ -2207,9 +2296,16 @@
       <textarea id="quoteNotes" rows="2" placeholder="Brief scope breakdown, gear included, delivery formats..."></textarea>
     </div>
 
-    <div class="mfoot">
+    <div class="mfoot" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn" data-close="quoteModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveQuoteBtn" onclick="window.submitQuoteForm()">Save &amp; Generate Quote</button>
+      <button type="button" class="btn" onclick="window.submitQuoteForm('whatsapp')" style="background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>
+        Save &amp; WhatsApp
+      </button>
+      <button type="button" class="btn primary" id="saveQuoteBtn" onclick="window.submitQuoteForm('email')" style="font-weight:600">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Save &amp; Send to Email
+      </button>
     </div>
   </div>
 </div>
@@ -2234,13 +2330,16 @@
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn" id="qdmSendEmailBtn" onclick="window.dispatchQuoteEmail()" style="font-size:11.5px;padding:5px 12px">
-            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send Email
+          <button type="button" class="btn primary" id="qdmSendEmailBtn" onclick="window.dispatchQuoteEmail()" style="font-size:11.5px;padding:6px 13px;font-weight:600">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send to Email
           </button>
-          <button type="button" class="btn" id="qdmSendWhatsAppBtn" onclick="window.dispatchQuoteWhatsApp()" style="font-size:11.5px;padding:5px 12px;background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3)">
+          <button type="button" class="btn" id="qdmSendWhatsAppBtn" onclick="window.dispatchQuoteWhatsApp()" style="font-size:11.5px;padding:6px 13px;background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>Send WhatsApp
           </button>
-          <button type="button" class="btn primary" id="qdmUpgradeInvoiceBtn" onclick="window.openUpgradeQuoteModal()" style="font-size:11.5px;padding:5px 12px;background:var(--red);border-color:var(--red);font-weight:700">
+          <button type="button" class="btn" onclick="window.print()" style="font-size:11.5px;padding:6px 10px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print PDF
+          </button>
+          <button type="button" class="btn" id="qdmUpgradeInvoiceBtn" onclick="window.openUpgradeQuoteModal()" style="font-size:11.5px;padding:6px 12px;background:var(--paper);border-color:var(--line-strong);font-weight:600">
             <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>Upgrade to Invoice ➔
           </button>
         </div>
@@ -2538,6 +2637,65 @@
         <button type="submit" class="btn primary" id="mpSaveBtn">Save Changes</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- 16. Custom Role & Permissions Modal -->
+<div class="modal" id="roleModal" role="dialog" aria-modal="true" aria-labelledby="roleModalTitle">
+  <div class="mbg" data-close="roleModal"></div>
+  <div class="mbox" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;padding:24px">
+    <button class="mclose" data-close="roleModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="flex-shrink:0;margin-bottom:12px">
+      <h3 id="roleModalTitle" style="font-family:'Poppins',sans-serif;font-size:18px;font-weight:600;margin-bottom:4px">Create Custom Role</h3>
+      <p class="msub" id="roleModalSub" style="margin-bottom:14px;color:var(--muted);font-size:12.5px">Configure custom role access rights and modular permissions across JMOS.</p>
+      
+      <input type="hidden" id="editRoleId" value="">
+
+      <div class="grid2" style="margin-bottom:12px">
+        <div class="field">
+          <label for="roleName">Role Name *</label>
+          <input id="roleName" placeholder="e.g. Lead Producer, Field Director" required autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="roleColor">Role Badge Color</label>
+          <select id="roleColor">
+            <option value="#C52523">Crimson Red (#C52523)</option>
+            <option value="#2B8A5A">Forest Green (#2B8A5A)</option>
+            <option value="#2B6E8A">Ocean Blue (#2B6E8A)</option>
+            <option value="#8A5A2B">Amber Gold (#8A5A2B)</option>
+            <option value="#6E2B8A">Purple (#6E2B8A)</option>
+            <option value="#5A7A2B">Olive (#5A7A2B)</option>
+            <option value="#473833">Charcoal (#473833)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label for="roleDescription">Description / Scope of Duties</label>
+        <input id="roleDescription" placeholder="e.g. Oversees video deliverables, quotes, and client communications." autocomplete="off">
+      </div>
+
+      <!-- Quick select buttons -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+        <span style="font-size:12px;font-weight:600;color:var(--ink)">Access Rights &amp; Modular Permissions</span>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn sm" onclick="toggleAllRolePermissions(true)" style="font-size:11px;padding:4px 9px">Select All</button>
+          <button type="button" class="btn sm" onclick="toggleAllRolePermissions(false)" style="font-size:11px;padding:4px 9px">Clear All</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Permissions Category Grid (Scrollable) -->
+    <div id="rolePermissionsContainer" style="flex:1;overflow-y:auto;padding-right:6px;display:flex;flex-direction:column;gap:14px">
+      <!-- Populated dynamically via JS from permission catalog -->
+    </div>
+
+    <div class="modal-footer" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0">
+      <button type="button" class="btn" data-close="roleModal">Cancel</button>
+      <button type="button" class="btn primary" id="saveRoleBtn" onclick="saveRole()">
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save Role
+      </button>
+    </div>
   </div>
 </div>
 

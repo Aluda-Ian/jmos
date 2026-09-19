@@ -52,10 +52,14 @@ async function loadSettings() {
         if (data.kra.kra_pin && document.getElementById('cfg_kra_pin')) document.getElementById('cfg_kra_pin').value = data.kra.kra_pin.value || 'P051782390X';
         if (data.kra.kra_taxpayer_name && document.getElementById('cfg_kra_taxpayer_name')) document.getElementById('cfg_kra_taxpayer_name').value = data.kra.kra_taxpayer_name.value || 'Jeota Media Ltd';
         if (data.kra.kra_etims_branch_id && document.getElementById('cfg_kra_etims_branch')) document.getElementById('cfg_kra_etims_branch').value = data.kra.kra_etims_branch_id.value || '00';
-        if (data.kra.kra_vat_rate && document.getElementById('cfg_kra_vat_rate')) document.getElementById('cfg_kra_vat_rate').value = data.kra.kra_vat_rate.value || '16';
+        if (data.kra.kra_vat_rate && document.getElementById('cfg_kra_vat_rate')) document.getElementById('cfg_kra_vat_rate').value = (data.kra.kra_vat_rate.value !== undefined && data.kra.kra_vat_rate.value !== null) ? data.kra.kra_vat_rate.value : '0';
         if (data.kra.kra_wht_rate && document.getElementById('cfg_kra_wht_rate')) document.getElementById('cfg_kra_wht_rate').value = data.kra.kra_wht_rate.value || '5';
         if (data.kra.kra_status && document.getElementById('cfg_kra_status')) document.getElementById('cfg_kra_status').value = data.kra.kra_status.value || 'connected';
       }
+    }
+
+    if (typeof loadRolesAndPermissions === 'function') {
+      loadRolesAndPermissions();
     }
   } catch (err) {
     console.warn('Could not load settings from server:', err.message);
@@ -924,14 +928,20 @@ function initSystemUpgrade() {
         return;
       }
 
-      const confirmed = confirm(
-        `Are you sure you want to install this upgrade archive?\n\n` +
-        `• File: ${selectedUpgradeFile.name}\n` +
-        `• A pre-upgrade database backup will be automatically created.\n` +
-        `• Existing .env and media in storage/ are safely protected.\n` +
-        `• Pending database migrations will be executed non-destructively.\n\n` +
-        `Click OK to proceed with deployment.`
-      );
+      const confirmed = await window.showConfirmDialog({
+        title: 'Deploy Software Upgrade?',
+        subtitle: 'Zero Data Loss Deployment Pipeline',
+        type: 'upgrade',
+        confirmText: 'Install & Deploy',
+        cancelText: 'Cancel',
+        message: `Are you sure you want to install and deploy <b>${escHtml(selectedUpgradeFile.name)}</b>?`,
+        bullets: [
+          `Package archive size: ${(selectedUpgradeFile.size / (1024 * 1024)).toFixed(2)} MB`,
+          'Automated safety database backup snapshot will be generated first.',
+          'Existing .env configuration and media uploads in storage/ are safely protected.',
+          'Pending database migrations will be executed non-destructively.'
+        ]
+      });
       if (!confirmed) return;
 
       applyBtn.disabled = true;
@@ -1069,4 +1079,314 @@ function initSystemUpgrade() {
 
   loadSystemStatus();
 }
+
+/* ==========================================================================
+   JMOS — Custom Roles & Granular Access Control Engine
+   ========================================================================== */
+
+window.JMOS_ROLES = [];
+window.JMOS_PERMS_CATALOG = [];
+
+async function loadRolesAndPermissions() {
+  const container = document.getElementById('rolesListContainer');
+  try {
+    const res = await JMOS_API.get('/roles');
+    if (res && res.status === 'success') {
+      window.JMOS_ROLES = res.data || [];
+      window.JMOS_PERMS_CATALOG = res.catalog || [];
+      renderRolesSection();
+      if (typeof updateUserRoleDropdowns === 'function') {
+        updateUserRoleDropdowns();
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load roles:', err.message);
+    if (container) {
+      container.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:12.5px;grid-column:1/-1">Could not load workspace roles.</div>';
+    }
+  }
+}
+
+function renderRolesSection() {
+  const container = document.getElementById('rolesListContainer');
+  if (!container) return;
+
+  const roles = window.JMOS_ROLES || [];
+  if (roles.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;grid-column:1/-1">No roles found. Click "Create Custom Role" to add one.</div>';
+    return;
+  }
+
+  container.innerHTML = roles.map(role => {
+    const isOwner = role.slug === 'owner';
+    const isSystem = !!role.is_system;
+    const permissions = Array.isArray(role.permissions) ? role.permissions : [];
+    const permsCount = isOwner ? 'All Access (*)' : `${permissions.length} rights granted`;
+    const userCount = role.users_count !== undefined ? role.users_count : (Array.isArray(JMOS_STATE.users) ? JMOS_STATE.users.filter(u => u.role === role.slug || u.role_id === role.id).length : 0);
+    const badgeBg = role.color || '#C52523';
+
+    let previewChips = [];
+    if (isOwner) {
+      previewChips = ['Unrestricted Super Admin'];
+    } else {
+      if (permissions.some(p => p.startsWith('dashboard.'))) previewChips.push('Dashboard');
+      if (permissions.some(p => p.startsWith('leads.') || p.startsWith('deals.'))) previewChips.push('Leads & CRM');
+      if (permissions.some(p => p.startsWith('projects.') || p.startsWith('tasks.'))) previewChips.push('Projects');
+      if (permissions.some(p => p.startsWith('quotes.'))) previewChips.push('Quotes');
+      if (permissions.some(p => p.startsWith('finance.') || p.startsWith('invoices.') || p.startsWith('expenses.'))) previewChips.push('Finance');
+      if (permissions.some(p => p.startsWith('people.') || p.startsWith('roles.'))) previewChips.push('Team Admin');
+      if (permissions.some(p => p.startsWith('chat.'))) previewChips.push('Team Chat');
+      if (permissions.some(p => p.startsWith('calendar.'))) previewChips.push('Calendar');
+      if (permissions.some(p => p.startsWith('settings.') || p.startsWith('system.'))) previewChips.push('System Admin');
+    }
+
+    const chipsHtml = previewChips.slice(0, 4).map(c => `
+      <span style="font-size:11px;padding:2px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line);color:var(--ink);font-weight:500">${escHtml(c)}</span>
+    `).join('') + (previewChips.length > 4 ? `<span style="font-size:10.5px;color:var(--muted);padding:2px 4px">+${previewChips.length - 4} more</span>` : '');
+
+    return `
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 2px 6px rgba(0,0,0,0.03);position:relative">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="width:10px;height:10px;border-radius:50%;background:${badgeBg};display:inline-block"></span>
+              <h4 style="font-family:'Poppins',sans-serif;font-size:14.5px;font-weight:600;margin:0;color:var(--ink)">${escHtml(role.name)}</h4>
+            </div>
+            <span style="font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:${isSystem ? 'rgba(43,138,90,0.12)' : 'rgba(197,37,35,0.12)'};color:${isSystem ? 'var(--green)' : 'var(--red)'}">
+              ${isSystem ? 'System' : 'Custom'}
+            </span>
+          </div>
+
+          <p style="font-size:12px;color:var(--muted);margin-bottom:12px;min-height:34px;line-height:1.4">
+            ${escHtml(role.description || 'Custom role with configured modular permissions.')}
+          </p>
+
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+            ${chipsHtml}
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--line);margin-top:6px">
+          <div style="font-size:11.5px;color:var(--muted)">
+            <b style="color:var(--ink);font-weight:600">${userCount}</b> ${userCount === 1 ? 'member' : 'members'} · <span style="font-size:11px;color:var(--muted)">${escHtml(permsCount)}</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn sm" onclick="openEditRoleModal(${role.id})" style="font-size:11px;padding:4px 10px">
+              Edit Rights
+            </button>
+            ${!isSystem ? `
+              <button type="button" class="btn sm" onclick="deleteRole(${role.id}, '${escHtml(role.name)}')" style="font-size:11px;padding:4px 8px;color:var(--red);border-color:rgba(239,68,68,0.25)" title="Delete custom role">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderPermissionCheckboxes(selectedPermissions = []) {
+  const container = document.getElementById('rolePermissionsContainer');
+  if (!container) return;
+
+  const catalog = window.JMOS_PERMS_CATALOG || [];
+  const isWildcard = selectedPermissions.includes('*');
+
+  container.innerHTML = catalog.map((group, groupIdx) => {
+    const allGroupKeys = group.permissions.map(p => p.key);
+    const groupCheckedCount = allGroupKeys.filter(k => isWildcard || selectedPermissions.includes(k)).length;
+    const isGroupAll = groupCheckedCount === allGroupKeys.length;
+
+    const permsList = group.permissions.map(perm => {
+      const isChecked = isWildcard || selectedPermissions.includes(perm.key);
+      return `
+        <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;cursor:pointer;padding:6px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line);user-select:none;transition:background .15s ease" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background='var(--paper)'">
+          <input type="checkbox" name="rolePerm" value="${perm.key}" ${isChecked ? 'checked' : ''} style="margin-top:2px;accent-color:var(--red);cursor:pointer">
+          <div style="flex:1">
+            <div style="font-weight:600;color:var(--ink)">${escHtml(perm.label)}</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.3">${escHtml(perm.description)}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    return `
+      <div style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:6px">
+          <div>
+            <div style="font-weight:600;font-size:13px;color:var(--ink)">${escHtml(group.group)}</div>
+            <div style="font-size:11px;color:var(--muted)">${escHtml(group.description)}</div>
+          </div>
+          <button type="button" class="btn sm" onclick="toggleGroupPermissions(${groupIdx}, ${!isGroupAll})" style="font-size:10.5px;padding:2px 7px">
+            ${isGroupAll ? 'Clear Group' : 'Select Group'}
+          </button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:8px">
+          ${permsList}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.openCreateRoleModal = function() {
+  document.getElementById('editRoleId').value = '';
+  document.getElementById('roleModalTitle').textContent = 'Create Custom Role';
+  document.getElementById('roleModalSub').textContent = 'Configure custom role access rights and modular permissions across JMOS.';
+  document.getElementById('roleName').value = '';
+  document.getElementById('roleDescription').value = '';
+  document.getElementById('roleColor').value = '#C52523';
+
+  // Default permissions for new role
+  renderPermissionCheckboxes(['dashboard.view', 'projects.view', 'tasks.manage', 'chat.access', 'calendar.view']);
+
+  const modal = document.getElementById('roleModal');
+  if (modal) {
+    modal.classList.add('on');
+    document.body.classList.add('modal-open');
+  }
+};
+
+window.openEditRoleModal = function(roleId) {
+  const role = (window.JMOS_ROLES || []).find(r => r.id === roleId);
+  if (!role) return;
+
+  document.getElementById('editRoleId').value = role.id;
+  document.getElementById('roleModalTitle').textContent = `Edit Role: ${role.name}`;
+  document.getElementById('roleModalSub').textContent = role.is_system ? 'Built-in system role. You can fine-tune its permissions matrix.' : 'Update role details and functional access permissions.';
+  document.getElementById('roleName').value = role.name || '';
+  document.getElementById('roleDescription').value = role.description || '';
+  document.getElementById('roleColor').value = role.color || '#C52523';
+
+  renderPermissionCheckboxes(Array.isArray(role.permissions) ? role.permissions : []);
+
+  const modal = document.getElementById('roleModal');
+  if (modal) {
+    modal.classList.add('on');
+    document.body.classList.add('modal-open');
+  }
+};
+
+window.toggleAllRolePermissions = function(checked) {
+  const checkboxes = document.querySelectorAll('#rolePermissionsContainer input[type="checkbox"]');
+  checkboxes.forEach(cb => { cb.checked = !!checked; });
+};
+
+window.toggleGroupPermissions = function(groupIdx, checked) {
+  const catalog = window.JMOS_PERMS_CATALOG || [];
+  const group = catalog[groupIdx];
+  if (!group) return;
+
+  const groupKeys = new Set(group.permissions.map(p => p.key));
+  const checkboxes = document.querySelectorAll('#rolePermissionsContainer input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    if (groupKeys.has(cb.value)) {
+      cb.checked = !!checked;
+    }
+  });
+};
+
+window.saveRole = async function() {
+  const roleId = document.getElementById('editRoleId').value;
+  const name = document.getElementById('roleName').value.trim();
+  const description = document.getElementById('roleDescription').value.trim();
+  const color = document.getElementById('roleColor').value;
+  const saveBtn = document.getElementById('saveRoleBtn');
+
+  if (!name) {
+    showToast('Validation Error', 'Please enter a role name', true);
+    return;
+  }
+
+  const selectedPermissions = Array.from(document.querySelectorAll('#rolePermissionsContainer input[type="checkbox"]:checked')).map(cb => cb.value);
+
+  const payload = {
+    name,
+    description,
+    color,
+    permissions: selectedPermissions,
+  };
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+  }
+
+  try {
+    let res;
+    if (roleId) {
+      res = await JMOS_API.post(`/roles/${roleId}`, payload);
+    } else {
+      res = await JMOS_API.post('/roles', payload);
+    }
+
+    if (res && res.status === 'success') {
+      showToast('Role Saved', res.message || 'Role permissions updated successfully');
+      const modal = document.getElementById('roleModal');
+      if (modal) {
+        modal.classList.remove('on');
+        document.body.classList.remove('modal-open');
+      }
+      await loadRolesAndPermissions();
+    } else {
+      showToast('Error', res?.message || 'Could not save role', true);
+    }
+  } catch (err) {
+    showToast('Role Save Failed', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save Role';
+    }
+  }
+};
+
+window.deleteRole = async function(roleId, roleName) {
+  const confirmed = await window.showConfirmDialog({
+    title: `Delete Role "${roleName}"?`,
+    subtitle: 'Access Control Modification',
+    type: 'danger',
+    confirmText: 'Delete Role',
+    message: `Are you sure you want to permanently delete custom role <b>${escHtml(roleName)}</b>?`,
+    bullets: [
+      'Any users currently assigned to this role will be automatically reassigned to the standard Team Member role.',
+      'This action cannot be undone.'
+    ]
+  });
+  if (!confirmed) return;
+
+  try {
+    const res = await JMOS_API.delete(`/roles/${roleId}`);
+    if (res && res.status === 'success') {
+      showToast('Role Deleted', res.message || 'Role removed');
+      await loadRolesAndPermissions();
+      if (typeof fetchUsers === 'function') {
+        fetchUsers();
+      }
+    } else {
+      showToast('Error', res?.message || 'Could not delete role', true);
+    }
+  } catch (err) {
+    showToast('Delete Failed', err.message, true);
+  }
+};
+
+window.updateUserRoleDropdowns = function() {
+  const nuRole = document.getElementById('nuRole');
+  if (!nuRole) return;
+
+  const roles = window.JMOS_ROLES || [];
+  if (roles.length === 0) return;
+
+  const currentVal = nuRole.value;
+
+  nuRole.innerHTML = roles.map(r => `
+    <option value="${escHtml(r.slug)}">${escHtml(r.name)}</option>
+  `).join('');
+
+  if (currentVal && Array.from(nuRole.options).some(o => o.value === currentVal)) {
+    nuRole.value = currentVal;
+  }
+};
 

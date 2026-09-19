@@ -69,8 +69,21 @@ class Quote extends Model
     public static function nextQuoteNumber(): string
     {
         $year = date('Y');
-        $count = static::whereYear('created_at', $year)->count() + 1;
+        $prefix = "QT-{$year}-";
+        $maxSeq = 0;
 
-        return sprintf('QT-%s-%03d', $year, $count);
+        $existingQuotes = static::where('quote_number', 'like', "{$prefix}%")->pluck('quote_number');
+        foreach ($existingQuotes as $qNum) {
+            if (preg_match('/QT-\d{4}-(\d+)/', (string) $qNum, $m)) {
+                $seq = (int) $m[1];
+                if ($seq > $maxSeq) {
+                    $maxSeq = $seq;
+                }
+            }
+        }
+
+        $nextSeq = $maxSeq + 1;
+
+        return sprintf('QT-%s-%03d', $year, $nextSeq);
     }
 }

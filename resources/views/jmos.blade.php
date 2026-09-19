@@ -13,10 +13,11 @@
 
   <!-- Progressive Web App (PWA) Manifest & Mobile Config -->
   <link rel="manifest" href="{{ asset('manifest.json') }}">
-  <meta name="theme-color" content="#C52523">
+  <meta name="theme-color" content="#FAF7F6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#120e0d" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="JMOS">
 
   <!-- Google Fonts -->
@@ -66,7 +67,7 @@
         <h1>Run all of Jeota from one place.</h1>
         <p>Clients, projects, tasks and finances — your whole operation, signed in and ready.</p>
       </div>
-      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.4.6') }}</span></div>
+      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.5.0') }}</span></div>
       <div class="bdrip" style="left:46px;height:60px"></div>
       <div class="bdrip" style="left:62px;height:96px"></div>
       <div class="bdrip" style="left:77px;height:44px"></div>
@@ -203,7 +204,7 @@
       </div>
       <div style="padding:4px 16px 14px;font-size:10.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;opacity:0.7;display:flex;align-items:center;gap:6px">
         <span>JMOS</span>
-        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.4.6') }}</span>
+        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.5.0') }}</span>
       </div>
     </aside>
 

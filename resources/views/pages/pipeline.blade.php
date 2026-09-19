@@ -235,14 +235,23 @@
   <!-- TAB PANE 3: CONTACTS DIRECTORY -->
   <div class="crm-tab-pane" id="crmPaneContacts" style="display:none">
     <div class="tablecard" style="box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px;overflow:hidden">
-      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Stakeholders &amp; Contacts Directory</h3>
-          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Individual contacts created from converted leads or client profiles.</p>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Stakeholders &amp; Contacts Directory</h3>
+            <span class="badge" id="crmContactsCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted)">0 Records</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Individual contacts created from leads or client accounts.</p>
         </div>
-        <button type="button" class="btn primary" onclick="window.openCreateContactModal()" style="font-size:12px;padding:6px 12px">
-          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Add Contact
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="position:relative">
+            <input type="text" id="contactSearchInput" placeholder="Search contacts by name, company, email..." style="font-size:12px;padding:6px 10px 6px 28px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);min-width:240px" oninput="window.filterContacts(this.value)">
+            <svg viewBox="0 0 24 24" width="13" height="13" style="position:absolute;left:9px;top:9px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <button type="button" class="btn primary" onclick="window.openCreateContactModal()" style="font-size:12px;padding:6px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Add Contact
+          </button>
+        </div>
       </div>
       <div class="tablewrap">
         <table>
@@ -268,14 +277,23 @@
   <!-- TAB PANE 4: ACCOUNTS (CLIENTS) -->
   <div class="crm-tab-pane" id="crmPaneAccounts" style="display:none">
     <div class="tablecard" style="box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px;overflow:hidden">
-      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Corporate Accounts &amp; Clients</h3>
-          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Central accounts directory converted from qualified leads.</p>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Corporate Accounts &amp; Clients</h3>
+            <span class="badge" id="crmAccountsCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted)">0 Accounts</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Central accounts directory converted from qualified leads or added directly.</p>
         </div>
-        <button type="button" class="btn primary" onclick="openModal('clientModal')" style="font-size:12px;padding:6px 12px">
-          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Add Account
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="position:relative">
+            <input type="text" id="accountSearchInput" placeholder="Search accounts by name, industry..." style="font-size:12px;padding:6px 10px 6px 28px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);min-width:220px" oninput="window.filterAccounts(this.value)">
+            <svg viewBox="0 0 24 24" width="13" height="13" style="position:absolute;left:9px;top:9px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <button type="button" class="btn primary" onclick="openModal('clientModal')" style="font-size:12px;padding:6px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Add Account
+          </button>
+        </div>
       </div>
       <div class="tablewrap">
         <table>
@@ -302,14 +320,23 @@
   <!-- TAB PANE 5: CALLS MADE & LOGGED -->
   <div class="crm-tab-pane" id="crmPaneCalls" style="display:none">
     <div class="tablecard" style="box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px;overflow:hidden">
-      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Phone Calls &amp; Touchpoints Log</h3>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Phone Calls &amp; Touchpoints Log</h3>
+            <span class="badge" id="crmCallsCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted)">0 Calls</span>
+          </div>
           <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Track outbound discovery calls, follow-ups, durations, and outcomes.</p>
         </div>
-        <button type="button" class="btn primary" onclick="window.openLogCallModal()" style="font-size:12px;padding:6px 12px">
-          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Log Call
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="position:relative">
+            <input type="text" id="callSearchInput" placeholder="Search call notes, person, purpose..." style="font-size:12px;padding:6px 10px 6px 28px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);min-width:220px" oninput="window.filterCalls(this.value)">
+            <svg viewBox="0 0 24 24" width="13" height="13" style="position:absolute;left:9px;top:9px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <button type="button" class="btn primary" onclick="window.openLogCallModal()" style="font-size:12px;padding:6px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Log Call
+          </button>
+        </div>
       </div>
       <div class="tablewrap">
         <table>
@@ -336,14 +363,23 @@
   <!-- TAB PANE 6: MEETINGS -->
   <div class="crm-tab-pane" id="crmPaneMeetings" style="display:none">
     <div class="tablecard" style="box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px;overflow:hidden">
-      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+      <div style="padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
-          <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Scheduled Discovery &amp; Pitch Meetings</h3>
+          <div style="display:flex;align-items:center;gap:8px">
+            <h3 style="font-size:15px;font-weight:700;margin:0;color:var(--ink)">Scheduled Discovery &amp; Pitch Meetings</h3>
+            <span class="badge" id="crmMeetingsCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted)">0 Meetings</span>
+          </div>
           <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Integrated with Operations Calendar and auto-generated Google Meet video rooms.</p>
         </div>
-        <button type="button" class="btn primary" onclick="window.openScheduleMeetingModal()" style="font-size:12px;padding:6px 12px">
-          <svg viewBox="0 0 24 24" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule Meeting
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="position:relative">
+            <input type="text" id="meetingSearchInput" placeholder="Search meetings by title, attendees..." style="font-size:12px;padding:6px 10px 6px 28px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);min-width:220px" oninput="window.filterMeetings(this.value)">
+            <svg viewBox="0 0 24 24" width="13" height="13" style="position:absolute;left:9px;top:9px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+          </div>
+          <button type="button" class="btn primary" onclick="window.openScheduleMeetingModal()" style="font-size:12px;padding:6px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule Meeting
+          </button>
+        </div>
       </div>
       <div class="tablewrap">
         <table>

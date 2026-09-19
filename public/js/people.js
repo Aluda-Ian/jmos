@@ -14,15 +14,17 @@ function renderPeople() {
 
   const list = JMOS_STATE.users || [];
   if (!list.length) {
-    peopleBody.innerHTML = '<tr><td colspan="8" style="padding:26px;text-align:center;color:var(--muted)">Loading team directory from database…</td></tr>';
+    peopleBody.innerHTML = '<tr><td colspan="8" style="padding:26px;text-align:center;color:var(--muted)">No team members found in database.</td></tr>';
     return;
   }
 
   peopleBody.innerHTML = list.map((u, i) => {
-    const pillClass = JMOS_STATE.accessPill[u.role] || '';
+    const roleSlug = (u.role || 'team').toLowerCase();
+    const pillClass = (JMOS_STATE.accessPill && JMOS_STATE.accessPill[roleSlug]) || '';
+    const roleLabel = (u.role && typeof u.role === 'string') ? (u.role.charAt(0).toUpperCase() + u.role.slice(1)) : 'Team';
     const pill = pillClass 
-      ? `<span class="pill ${pillClass}">${u.role[0].toUpperCase() + u.role.slice(1)}</span>`
-      : `<span class="pill" style="background:var(--paper);border:1px solid var(--line);color:var(--muted)">Team</span>`;
+      ? `<span class="pill ${pillClass}">${escHtml(roleLabel)}</span>`
+      : `<span class="pill" style="background:var(--paper);border:1px solid var(--line);color:var(--muted)">${escHtml(roleLabel)}</span>`;
 
     const avatarHtml = u.avatar_url 
       ? `<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;border:1px solid var(--line);flex-shrink:0"><img src="${escHtml(u.avatar_url)}" alt="${escHtml(u.name)}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
@@ -66,7 +68,8 @@ function renderPeople() {
 
 async function ensurePeople() {
   try {
-    const users = await JMOS_API.get('/users');
+    const res = await JMOS_API.get('/users');
+    const users = Array.isArray(res) ? res : (res && Array.isArray(res.data) ? res.data : []);
     if (Array.isArray(users)) {
       JMOS_STATE.users = users.map((u, i) => ({
         id: u.id,
@@ -81,8 +84,8 @@ async function ensurePeople() {
         role: u.role || 'team',
         type: u.type || 'Full-time',
         pay: u.pay || '—',
-        color: u.color || JMOS_COLORS[i % JMOS_COLORS.length],
-        ini: u.initials || getInitials(u.name)
+        color: u.color || (typeof JMOS_COLORS !== 'undefined' ? JMOS_COLORS[i % JMOS_COLORS.length] : '#C52523'),
+        ini: u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : 'TM')
       }));
 
       // If current user is in list, sync local state
@@ -101,6 +104,9 @@ async function ensurePeople() {
 
       renderPeople();
       renderDemoAccounts();
+      if (typeof updateUserRoleDropdowns === 'function') {
+        updateUserRoleDropdowns();
+      }
     }
   } catch (err) {
     console.error('Error fetching users:', err);
@@ -108,6 +114,10 @@ async function ensurePeople() {
 }
 
 function openEditUserModal(user) {
+  if (typeof updateUserRoleDropdowns === 'function') {
+    updateUserRoleDropdowns();
+  }
+
   const editId = document.getElementById('editUserId');
   if (editId) editId.value = user.id;
 

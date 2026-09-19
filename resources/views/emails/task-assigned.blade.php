@@ -3,7 +3,7 @@
 @section('content')
   <div class="headline">New Task Assigned to You</div>
   <p class="body-text">
-    Hello <strong>{{ $assigneeName ?? 'Team Member' }}</strong>,<br>
+    Hello <strong>{{ $assigneeName ?? $userName ?? 'Team Member' }}</strong>,<br>
     You have been assigned a new task in the <strong>JMOS</strong> workflow.
   </p>
 

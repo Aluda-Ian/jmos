@@ -366,14 +366,25 @@ document.addEventListener('click', async (e) => {
       await JMOS_API.fetchAll();
       renderAllViews();
     } catch (err) {
-      alert('Failed to update task: ' + err.message);
+      showToast('Update Failed', err.message, true);
     }
   }
 
   const delSvcBtn = e.target.closest('[data-del-service]');
   if (delSvcBtn) {
     const svcId = delSvcBtn.getAttribute('data-del-service');
-    if (confirm('Delete this service recipe from database?')) {
+    const confirmed = await window.showConfirmDialog({
+      title: 'Delete Service Recipe?',
+      subtitle: 'Workflow Blueprint',
+      type: 'danger',
+      confirmText: 'Delete Recipe',
+      message: 'Are you sure you want to delete this service template from the database?',
+      bullets: [
+        'Automatic task generation for this deliverable will be disabled.',
+        'Existing projects and tasks will remain intact.'
+      ]
+    });
+    if (confirmed) {
       delSvcBtn.disabled = true;
       try {
         await JMOS_API.delete(`/services/${svcId}`);
@@ -712,6 +723,7 @@ window.JMOS_PWA = {
   isInstalled: false,
   isIos: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
   isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
+  currentStep: 1,
 
   init() {
     // 1. Register Service Worker
@@ -731,7 +743,7 @@ window.JMOS_PWA = {
       this.deferredPrompt = e;
       this.updateInstallButtons(true);
       if (!this.isInstalled && !this.isStandalone && typeof openModal === 'function') {
-        openModal('pwaInstallModal');
+        this.openInstallModal(1);
       }
     });
 
@@ -762,10 +774,125 @@ window.JMOS_PWA = {
     } else if (typeof openModal === 'function') {
       setTimeout(() => {
         if (!this.isInstalled && !this.isStandalone) {
-          openModal('pwaInstallModal');
+          this.openInstallModal(1);
         }
-      }, 800);
+      }, 1200);
     }
+  },
+
+  openInstallModal(step = 1) {
+    if (typeof openModal === 'function') {
+      openModal('pwaInstallModal');
+      this.setStep(step);
+    }
+  },
+
+  setStep(step) {
+    this.currentStep = step;
+    const step1 = document.getElementById('pwaStep1Notifications');
+    const step2 = document.getElementById('pwaStep2Download');
+    const tab1 = document.getElementById('pwaTabStep1');
+    const tab2 = document.getElementById('pwaTabStep2');
+    const notifGranted = ('Notification' in window) && (Notification.permission === 'granted');
+
+    if (step1 && step2) {
+      if (step === 1) {
+        step1.style.display = 'block';
+        step2.style.display = 'none';
+      } else {
+        step1.style.display = 'none';
+        step2.style.display = 'block';
+      }
+    }
+
+    if (tab1 && tab2) {
+      if (step === 1) {
+        tab1.style.background = 'var(--red-soft, rgba(197,37,35,0.12))';
+        tab1.style.color = 'var(--red, #C52523)';
+        tab1.style.borderColor = 'var(--red, #C52523)';
+        tab2.style.background = 'transparent';
+        tab2.style.color = 'var(--muted, #948885)';
+        tab2.style.borderColor = 'var(--line, rgba(255,255,255,0.08))';
+      } else {
+        tab1.style.background = notifGranted ? 'rgba(43,138,90,0.12)' : 'transparent';
+        tab1.style.color = notifGranted ? 'var(--green, #2b8a5a)' : 'var(--muted, #948885)';
+        tab1.style.borderColor = notifGranted ? 'var(--green, #2b8a5a)' : 'var(--line, rgba(255,255,255,0.08))';
+        tab2.style.background = 'var(--red-soft, rgba(197,37,35,0.12))';
+        tab2.style.color = 'var(--red, #C52523)';
+        tab2.style.borderColor = 'var(--red, #C52523)';
+      }
+    }
+
+    this.refreshNotificationState();
+  },
+
+  refreshNotificationState() {
+    const permBadge = document.getElementById('pwaNotifStatusBadge');
+    const permBtn = document.getElementById('pwaAllowNotifsBtn');
+    const isGranted = ('Notification' in window) && (Notification.permission === 'granted');
+    const isDenied = ('Notification' in window) && (Notification.permission === 'denied');
+
+    if (permBadge) {
+      if (isGranted) {
+        permBadge.innerHTML = '✓ Live Alerts Active';
+        permBadge.style.background = 'rgba(43,138,90,0.15)';
+        permBadge.style.color = 'var(--green, #2b8a5a)';
+      } else if (isDenied) {
+        permBadge.innerHTML = '⚠️ Blocked in Browser';
+        permBadge.style.background = 'rgba(197,37,35,0.15)';
+        permBadge.style.color = 'var(--red, #C52523)';
+      } else {
+        permBadge.innerHTML = 'Action Required';
+        permBadge.style.background = 'rgba(217,119,6,0.15)';
+        permBadge.style.color = 'var(--amber, #d97706)';
+      }
+    }
+
+    if (permBtn) {
+      if (isGranted) {
+        permBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          Alerts Enabled — Continue to Download
+        `;
+      } else {
+        permBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          Allow Live Alerts &amp; Continue
+        `;
+      }
+    }
+  },
+
+  async enableNotificationsAndProceed() {
+    const btn = document.getElementById('pwaAllowNotifsBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+    }
+
+    if (window.JMOS_PUSH && typeof window.JMOS_PUSH.requestPermission === 'function') {
+      try {
+        await window.JMOS_PUSH.requestPermission();
+      } catch (err) {
+        console.warn('Push permission request error:', err);
+      }
+    } else if ('Notification' in window) {
+      try {
+        await Notification.requestPermission();
+      } catch (e) {}
+    }
+
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+
+    this.refreshNotificationState();
+
+    // Smoothly advance to Step 2 (Download) in the same popup
+    setTimeout(() => {
+      this.setStep(2);
+    }, 400);
   },
 
   async triggerInstall() {
@@ -794,9 +921,7 @@ window.JMOS_PWA = {
       return;
     }
 
-    if (typeof openModal === 'function') {
-      openModal('pwaInstallModal');
-    }
+    this.openInstallModal(2);
   },
 
   updateInstallButtons(canInstall = false, isInstalled = false) {
@@ -832,7 +957,7 @@ window.JMOS_PWA = {
 };
 
 window.triggerDownloadApp = function() {
-  window.JMOS_PWA.triggerInstall();
+  window.JMOS_PWA.openInstallModal(1);
 };
 
 // App Master Bootloader

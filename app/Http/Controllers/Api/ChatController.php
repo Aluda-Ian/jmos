@@ -454,6 +454,7 @@ class ChatController extends Controller
         $originalName = $file->getClientOriginalName();
         $extension = strtolower($file->getClientOriginalExtension());
         $mime = $file->getMimeType();
+        $fileSize = $file->getSize() ?: 0;
 
         $isImage = str_starts_with($mime, 'image/') || in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
 
@@ -472,7 +473,7 @@ class ChatController extends Controller
             'attachment_name' => $originalName,
             'attachment_url' => $url,
             'is_image' => $isImage,
-            'size' => $file->getSize() ?: 0,
+            'size' => $fileSize,
         ], 201);
     }
 

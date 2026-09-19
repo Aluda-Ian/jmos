@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\CalendarEvent;
 use App\Models\Client;
+use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Project;
 use Illuminate\Http\JsonResponse;
@@ -37,6 +38,19 @@ class ClientController extends Controller
         ]);
 
         $client = Client::create($validated);
+
+        // Auto-generate / sync Contact for this Client
+        $contactPerson = $client->contact_person ?: $client->client_name;
+        Contact::create([
+            'contact_name' => $contactPerson,
+            'company_name' => $client->client_name,
+            'client_id' => $client->id,
+            'title' => 'Client Representative',
+            'email' => $client->email,
+            'phone' => $client->phone,
+            'owner' => $client->owner ?? 'Jeota Media',
+            'notes' => 'Generated from Client creation',
+        ]);
 
         AuditLog::record('CREATE', "Registered corporate client '{$client->client_name}'", 'Client', $client->id, [], $request);
 
@@ -132,6 +146,12 @@ class ClientController extends Controller
             Invoice::where('client', $oldName)->update(['client' => $validated['client_name']]);
         }
 
+        // Keep associated contacts in sync
+        Contact::where('client_id', $client->id)->update([
+            'company_name' => $client->client_name,
+            'owner' => $client->owner ?? 'Jeota Media',
+        ]);
+
         AuditLog::record('UPDATE', "Updated client profile '{$client->client_name}'", 'Client', $client->id, $validated, $request);
 
         return response()->json([
@@ -145,6 +165,10 @@ class ClientController extends Controller
     {
         $name = $client->client_name;
         $id = $client->id;
+
+        // Clean up linked contacts for this client
+        Contact::where('client_id', $client->id)->delete();
+
         $client->delete();
 
         AuditLog::record('DELETE', "Removed client '{$name}' from directory", 'Client', $id, [], $request);
