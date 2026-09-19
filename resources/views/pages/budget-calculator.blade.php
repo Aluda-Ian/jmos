@@ -317,10 +317,11 @@
 
 <div class="quote-overlay" id="quote-overlay">
   <div class="quote-bar">
-    <span class="ttl">Quote preview — edit fields, then print or save as PDF</span>
+    <span class="ttl">Quote preview — edit fields, then print, email, or save as PDF</span>
     <div class="grp">
       <button class="btn" onclick="closeQuote()">Back</button>
       <button class="btn" onclick="resetQuoteFromBudget()" title="Replace items with one line at the budget total">Reset from budget</button>
+      <button class="btn" onclick="sendQuoteEmail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send to mail</button>
       <button class="btn btn-primary" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF</button>
     </div>
   </div>
@@ -583,6 +584,51 @@ function qAdd(){S.quote.items.push({name:'ITEM',deliverables:['Deliverable'],qty
 function qCt(k,el){S.contact[k]=el.textContent.trim();}
 function qPay(k,el){S.quote[k]=el.textContent.trim();}
 function qNote(i,el){S.quote.notes[i]=el.textContent.trim();}
+
+function sendQuoteEmail() {
+  const t = calc();
+  const clientName = S.meta.client || 'Client';
+  const projectName = S.meta.project || 'Production Scope';
+  const quoteNo = S.meta.quoteNo || 'JM-Q-0001';
+  const totalStr = fmt(t.net);
+  const depStr = fmt(t.dep);
+  const balStr = fmt(t.bal);
+
+  let itemsText = '';
+  (S.quote.items || defaultQuoteItems()).forEach(it => {
+    itemsText += `• ${it.name}: ${fmt(it.amount)}\n`;
+    if (it.deliverables && it.deliverables.length) {
+      itemsText += `  Deliverables: ${it.deliverables.join(', ')}\n`;
+    }
+  });
+
+  const body = `Dear ${clientName},\n\n` +
+    `Please find the commercial quotation for ${projectName} (Ref: ${quoteNo}) detailed below:\n\n` +
+    `----------------------------------------\n` +
+    `SCOPE & DELIVERABLES:\n` +
+    `${itemsText}\n` +
+    `TOTAL PAYABLE: ${totalStr}\n` +
+    `PAYMENT TERMS:\n` +
+    `• ${S.pricing.deposit}% Deposit: ${depStr}\n` +
+    `• ${100 - S.pricing.deposit}% On Final Delivery: ${balStr}\n\n` +
+    `PAYMENT METHODS:\n` +
+    `• M-Pesa: ${S.quote.mpesa || 'Paybill 880100 · Acc: 352655'}\n` +
+    `• Bank: ${S.quote.bank || 'NCBA — Junction Branch · A/C: Jeota Media Limited'}\n\n` +
+    `Thank you for choosing Jeota Media.\n\n` +
+    `Best regards,\n` +
+    `Jeota Media Ltd\n` +
+    `${S.contact.phone || '+254 791 388 683'} · ${S.contact.email || 'info@jeotamedia.co.ke'}\n` +
+    `https://${S.contact.web || 'www.jeotamedia.co.ke'}`;
+
+  const defaultEmail = (S.contact && S.contact.clientEmail) || '';
+  const recipient = prompt(`Enter recipient email address:`, defaultEmail);
+  if (recipient === null) return;
+
+  const mailtoUrl = `mailto:${encodeURIComponent(recipient.trim())}?subject=${encodeURIComponent(`Quotation: ${projectName} (${quoteNo}) — Jeota Media`)}&body=${encodeURIComponent(body)}`;
+  window.location.href = mailtoUrl;
+  toast('Opening email client…');
+}
+
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQuote();});
