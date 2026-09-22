@@ -8,6 +8,9 @@
       <p>Your whole money picture — calculated inside JMOS.</p>
     </div>
     <div class="head-actions">
+      <button type="button" class="btn" onclick="window.openAiReportModal('financial_summary')" title="Generate J- ai financial ledger analysis" style="display:inline-flex;align-items:center;gap:6px">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red,#C52523)"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>J- ai Summary
+      </button>
       <button type="button" class="btn" data-view="statements" onclick="showView('statements')" title="View comprehensive financial statements &amp; client ledger">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>Financial Statements
       </button>

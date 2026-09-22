@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="{{ asset('css/components.css') }}?v={{ time() }}">
   <link rel="stylesheet" href="{{ asset('css/views.css') }}?v={{ time() }}">
   <link rel="stylesheet" href="{{ asset('css/modals.css') }}?v={{ time() }}">
+  <link rel="stylesheet" href="{{ asset('css/ai-assistant.css') }}?v={{ time() }}">
 
   <!-- Fast session restore pre-check to eliminate flicker on page refresh -->
   <script>
@@ -431,6 +432,76 @@
   @include('partials.modals')
 
   <!-- ==========================================================================
+       J- AI OPERATING ASSISTANT & INTELLIGENCE DRAWER
+       ========================================================================== -->
+  <button type="button" class="ai-assistant-fab" id="aiAssistantFab" title="Open J- ai Intelligence Assistant">
+    <div class="sparkle-icon">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+    </div>
+    <span>J- ai</span>
+    <span class="badge-pulse"></span>
+  </button>
+
+  <div class="ai-drawer-overlay" id="aiDrawerOverlay"></div>
+  <aside class="ai-drawer" id="aiAssistantDrawer">
+    <div class="ai-drawer-header">
+      <div class="ai-drawer-title">
+        <div class="sparkle-icon" style="width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;color:#fff">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+        </div>
+        <div>
+          <h3>J- ai Assistant</h3>
+        </div>
+        <span class="badge">J- ai</span>
+      </div>
+      <div class="ai-drawer-actions">
+        <button type="button" class="ai-icon-btn" id="aiDrawerClear" title="Clear Conversation">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+        <button type="button" class="ai-icon-btn" id="aiDrawerClose" title="Close Drawer">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <div class="ai-mode-bar">
+      <button type="button" class="ai-mode-btn active" data-mode="general_help">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        General Help
+      </button>
+      <button type="button" class="ai-mode-btn" data-mode="lead_gen">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7.5" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        Lead Qualification
+      </button>
+      <button type="button" class="ai-mode-btn" data-mode="fundraising_partner">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Grants &amp; Funding
+      </button>
+    </div>
+
+    <!-- Messages Body -->
+    <div class="ai-messages-container" id="aiMessagesContainer"></div>
+
+    <!-- Quick Prompts Chips -->
+    <div class="ai-prompt-chips">
+      <button type="button" class="ai-chip">How do I create a production quote?</button>
+      <button type="button" class="ai-chip">Find grant opportunities</button>
+      <button type="button" class="ai-chip">Where are unpaid invoices?</button>
+    </div>
+
+    <!-- Input Footer -->
+    <div class="ai-drawer-input-container">
+      <div class="ai-input-wrapper">
+        <input type="text" id="aiInputField" class="ai-input-field" placeholder="Ask J- ai anything about projects, leads, or workflows…" autocomplete="off">
+        <button type="button" id="aiSendBtn" class="ai-send-btn" title="Send message">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
        JAVASCRIPT MODULES
        ========================================================================== -->
   <script src="{{ asset('js/data.js') }}?v={{ time() }}"></script>
@@ -447,6 +518,7 @@
   <script src="{{ asset('js/documents.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/fundraising.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/settings.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/ai-assistant.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/modals.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/app.js') }}?v={{ time() }}"></script>
 </body>

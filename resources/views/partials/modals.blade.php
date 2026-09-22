@@ -3616,7 +3616,46 @@
   </div>
 </div>
 
+<!-- AI Executive Intelligence & Reporting Modal -->
+<div class="modal-overlay" id="aiReportModal" style="display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(6px)">
+  <div class="modal" style="max-width:720px;width:95%;max-height:88vh;display:flex;flex-direction:column;border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,0.3)">
+    <div class="modal-header" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;color:#fff">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        </div>
+        <div>
+          <h3 id="aiReportModalTitle" style="margin:0;font-size:16px;font-weight:600">J- ai Executive Intelligence Briefing</h3>
+          <div id="aiReportMeta" style="font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px">
+            Role-Scoped Dataset &middot; Powered by J- ai (Gemini)
+          </div>
+        </div>
+      </div>
+      <button type="button" class="btn icon sm" onclick="document.getElementById('aiReportModal').style.display='none'" style="border:none;background:transparent;cursor:pointer">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="aiReportContent" style="flex:1;overflow-y:auto;padding:24px 20px;background:var(--paper);border-radius:0 0 0 0">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <div class="modal-footer" style="padding:12px 20px;border-top:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn sm" onclick="window.openAiReportModal('executive_digest', true)">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh Live Analysis
+        </button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn" onclick="document.getElementById('aiReportModal').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast Notification Container -->
 <div class="toasts" id="toasts"></div>
+
 
 

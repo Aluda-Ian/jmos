@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\Ai\AiChatController;
+use App\Http\Controllers\Api\Ai\AiReportController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CalendarController;
@@ -150,3 +152,13 @@ Route::post('notifications/{notification}/read', [NotificationController::class,
 Route::post('notifications/{notification}/unread', [NotificationController::class, 'markUnread']);
 Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
 Route::delete('notifications/{notification}', [NotificationController::class, 'destroy']);
+
+// AI Intelligence & Reporting Engine (Gemini & Claude)
+Route::middleware('auth:sanctum')->prefix('ai')->group(function () {
+    Route::post('reports/generate', [AiReportController::class, 'generate']);
+    Route::get('reports/history', [AiReportController::class, 'history']);
+    Route::post('chat/message', [AiChatController::class, 'sendMessage']);
+    Route::get('chat/history', [AiChatController::class, 'getHistory']);
+    Route::post('chat/clear', [AiChatController::class, 'clearHistory']);
+    Route::get('opportunities', [AiChatController::class, 'getOpportunities']);
+});

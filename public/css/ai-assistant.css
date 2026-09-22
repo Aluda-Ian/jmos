@@ -1,0 +1,454 @@
+/* ==========================================================================
+   JMOS — JAI Assistant & Intelligence Drawer Styles
+   Brand Identity: Jeota Media Crimson (#C52523 / #9E1B21)
+   ========================================================================== */
+
+/* Floating Launcher Button */
+.ai-assistant-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 10px 12px;
+  background: linear-gradient(135deg, var(--red, #C52523) 0%, var(--red-deep, #9E1B21) 100%);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 30px;
+  box-shadow: 0 8px 24px rgba(197, 37, 35, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+}
+
+.ai-assistant-fab:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(197, 37, 35, 0.45);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ai-assistant-fab .sparkle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.ai-assistant-fab .sparkle-icon svg {
+  stroke: #ffffff;
+  color: #ffffff;
+}
+
+.ai-assistant-fab .badge-pulse {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  border: 2px solid #ffffff;
+}
+
+/* Chat Drawer Panel */
+.ai-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 22, 20, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s ease;
+}
+
+.ai-drawer-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ai-drawer {
+  position: fixed;
+  top: 0;
+  right: -480px;
+  bottom: 0;
+  width: 440px;
+  max-width: 92vw;
+  background: #ffffff;
+  border-left: 1px solid var(--line, #ECE6E4);
+  box-shadow: -8px 0 32px rgba(28, 22, 20, 0.18);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ai-drawer.open {
+  right: 0;
+}
+
+/* Drawer Header */
+.ai-drawer-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line, #ECE6E4);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-drawer-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink, #1C1614);
+  letter-spacing: -0.01em;
+}
+
+.ai-drawer-title .badge {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--red-soft, #FBEAE8);
+  color: var(--red, #C52523);
+  border: 1px solid var(--red-line, #F1CFCB);
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+}
+
+.ai-drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-icon-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted, #6E6763);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ai-icon-btn:hover {
+  background: var(--red-soft, #FBEAE8);
+  border-color: var(--red-line, #F1CFCB);
+  color: var(--red, #C52523);
+}
+
+/* Mode Selector Bar */
+.ai-mode-bar {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line, #ECE6E4);
+  background: #ffffff;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.ai-mode-btn {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--line, #ECE6E4);
+  background: #f8fafc;
+  color: var(--muted, #6E6763);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ai-mode-btn svg {
+  color: var(--muted, #6E6763);
+  stroke: currentColor;
+  flex-shrink: 0;
+  transition: color 0.18s ease;
+}
+
+.ai-mode-btn.active {
+  background: var(--red, #C52523) !important;
+  color: #ffffff !important;
+  border-color: var(--red, #C52523) !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(197, 37, 35, 0.25);
+}
+
+.ai-mode-btn.active svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.ai-mode-btn:hover:not(.active) {
+  border-color: var(--red-line, #F1CFCB);
+  color: var(--red, #C52523);
+  background: var(--red-soft, #FBEAE8);
+}
+
+.ai-mode-btn:hover:not(.active) svg {
+  color: var(--red, #C52523);
+}
+
+/* Messages Container */
+.ai-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #ffffff;
+}
+
+.ai-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.ai-msg.user {
+  align-self: flex-end;
+  background: var(--red, #C52523);
+  color: #ffffff !important;
+  padding: 10px 14px;
+  border-radius: 14px 14px 2px 14px;
+  box-shadow: 0 2px 6px rgba(197, 37, 35, 0.15);
+}
+
+.ai-msg.assistant {
+  align-self: flex-start;
+  background: var(--paper, #FAF7F6);
+  border: 1px solid var(--line, #ECE6E4);
+  color: var(--ink, #1C1614);
+  padding: 12px 16px;
+  border-radius: 14px 14px 14px 2px;
+}
+
+.ai-msg.assistant h4, .ai-msg.assistant h3 {
+  margin: 8px 0 4px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink, #1C1614);
+}
+
+.ai-msg.assistant p {
+  margin: 4px 0;
+}
+
+.ai-msg.assistant ul, .ai-msg.assistant ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.ai-msg.assistant li {
+  margin: 2px 0;
+}
+
+.ai-msg-time {
+  font-size: 9.5px;
+  opacity: 0.65;
+  margin-top: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Escalation Callout Box inside Assistant Reply */
+.ai-escalation-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--red-soft, #FBEAE8);
+  border: 1px solid var(--red-line, #F1CFCB);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.ai-escalation-card .badge-alert {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--red, #C52523);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.ai-nav-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ai-nav-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--line, #ECE6E4);
+  color: var(--ink, #1C1614);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-nav-btn:hover {
+  background: var(--red, #C52523);
+  color: #ffffff;
+  border-color: var(--red, #C52523);
+}
+
+/* Quick Prompt Suggestions */
+.ai-prompt-chips {
+  padding: 8px 16px 4px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  background: #ffffff;
+}
+
+.ai-chip {
+  padding: 4px 10px;
+  font-size: 11px;
+  background: #f8fafc;
+  border: 1px solid var(--line, #ECE6E4);
+  color: var(--muted, #6E6763);
+  border-radius: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.ai-chip:hover {
+  border-color: var(--red-line, #F1CFCB);
+  color: var(--red, #C52523);
+  background: var(--red-soft, #FBEAE8);
+}
+
+/* Input Area */
+.ai-drawer-input-container {
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--line, #ECE6E4);
+  background: #ffffff;
+}
+
+.ai-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--line, #ECE6E4);
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: all 0.15s ease;
+}
+
+.ai-input-wrapper:focus-within {
+  border-color: var(--red, #C52523);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px var(--red-soft, #FBEAE8);
+}
+
+.ai-input-field {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ink, #1C1614);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+}
+
+/* Send Button — High Visibility Brand Crimson with Crisp White Icon */
+.ai-send-btn {
+  background: var(--red, #C52523) !important;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(197, 37, 35, 0.25);
+}
+
+.ai-send-btn svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+  fill: none !important;
+}
+
+.ai-send-btn:hover:not(:disabled) {
+  background: var(--red-deep, #9E1B21) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(197, 37, 35, 0.35);
+}
+
+.ai-send-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ai-send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #cbd5e1 !important;
+  box-shadow: none;
+}
+
+.ai-send-btn:disabled svg {
+  stroke: #64748b !important;
+}
+
+/* Loading Dots */
+.ai-loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.ai-loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red, #C52523);
+  animation: aiPulse 1.2s infinite ease-in-out both;
+}
+
+.ai-loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+.ai-loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes aiPulse {
+  0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}

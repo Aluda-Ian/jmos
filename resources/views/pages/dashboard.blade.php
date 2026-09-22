@@ -24,7 +24,11 @@
       <h1 class="pt" id="greetName">{{ $greeting }}.</h1>
       <p id="dashSubtitle">Here's where Jeota stands today.</p>
     </div>
-    <div class="head-actions">
+    <div class="head-actions" style="display:flex;gap:8px">
+      <button type="button" class="btn" onclick="window.openAiReportModal('executive_digest')" style="display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--red,#C52523)"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        J- ai Briefing
+      </button>
       <button type="button" class="btn primary" id="dashQuickActionBtn" onclick="openModal('dealModal')" data-modal-open="dealModal">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Quick Action
       </button>
