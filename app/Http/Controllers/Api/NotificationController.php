@@ -25,7 +25,7 @@ class NotificationController extends Controller
             return $found;
         }
 
-        return User::first();
+        return null;
     }
 
     public function index(Request $request): JsonResponse

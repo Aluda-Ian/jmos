@@ -34,6 +34,9 @@ use Illuminate\Support\Facades\Route;
 // Auth Routes
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetOtp']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyPasswordResetOtp']);
+    Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -62,6 +65,7 @@ Route::apiResource('documents', DocumentController::class);
 Route::get('documents/{document}/download', [DocumentController::class, 'download']);
 
 // Fundraising & Impact Grants Tracker
+Route::post('fundraising/import', [FundraisingController::class, 'importCsv']);
 Route::apiResource('fundraising', FundraisingController::class);
 
 // Public / Token-enabled CRUD Resources
@@ -74,6 +78,10 @@ Route::post('pipeline/{deal}/win', [DealController::class, 'win']);
 Route::post('deals/{deal}/win', [DealController::class, 'win']);
 
 Route::apiResource('tasks', TaskController::class);
+Route::post('tasks/{task}/links', [TaskController::class, 'addLink']);
+Route::delete('tasks/{task}/links/{linkId}', [TaskController::class, 'removeLink']);
+Route::post('tasks/{task}/comments', [TaskController::class, 'addComment']);
+Route::post('tasks/{task}/workflow', [TaskController::class, 'workflowAction']);
 
 Route::get('invoices/next-number', [InvoiceController::class, 'nextNumber']);
 Route::apiResource('invoices', InvoiceController::class);
@@ -86,6 +94,7 @@ Route::apiResource('expenses', ExpenseController::class);
 Route::get('finance/overview', [FinanceController::class, 'overview']);
 Route::apiResource('users', UserController::class);
 Route::post('users/{user}', [UserController::class, 'update']);
+Route::post('users/{user}/resend-invitation', [UserController::class, 'resendInvitation']);
 Route::post('users/{user}/permissions', [RoleController::class, 'assignUserPermissions']);
 Route::apiResource('roles', RoleController::class);
 Route::post('roles/{role}', [RoleController::class, 'update']);

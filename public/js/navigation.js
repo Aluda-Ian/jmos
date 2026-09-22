@@ -45,6 +45,9 @@ function showView(view) {
   if (view === 'fundraising' && typeof window.refreshFundraising === 'function') {
     window.refreshFundraising();
   }
+  if (view === 'partnerships' && typeof window.refreshPartnerships === 'function') {
+    window.refreshPartnerships();
+  }
   if (view === 'finance' && typeof window.refreshFinanceData === 'function') {
     window.refreshFinanceData();
   }
@@ -72,7 +75,7 @@ function showView(view) {
 function resolveTargetViewFromUrl() {
   const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
   const hash = window.location.hash.replace(/^#\/?/, '');
-  const validViews = ['dashboard', 'pipeline', 'leads', 'clients', 'projects', 'tasks', 'calendar', 'quotes', 'finance', 'statements', 'invoices', 'documents', 'fundraising', 'people', 'settings', 'chat'];
+  const validViews = ['dashboard', 'pipeline', 'leads', 'clients', 'projects', 'tasks', 'calendar', 'quotes', 'finance', 'statements', 'invoices', 'documents', 'fundraising', 'partnerships', 'people', 'settings', 'chat'];
 
   if (validViews.includes(path)) return path;
   if (validViews.includes(hash)) return hash;

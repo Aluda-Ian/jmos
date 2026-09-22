@@ -1,25 +1,22 @@
 <!-- ==========================================================================
-     JMOS — View: Documents Repository (Zoho CRM Workflow)
+     JMOS — View: Documents Repository (Cloud Links & Drive Assets)
      ========================================================================== -->
 <section class="view" data-view="documents" hidden>
   <div class="page-head" style="margin-bottom:16px">
     <div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-        <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700">CENTRAL REPOSITORY</span>
-        <span class="badge" style="background:var(--panel-2);color:var(--muted);font-size:11px">CONTRACTS, PROPOSALS &amp; ASSETS</span>
+        <span class="badge" style="background:var(--red-soft);color:var(--red);font-size:11px;font-weight:700">CLOUD REPOSITORY</span>
+        <span class="badge" style="background:rgba(37,211,102,0.15);color:#128C7E;font-size:11px;font-weight:600">ZERO HOST STORAGE</span>
       </div>
       <h1 class="pt">Documents &amp; Files</h1>
-      <p>Contracts, commercial proposals, brand guidelines, production briefs, and grant application files.</p>
+      <p>Direct links to Google Drive, Dropbox, Playbook, Notion, and Frame.io assets — no server disk space or traffic consumed.</p>
     </div>
     <div class="head-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn" onclick="window.refreshDocuments()" title="Refresh documents">
         <svg viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Refresh
       </button>
-      <button type="button" class="btn" onclick="window.openUploadDocumentModal('link')" title="Add Google Drive, Dropbox or Notion Link">
-        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Add Cloud Link
-      </button>
-      <button type="button" class="btn primary" onclick="window.openUploadDocumentModal('file')" title="Upload file attachment">
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Upload Document
+      <button type="button" class="btn primary" onclick="window.openUploadDocumentModal('link')" title="Add Google Drive, Dropbox, Playbook, or Notion Link">
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Add Document Link
       </button>
     </div>
   </div>
@@ -68,7 +65,7 @@
       </div>
 
       <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted)">
-        <p style="margin:0 0 6px"><b>Tip:</b> Attach documents directly to Clients, Live Projects, or Leads for fast access.</p>
+        <p style="margin:0 0 6px"><b>Zero Host Storage:</b> Link external Google Drive, Dropbox, Playbook, or Notion assets to keep documents organized without using server hosting space or data traffic.</p>
       </div>
     </aside>
 
@@ -82,16 +79,16 @@
             <span>JMOS</span>
             <span>&rsaquo;</span>
             <span style="font-weight:700;color:var(--ink)" id="docBreadcrumbActive">All Documents</span>
-            <span class="badge" id="docCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted);margin-left:6px">0 Files</span>
+            <span class="badge" id="docCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted);margin-left:6px">0 Links</span>
           </div>
 
           <div style="display:flex;align-items:center;gap:10px">
             <div style="position:relative">
-              <input type="text" id="docSearchInput" placeholder="Search files &amp; contracts..." style="font-size:12px;padding:5px 8px 5px 26px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);width:210px" oninput="window.onDocSearchChange(this.value)">
+              <input type="text" id="docSearchInput" placeholder="Search links &amp; documents..." style="font-size:12px;padding:5px 8px 5px 26px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);width:210px" oninput="window.onDocSearchChange(this.value)">
               <svg viewBox="0 0 24 24" width="13" height="13" style="position:absolute;left:8px;top:8px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             </div>
-            <button type="button" class="btn primary" onclick="window.openUploadDocumentModal('file')" style="font-size:11.5px;padding:4px 12px">
-              <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Upload
+            <button type="button" class="btn primary" onclick="window.openUploadDocumentModal('link')" style="font-size:11.5px;padding:4px 12px">
+              <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Add Link
             </button>
           </div>
         </div>
@@ -103,17 +100,16 @@
               <tr>
                 <th>Document Title</th>
                 <th>Category</th>
+                <th>Platform / Provider</th>
                 <th>Associated Record</th>
-                <th>File Format</th>
-                <th>Size</th>
-                <th>Uploaded By</th>
+                <th>Linked By</th>
                 <th>Date Added</th>
                 <th style="text-align:right">Action</th>
               </tr>
             </thead>
             <tbody id="documentsTableBody">
               <tr>
-                <td colspan="8" style="padding:40px;text-align:center;color:var(--muted)">Loading documents repository…</td>
+                <td colspan="7" style="padding:40px;text-align:center;color:var(--muted)">Loading cloud documents repository…</td>
               </tr>
             </tbody>
           </table>

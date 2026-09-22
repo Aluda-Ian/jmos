@@ -12,17 +12,39 @@ class Task extends Model
 
     protected $fillable = [
         'project_id',
+        'assigned_to_id',
+        'assigned_by_id',
         'title',
+        'description',
         'stage',
+        'priority',
         'assigned_to',
         'assigned_initials',
         'assigned_color',
+        'sticky_color',
+        'links',
+        'comments',
         'due_date',
+    ];
+
+    protected $casts = [
+        'links' => 'array',
+        'comments' => 'array',
     ];
 
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function assignedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_to_id');
+    }
+
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by_id');
     }
 
     protected static function booted(): void

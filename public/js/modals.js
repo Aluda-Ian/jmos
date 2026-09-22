@@ -281,10 +281,8 @@ window.openModal = function(id) {
 
       const niNo = document.getElementById('niNo');
       if (niNo) niNo.value = window.getNextInvoiceNo();
-      ['niAmount', 'niDue', 'niMethod'].forEach(fid => {
-        const el = document.getElementById(fid);
-        if (el) el.value = '';
-      });
+      const niDue = document.getElementById('niDue');
+      if (niDue) niDue.value = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
       const st = document.getElementById('niStatus');
       if (st) st.value = 'Sent';
       const etims = document.getElementById('niEtims');
@@ -312,7 +310,7 @@ window.openModal = function(id) {
       const neEtr = document.getElementById('neEtr');
       if (neEtr) neEtr.value = 'no';
       const neDate = document.getElementById('neDate');
-      if (neDate) neDate.value = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (neDate) neDate.value = new Date().toISOString().slice(0, 10);
       const preview = document.getElementById('neReceiptPreview');
       if (preview) preview.style.display = 'none';
       const fileInput = document.getElementById('neReceiptFile');
@@ -1359,17 +1357,37 @@ function initModals() {
         } catch (_) {}
       }
 
+      const rawCategory = document.getElementById('npCategory')?.value || 'video_production';
+      const category = rawCategory === 'custom'
+        ? (document.getElementById('npCustomCategoryInput')?.value.trim() || 'Custom')
+        : rawCategory;
+
+      const rawType = document.getElementById('npType')?.value.trim() || 'Brand film';
+      const project_type = rawType === 'custom'
+        ? (document.getElementById('npCustomTypeInput')?.value.trim() || 'Custom Project')
+        : rawType;
+
+      const rawStage = document.getElementById('npStage')?.value.trim() || 'Brief';
+      const stage = rawStage === 'custom'
+        ? (document.getElementById('npCustomStageInput')?.value.trim() || 'Planning')
+        : rawStage;
+
+      const rawStatus = document.getElementById('npStatus')?.value.trim() || 'On track';
+      const status = rawStatus === 'custom'
+        ? (document.getElementById('npCustomStatusInput')?.value.trim() || 'In Progress')
+        : rawStatus;
+
       btn.disabled = true;
       btn.textContent = 'Creating…';
       try {
         await JMOS_API.post('/projects', {
           project_name: name,
           client: client,
-          category: document.getElementById('npCategory')?.value || 'client',
-          project_type: document.getElementById('npType')?.value.trim() || 'Brand film',
+          category: category,
+          project_type: project_type,
           project_manager: document.getElementById('npManager')?.value.trim() || 'Barny Kiome',
-          stage: document.getElementById('npStage')?.value || 'brief',
-          status: document.getElementById('npStatus')?.value || 'On track',
+          stage: stage,
+          status: status,
           priority: 'High',
           deadline: deadlineStr,
           budget: Number(document.getElementById('npBudget')?.value) || 0,
@@ -1431,12 +1449,20 @@ function initModals() {
       const assigned = document.getElementById('ntAssigned')?.value || 'Barny Kiome';
       const userObj = (window.JMOS_STATE && JMOS_STATE.users) ? JMOS_STATE.users.find(u => u.name === assigned) : null;
       const projectIdVal = document.getElementById('ntProject')?.value;
+      const stickyColorVal = document.getElementById('ntStickyColor')?.value || '#FFFBEB';
+      const descriptionVal = document.getElementById('ntDescription')?.value.trim() || null;
+      const priorityVal = document.getElementById('ntPriority')?.value || 'medium';
+      const dueDateVal = document.getElementById('ntDueDate')?.value || null;
 
       try {
         await JMOS_API.post('/tasks', {
           project_id: projectIdVal ? Number(projectIdVal) : null,
           title,
+          description: descriptionVal,
           stage: document.getElementById('ntStage')?.value || 'todo',
+          priority: priorityVal,
+          due_date: dueDateVal,
+          sticky_color: stickyColorVal,
           assigned_to: assigned,
           assigned_initials: userObj ? userObj.ini : getInitials(assigned),
           assigned_color: userObj ? userObj.color : '#C52523'
@@ -2003,3 +2029,707 @@ window.deleteInvoice = async function(id, invoiceNo) {
     showToast('Delete failed', err.message, true);
   }
 };
+
+/* ==========================================================================
+   STICKY NOTE TASK DETAIL & WORKSPACE CONTROLLER
+   ========================================================================== */
+
+window.detectTaskLinkProvider = function(url) {
+  if (!url) return { name: 'Cloud Link', cls: 'generic' };
+  const u = url.toLowerCase();
+  if (u.includes('drive.google.com') || u.includes('docs.google.com')) return { name: 'Google Drive', cls: 'gdrive' };
+  if (u.includes('frame.io')) return { name: 'Frame.io', cls: 'frameio' };
+  if (u.includes('dropbox.com')) return { name: 'Dropbox', cls: 'dropbox' };
+  if (u.includes('playbook.com')) return { name: 'Playbook', cls: 'playbook' };
+  if (u.includes('figma.com')) return { name: 'Figma', cls: 'figma' };
+  if (u.includes('notion.so') || u.includes('notion.site')) return { name: 'Notion', cls: 'notion' };
+  if (u.includes('canva.com')) return { name: 'Canva', cls: 'canva' };
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return { name: 'YouTube', cls: 'youtube' };
+  if (u.includes('vimeo.com')) return { name: 'Vimeo', cls: 'vimeo' };
+  return { name: 'Web Link', cls: 'generic' };
+};
+
+function fmtRelativeTime(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const diff = (Date.now() - new Date(isoStr).getTime()) / 1000;
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return new Date(isoStr).toLocaleDateString('en-KE', { month: 'short', day: 'numeric' });
+  } catch (_) {
+    return '';
+  }
+}
+
+window.openTaskDetailModal = function(taskId) {
+  const task = (JMOS_STATE.tasks || []).find(t => String(t.id) === String(taskId));
+  if (!task) return;
+
+  const idEl = document.getElementById('tdTaskId');
+  const titleEl = document.getElementById('tdTaskTitle');
+  const projBadge = document.getElementById('tdProjectBadge');
+  const priorityBadge = document.getElementById('tdPriorityBadge');
+  const stageBadge = document.getElementById('tdStageBadge');
+  const currentStagePill = document.getElementById('tdCurrentStagePill');
+  const assigneeName = document.getElementById('tdAssigneeName');
+  const assigneeAvatar = document.getElementById('tdAssigneeAvatar');
+  const assignerName = document.getElementById('tdAssignerName');
+  const dueDateText = document.getElementById('tdDueDateText');
+  const descBox = document.getElementById('tdDescriptionBox');
+  const banner = document.getElementById('tdBanner');
+
+  if (idEl) idEl.value = task.id;
+  if (titleEl) titleEl.textContent = task.title || 'Untitled Task';
+
+  // Project
+  const proj = task.project || (task.project_id && JMOS_STATE.projects ? JMOS_STATE.projects.find(p => p.id === task.project_id) : null);
+  if (projBadge) {
+    if (proj) {
+      projBadge.textContent = proj.project_name;
+      projBadge.title = `Client: ${proj.client || 'Internal'}`;
+      projBadge.style.cursor = 'pointer';
+      projBadge.onclick = () => {
+        closeModal('taskDetailModal');
+        if (typeof window.openProjectDetailModal === 'function') {
+          window.openProjectDetailModal(proj.id);
+        }
+      };
+    } else {
+      projBadge.textContent = 'General Workspace Task';
+      projBadge.style.cursor = 'default';
+      projBadge.onclick = null;
+    }
+  }
+
+  // Priority
+  const priority = task.priority || 'medium';
+  if (priorityBadge) {
+    priorityBadge.textContent = priority.toUpperCase() + ' PRIORITY';
+    if (priority === 'urgent') {
+      priorityBadge.style.background = 'rgba(220, 38, 38, 0.15)';
+      priorityBadge.style.color = '#DC2626';
+      priorityBadge.style.borderColor = 'rgba(220, 38, 38, 0.3)';
+    } else if (priority === 'high') {
+      priorityBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+      priorityBadge.style.color = '#D97706';
+      priorityBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+    } else {
+      priorityBadge.style.background = 'var(--panel-2)';
+      priorityBadge.style.color = 'var(--muted)';
+      priorityBadge.style.borderColor = 'var(--line)';
+    }
+  }
+
+  // Stage
+  const stageLabels = {
+    'todo': 'To do',
+    'in_progress': 'In progress',
+    'review_internal': 'Internal Review',
+    'review_client': 'Client Review',
+    'done': 'Done ✓'
+  };
+  const currentStageLabel = stageLabels[task.stage] || task.stage;
+  if (stageBadge) stageBadge.textContent = currentStageLabel;
+  if (currentStagePill) currentStagePill.textContent = 'Current: ' + currentStageLabel;
+
+  // Assignee
+  const personColor = task.assigned_color || '#C52523';
+  const ini = task.assigned_initials || getInitials(task.assigned_to || 'JM');
+  const taskAvatar = document.getElementById('tdTaskAvatar');
+  if (taskAvatar) {
+    taskAvatar.style.background = personColor;
+    taskAvatar.textContent = ini;
+  }
+  if (assigneeAvatar) {
+    assigneeAvatar.style.background = personColor;
+    assigneeAvatar.textContent = ini;
+  }
+  if (assigneeName) assigneeName.textContent = task.assigned_to || 'Unassigned';
+
+  // Assigner & Due date
+  const creator = task.assigned_by?.name || (task.assigned_by_id && JMOS_STATE.users ? (JMOS_STATE.users.find(u => u.id === task.assigned_by_id)?.name) : 'Production Lead');
+  if (assignerName) assignerName.textContent = creator;
+  if (dueDateText) dueDateText.textContent = task.due_date ? fmtDate(task.due_date) : 'Flexible Timeline';
+
+  // Sticky Theme Color
+  const stickyColor = task.sticky_color || '#FFFBEB';
+  const modalBox = document.getElementById('tdModalBox');
+  if (modalBox) {
+    modalBox.style.setProperty('--sticky-theme-bg', stickyColor);
+    modalBox.style.backgroundColor = stickyColor;
+  }
+  if (banner) {
+    banner.style.setProperty('--sticky-theme-bg', stickyColor);
+    banner.style.backgroundColor = stickyColor;
+  }
+  const modalBody = document.querySelector('#taskDetailModal .sticky-modal-body');
+  if (modalBody) {
+    modalBody.style.backgroundColor = stickyColor;
+  }
+  const modalFooter = document.querySelector('#taskDetailModal .workspace-modal-footer');
+  if (modalFooter) {
+    modalFooter.style.backgroundColor = stickyColor;
+  }
+  document.querySelectorAll('#tdColorPickerMini .swatch-mini').forEach(sw => {
+    if (sw.getAttribute('data-color') === stickyColor) {
+      sw.classList.add('active');
+    } else {
+      sw.classList.remove('active');
+    }
+  });
+
+  // Description
+  if (descBox) {
+    descBox.textContent = task.description ? task.description : 'No detailed instructions provided for this task.';
+  }
+
+  // Render Deliverable Review Links
+  window.renderTaskDetailLinks(task);
+
+  // Render Stepper & PM Workflow Buttons
+  window.renderTaskWorkflowControls(task);
+
+  // Render Comments & Activity Stream
+  window.renderTaskDetailComments(task);
+
+  // Clear new link & comment input fields
+  const linkTitleInput = document.getElementById('tdNewLinkTitle');
+  const linkUrlInput = document.getElementById('tdNewLinkUrl');
+  const linkDetectBadge = document.getElementById('tdProviderDetectBadge');
+  const commentMsgInput = document.getElementById('tdCommentMessage');
+  if (linkTitleInput) linkTitleInput.value = '';
+  if (linkUrlInput) linkUrlInput.value = '';
+  if (linkDetectBadge) linkDetectBadge.style.display = 'none';
+  if (commentMsgInput) commentMsgInput.value = '';
+
+  openModal('taskDetailModal');
+};
+
+window.renderTaskDetailLinks = function(task) {
+  const container = document.getElementById('tdLinksList');
+  const countBadge = document.getElementById('tdLinksCountBadge');
+  if (!container) return;
+
+  const links = Array.isArray(task.links) ? task.links : [];
+  if (countBadge) countBadge.textContent = `${links.length} link${links.length === 1 ? '' : 's'}`;
+
+  if (!links.length) {
+    container.innerHTML = `<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted);background:var(--panel);border-radius:10px;border:1px dashed var(--line)">No review links attached yet. Team members can attach Google Drive cuts, Frame.io videos, Figma prototypes, or review documents below.</div>`;
+    return;
+  }
+
+  container.innerHTML = links.map(lnk => {
+    const provInfo = window.detectTaskLinkProvider(lnk.url);
+    const provName = lnk.provider || provInfo.name;
+    const provCls = provInfo.cls;
+    const author = lnk.created_by || 'Team';
+    const timeText = lnk.created_at ? fmtRelativeTime(lnk.created_at) : '';
+
+    return `
+      <div class="sticky-link-card">
+        <div class="link-card-meta">
+          <div class="link-card-title">${escHtml(lnk.title || 'Review Deliverable')}</div>
+          <div class="link-card-sub">
+            <span class="provider-pill ${provCls}">${escHtml(provName)}</span>
+            <span>By ${escHtml(author)} ${timeText ? '• ' + escHtml(timeText) : ''}</span>
+          </div>
+        </div>
+        <div class="link-card-actions">
+          <a href="${escHtml(lnk.url)}" target="_blank" rel="noopener noreferrer" class="btn-open-link" title="Open ${escHtml(lnk.title)} in new tab">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Review ↗
+          </a>
+          <button type="button" class="linkbtn" data-delete-task-link="${lnk.id}" style="color:var(--muted);font-size:14px;padding:4px" title="Delete link">&times;</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.renderTaskWorkflowControls = function(task) {
+  const stagesOrder = ['todo', 'in_progress', 'review_internal', 'review_client', 'done'];
+  const currentIdx = stagesOrder.indexOf(task.stage);
+
+  // Stepper buttons
+  document.querySelectorAll('#tdStageStepper .stage-step-btn').forEach((btn, idx) => {
+    btn.classList.remove('completed', 'current');
+    if (idx < currentIdx) {
+      btn.classList.add('completed');
+    } else if (idx === currentIdx) {
+      btn.classList.add('current');
+    }
+  });
+
+  const proceedBtn = document.getElementById('tdProceedBtn');
+  const sendBackBtn = document.getElementById('tdSendBackBtn');
+  const revBox = document.getElementById('tdRevisionNoteBox');
+  if (revBox) revBox.style.display = 'none';
+
+  if (proceedBtn) {
+    if (task.stage === 'todo') {
+      proceedBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> Start Task →`;
+      proceedBtn.style.display = 'inline-flex';
+    } else if (task.stage === 'in_progress') {
+      proceedBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> Submit for Internal Review →`;
+      proceedBtn.style.display = 'inline-flex';
+    } else if (task.stage === 'review_internal') {
+      proceedBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg> Approve & Move to Client Review →`;
+      proceedBtn.style.display = 'inline-flex';
+    } else if (task.stage === 'review_client') {
+      proceedBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Approve & Mark Done ✓`;
+      proceedBtn.style.display = 'inline-flex';
+    } else {
+      proceedBtn.style.display = 'none';
+    }
+  }
+
+  if (sendBackBtn) {
+    if (task.stage === 'todo') {
+      sendBackBtn.style.display = 'none';
+    } else if (task.stage === 'in_progress') {
+      sendBackBtn.style.display = 'inline-flex';
+      sendBackBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Revert to To Do`;
+    } else {
+      sendBackBtn.style.display = 'inline-flex';
+      sendBackBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Send Back for Changes`;
+    }
+  }
+};
+
+window.renderTaskDetailComments = function(task) {
+  const feed = document.getElementById('tdCommentsFeed');
+  const countBadge = document.getElementById('tdCommentsCountBadge');
+  if (!feed) return;
+
+  const comments = Array.isArray(task.comments) ? task.comments : [];
+  if (countBadge) countBadge.textContent = `${comments.length} entr${comments.length === 1 ? 'y' : 'ies'}`;
+
+  if (!comments.length) {
+    feed.innerHTML = `<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted);background:var(--panel);border-radius:10px;border:1px dashed var(--line)">No comments or recommendations yet. Use the box below to share review feedback, recommendations, or revision notes.</div>`;
+    return;
+  }
+
+  feed.innerHTML = comments.map(c => {
+    const authorName = c.user_name || 'Team Member';
+    const authorColor = c.user_color || '#C52523';
+    const authorIni = getInitials(authorName);
+    const role = c.user_role || 'team';
+    const timeText = c.created_at ? fmtRelativeTime(c.created_at) : '';
+    const type = c.type || 'comment';
+
+    let tagHtml = '';
+    if (type === 'recommendation') {
+      tagHtml = `<span class="comment-type-tag recommendation">💡 Recommendation</span>`;
+    } else if (type === 'change_request') {
+      tagHtml = `<span class="comment-type-tag change_request">⚠️ Revision Requested</span>`;
+    } else if (type === 'approval') {
+      tagHtml = `<span class="comment-type-tag approval">✅ Stage Advance</span>`;
+    } else if (type === 'link_attached') {
+      tagHtml = `<span class="comment-type-tag" style="background:rgba(66,133,244,0.15);color:#3B82F6">📎 Review Link Attached</span>`;
+    }
+
+    return `
+      <div class="comment-bubble ${escHtml(type)}">
+        <div class="comment-author-row">
+          <div class="comment-author-left">
+            <span class="av-chip" style="background:${authorColor};width:20px;height:20px;font-size:9px">${escHtml(authorIni)}</span>
+            <b style="font-size:12.5px;color:var(--ink)">${escHtml(authorName)}</b>
+            <span class="comment-role-pill">${escHtml(role)}</span>
+          </div>
+          <span class="comment-time">${escHtml(timeText)}</span>
+        </div>
+        ${tagHtml ? `<div style="margin:2px 0">${tagHtml}</div>` : ''}
+        <div class="comment-body-text">${escHtml(c.message || '')}</div>
+      </div>
+    `;
+  }).join('');
+
+  feed.scrollTop = feed.scrollHeight;
+};
+
+// Global Event Listeners for Task Detail Workspace Modal
+document.addEventListener('DOMContentLoaded', () => {
+  // 1. Live Cloud Provider Detection on URL Input
+  const linkUrlInput = document.getElementById('tdNewLinkUrl');
+  if (linkUrlInput) {
+    linkUrlInput.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      const badge = document.getElementById('tdProviderDetectBadge');
+      if (!badge) return;
+      if (val) {
+        const prov = window.detectTaskLinkProvider(val);
+        badge.textContent = prov.name;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    });
+  }
+
+  // 2. Sticky Color Swatches in Create Task Modal
+  const createSwatches = document.querySelectorAll('#taskStickyColorSwatches .color-swatch-btn');
+  createSwatches.forEach(btn => {
+    btn.addEventListener('click', () => {
+      createSwatches.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const color = btn.getAttribute('data-color');
+      const hidden = document.getElementById('ntStickyColor');
+      if (hidden) hidden.value = color;
+    });
+  });
+});
+
+// Click Delegations for Task Detail Modal Actions
+document.addEventListener('click', async (e) => {
+  // A. Change Theme Color in Task Detail Modal
+  const swatchBtn = e.target.closest('#tdColorPickerMini .swatch-mini');
+  if (swatchBtn) {
+    const taskId = document.getElementById('tdTaskId')?.value;
+    const color = swatchBtn.getAttribute('data-color');
+    if (!taskId || !color) return;
+
+    document.querySelectorAll('#tdColorPickerMini .swatch-mini').forEach(b => b.classList.remove('active'));
+    swatchBtn.classList.add('active');
+    
+    const modalBox = document.getElementById('tdModalBox');
+    if (modalBox) {
+      modalBox.style.setProperty('--sticky-theme-bg', color);
+      modalBox.style.backgroundColor = color;
+    }
+    const banner = document.getElementById('tdBanner');
+    if (banner) {
+      banner.style.setProperty('--sticky-theme-bg', color);
+      banner.style.backgroundColor = color;
+    }
+    const modalBody = document.querySelector('#taskDetailModal .sticky-modal-body');
+    if (modalBody) {
+      modalBody.style.backgroundColor = color;
+    }
+    const modalFooter = document.querySelector('#taskDetailModal .workspace-modal-footer');
+    if (modalFooter) {
+      modalFooter.style.backgroundColor = color;
+    }
+
+    try {
+      await JMOS_API.put(`/tasks/${taskId}`, { sticky_color: color });
+      const task = (JMOS_STATE.tasks || []).find(t => String(t.id) === String(taskId));
+      if (task) task.sticky_color = color;
+      renderTasks();
+    } catch (err) {
+      showToast('Color update failed', err.message, true);
+    }
+    return;
+  }
+
+  // B. Add Review Link
+  if (e.target.closest('#tdAddLinkBtn')) {
+    const btn = e.target.closest('#tdAddLinkBtn');
+    const taskId = document.getElementById('tdTaskId')?.value;
+    const title = document.getElementById('tdNewLinkTitle')?.value.trim();
+    const url = document.getElementById('tdNewLinkUrl')?.value.trim();
+
+    if (!taskId) return;
+    if (!title) return showToast('Link Label Required', 'Please enter a name for this deliverable (e.g. Rough Cut v1)', true);
+    if (!url) return showToast('Link URL Required', 'Please enter a valid review URL (e.g. Google Drive, Frame.io)', true);
+
+    btn.disabled = true;
+    btn.textContent = 'Attaching…';
+
+    try {
+      const res = await JMOS_API.post(`/tasks/${taskId}/links`, { title, url });
+      const updatedTask = res.data;
+      if (updatedTask && JMOS_STATE.tasks) {
+        const idx = JMOS_STATE.tasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx !== -1) JMOS_STATE.tasks[idx] = updatedTask;
+        window.openTaskDetailModal(taskId);
+        renderTasks();
+      }
+      showToast('Review Link Added', `Attached "${title}" for review`);
+    } catch (err) {
+      showToast('Failed to add link', err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Attach Review Link`;
+    }
+    return;
+  }
+
+  // C. Delete Review Link
+  const delLinkBtn = e.target.closest('[data-delete-task-link]');
+  if (delLinkBtn) {
+    const linkId = delLinkBtn.getAttribute('data-delete-task-link');
+    const taskId = document.getElementById('tdTaskId')?.value;
+    if (!taskId || !linkId) return;
+
+    try {
+      const res = await JMOS_API.delete(`/tasks/${taskId}/links/${linkId}`);
+      const updatedTask = res.data;
+      if (updatedTask && JMOS_STATE.tasks) {
+        const idx = JMOS_STATE.tasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx !== -1) JMOS_STATE.tasks[idx] = updatedTask;
+        window.openTaskDetailModal(taskId);
+        renderTasks();
+      }
+      showToast('Review Link Removed', 'Deliverable link deleted');
+    } catch (err) {
+      showToast('Delete failed', err.message, true);
+    }
+    return;
+  }
+
+  // D. Proceed to Next Stage
+  if (e.target.closest('#tdProceedBtn')) {
+    const btn = e.target.closest('#tdProceedBtn');
+    const taskId = document.getElementById('tdTaskId')?.value;
+    if (!taskId) return;
+
+    btn.disabled = true;
+    try {
+      const res = await JMOS_API.post(`/tasks/${taskId}/workflow`, { action: 'proceed' });
+      const updatedTask = res.data;
+      if (updatedTask && JMOS_STATE.tasks) {
+        const idx = JMOS_STATE.tasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx !== -1) JMOS_STATE.tasks[idx] = updatedTask;
+        window.openTaskDetailModal(taskId);
+        renderTasks();
+      }
+      showToast('Task Advanced', `Stage moved to ${updatedTask.stage.replace('_', ' ')}`);
+    } catch (err) {
+      showToast('Workflow failed', err.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
+
+  // E. Toggle Send Back Revision Box
+  if (e.target.closest('#tdSendBackBtn')) {
+    const revBox = document.getElementById('tdRevisionNoteBox');
+    if (revBox) {
+      revBox.style.display = (revBox.style.display === 'none' || !revBox.style.display) ? 'block' : 'none';
+      if (revBox.style.display === 'block') {
+        document.getElementById('tdRevisionText')?.focus();
+      }
+    }
+    return;
+  }
+
+  if (e.target.closest('#tdCancelRevisionBtn')) {
+    const revBox = document.getElementById('tdRevisionNoteBox');
+    if (revBox) revBox.style.display = 'none';
+    return;
+  }
+
+  // F. Confirm Send Back for Changes
+  if (e.target.closest('#tdConfirmSendBackBtn')) {
+    const btn = e.target.closest('#tdConfirmSendBackBtn');
+    const taskId = document.getElementById('tdTaskId')?.value;
+    const recommendation = document.getElementById('tdRevisionText')?.value.trim();
+
+    if (!taskId) return;
+    if (!recommendation) return showToast('Revision Note Required', 'Please specify what adjustments or changes are required', true);
+
+    btn.disabled = true;
+    btn.textContent = 'Reverting…';
+
+    try {
+      const res = await JMOS_API.post(`/tasks/${taskId}/workflow`, { action: 'send_back', recommendation });
+      const updatedTask = res.data;
+      if (updatedTask && JMOS_STATE.tasks) {
+        const idx = JMOS_STATE.tasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx !== -1) JMOS_STATE.tasks[idx] = updatedTask;
+        window.openTaskDetailModal(taskId);
+        renderTasks();
+      }
+      showToast('Changes Requested', 'Task reverted for team member revisions');
+    } catch (err) {
+      showToast('Revert failed', err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Revisions & Revert';
+    }
+    return;
+  }
+
+  // G. Stage Stepper Direct Click in Task Detail Modal
+  const taskStageStepBtn = e.target.closest('#tdStageStepper .stage-step-btn');
+  if (taskStageStepBtn) {
+    const newStage = taskStageStepBtn.getAttribute('data-stage');
+    const taskId = document.getElementById('tdTaskId')?.value;
+    if (!taskId || !newStage) return;
+
+    try {
+      taskStageStepBtn.disabled = true;
+      const res = await JMOS_API.put(`/tasks/${taskId}`, { stage: newStage });
+      const updatedTask = res.data;
+      if (updatedTask && JMOS_STATE.tasks) {
+        const idx = JMOS_STATE.tasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx !== -1) JMOS_STATE.tasks[idx] = updatedTask;
+        window.openTaskDetailModal(taskId);
+        renderTasks();
+      }
+      showToast('Stage Updated', `Task moved to ${newStage.replace('_', ' ')}`);
+    } catch (err) {
+      showToast('Stage change unauthorized', err.message, true);
+    } finally {
+      taskStageStepBtn.disabled = false;
+    }
+    return;
+  }
+
+  // H. Post Comment / Recommendation
+  if (e.target.closest('#tdPostCommentBtn')) {
+    const btn = e.target.closest('#tdPostCommentBtn');
+    const taskId = document.getElementById('tdTaskId')?.value;
+    const message = document.getElementById('tdCommentMessage')?.value.trim();
+    const type = document.getElementById('tdCommentTypeSelect')?.value || 'comment';
+
+    if (!taskId) return;
+    if (!message) return showToast('Comment Required', 'Please enter your message or recommendation', true);
+
+    btn.disabled = true;
+    btn.textContent = 'Posting…';
+
+    try {
+      const res = await JMOS_API.post(`/tasks/${taskId}/comments`, { message, type });
+      const updatedTask = res.data;
+      if (updatedTask && JMOS_STATE.tasks) {
+        const idx = JMOS_STATE.tasks.findIndex(t => String(t.id) === String(taskId));
+        if (idx !== -1) JMOS_STATE.tasks[idx] = updatedTask;
+        window.renderTaskDetailComments(updatedTask);
+        renderTasks();
+      }
+      document.getElementById('tdCommentMessage').value = '';
+      showToast('Comment Posted', 'Feedback recorded on task');
+    } catch (err) {
+      showToast('Post comment failed', err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Post Comment`;
+    }
+    return;
+  }
+
+  // I. Delete Task
+  if (e.target.closest('#tdDeleteTaskBtn')) {
+    const taskId = document.getElementById('tdTaskId')?.value;
+    if (!taskId) return;
+    const task = (JMOS_STATE.tasks || []).find(t => String(t.id) === String(taskId));
+    const title = task ? task.title : 'this task';
+
+    const confirmed = await window.showConfirmDialog({
+      title: 'Remove Task?',
+      message: `Are you sure you want to delete task <b>${escHtml(title)}</b>? Associated calendar deadlines will also be removed.`,
+      confirmText: 'Delete Task',
+      isDanger: true
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await JMOS_API.delete(`/tasks/${taskId}`);
+      closeModal('taskDetailModal');
+      showToast('Task Deleted', `Removed "${title}" from workspace`);
+      await JMOS_API.fetchAll();
+      renderAllViews();
+    } catch (err) {
+      showToast('Delete failed', err.message, true);
+    }
+    return;
+  }
+});
+
+// Universal Calendar Date & Time Picker Activator (No manual typing required)
+document.addEventListener('click', (e) => {
+  const target = e.target;
+  if (target && target.tagName === 'INPUT' && (target.type === 'date' || target.type === 'time' || target.type === 'datetime-local')) {
+    if (typeof target.showPicker === 'function') {
+      try {
+        target.showPicker();
+      } catch (_) {}
+    }
+  }
+});
+
+// Dynamic Project Custom Field & Category Switching Helpers
+window.onProjectCategoryChange = function(cat, prefix) {
+  const customWrap = document.getElementById(prefix === 'np' ? 'npCustomCategoryWrap' : 'pdmCustomCategoryWrap');
+  const customInput = document.getElementById(prefix === 'np' ? 'npCustomCategoryInput' : 'pdmCustomCategoryInput');
+  const typeSelect = document.getElementById(prefix === 'np' ? 'npType' : 'pdmTypeSelect');
+  const stageSelect = document.getElementById(prefix === 'np' ? 'npStage' : 'pdmStageSelect');
+
+  if (cat === 'custom') {
+    if (customWrap) customWrap.style.display = 'block';
+    if (customInput) customInput.focus();
+  } else {
+    if (customWrap) customWrap.style.display = 'none';
+  }
+
+  // Auto-suggest appropriate default type and stage based on chosen category
+  if (typeSelect && stageSelect) {
+    if (cat === 'development') {
+      const devType = typeSelect.querySelector('option[value="Internal System Development (JMOS / Tech)"]');
+      if (devType) typeSelect.value = devType.value;
+      const devStage = stageSelect.querySelector('option[value="Backlog / Requirements"]');
+      if (devStage) stageSelect.value = devStage.value;
+    } else if (cat === 'graphic_design') {
+      const gdType = typeSelect.querySelector('option[value="Brand Identity & Logo Design"]');
+      if (gdType) typeSelect.value = gdType.value;
+      const gdStage = stageSelect.querySelector('option[value="Creative Brief"]');
+      if (gdStage) stageSelect.value = gdStage.value;
+    } else if (cat === 'content_calendar') {
+      const ccType = typeSelect.querySelector('option[value="Monthly Content Calendar & Production"]');
+      if (ccType) typeSelect.value = ccType.value;
+      const ccStage = stageSelect.querySelector('option[value="Content Strategy"]');
+      if (ccStage) stageSelect.value = ccStage.value;
+    } else if (cat === 'video_production') {
+      const vpType = typeSelect.querySelector('option[value="Brand film"]');
+      if (vpType) typeSelect.value = vpType.value;
+      const vpStage = stageSelect.querySelector('option[value="Brief"]');
+      if (vpStage) stageSelect.value = vpStage.value;
+    } else if (cat === 'internal') {
+      const inType = typeSelect.querySelector('option[value="Internal Operations & Studio R&D"]');
+      if (inType) typeSelect.value = inType.value;
+      const inStage = stageSelect.querySelector('option[value="Planning"]');
+      if (inStage) stageSelect.value = inStage.value;
+    }
+  }
+};
+
+window.onProjectTypeChange = function(val, prefix) {
+  const customWrap = document.getElementById(prefix === 'np' ? 'npCustomTypeWrap' : 'pdmCustomTypeWrap');
+  const customInput = document.getElementById(prefix === 'np' ? 'npCustomTypeInput' : 'pdmCustomTypeInput');
+  if (val === 'custom') {
+    if (customWrap) customWrap.style.display = 'block';
+    if (customInput) customInput.focus();
+  } else {
+    if (customWrap) customWrap.style.display = 'none';
+  }
+};
+
+window.onProjectStageChange = function(val, prefix) {
+  const customWrap = document.getElementById(prefix === 'np' ? 'npCustomStageWrap' : 'pdmCustomStageWrap');
+  const customInput = document.getElementById(prefix === 'np' ? 'npCustomStageInput' : 'pdmCustomStageInput');
+  if (val === 'custom') {
+    if (customWrap) customWrap.style.display = 'block';
+    if (customInput) customInput.focus();
+  } else {
+    if (customWrap) customWrap.style.display = 'none';
+  }
+};
+
+window.onProjectStatusChange = function(val, prefix) {
+  const customWrap = document.getElementById(prefix === 'np' ? 'npCustomStatusWrap' : 'pdmCustomStatusWrap');
+  const customInput = document.getElementById(prefix === 'np' ? 'npCustomStatusInput' : 'pdmCustomStatusInput');
+  if (val === 'custom') {
+    if (customWrap) customWrap.style.display = 'block';
+    if (customInput) customInput.focus();
+  } else {
+    if (customWrap) customWrap.style.display = 'none';
+  }
+};
+
+
+

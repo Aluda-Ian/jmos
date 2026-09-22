@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Mail\UserInvitationMail;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -168,5 +171,106 @@ class UserProfileAndTeamManagementTest extends TestCase
 
         $user->refresh();
         $this->assertTrue(Hash::check('new_secure_password_123', $user->password));
+    }
+
+    public function test_adding_new_user_sends_password_setup_invitation_email(): void
+    {
+        Mail::fake();
+
+        $owner = User::where('role', 'owner')->first();
+        Sanctum::actingAs($owner);
+
+        $response = $this->postJson('/api/users', [
+            'name' => 'Brian Mwangi',
+            'email' => 'brian.mwangi@jeotamedia.co.ke',
+            'title' => 'Audio Specialist',
+            'department' => 'Audio & Sound',
+            'role' => 'team',
+            'type' => 'Full-time',
+            'pay' => '60,000/mo',
+            'send_invite_email' => true,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => 'success',
+            ]);
+
+        $user = User::where('email', 'brian.mwangi@jeotamedia.co.ke')->first();
+        $this->assertNotNull($user);
+
+        // Verify that invitation mail was sent
+        Mail::assertSent(UserInvitationMail::class, function ($mail) use ($user) {
+            return $mail->hasTo($user->email) &&
+                   ! empty($mail->data['otp']) &&
+                   $mail->data['userName'] === 'Brian Mwangi';
+        });
+
+        // Verify reset token record exists in DB
+        $tokenRecord = DB::table('password_reset_tokens')
+            ->where('email', $user->email)
+            ->first();
+        $this->assertNotNull($tokenRecord);
+    }
+
+    public function test_can_resend_password_setup_invitation_email(): void
+    {
+        Mail::fake();
+
+        $owner = User::where('role', 'owner')->first();
+        Sanctum::actingAs($owner);
+
+        $user = User::factory()->create([
+            'email' => 'member.resend@jeotamedia.co.ke',
+            'name' => 'Resend Candidate',
+        ]);
+
+        $response = $this->postJson("/api/users/{$user->id}/resend-invitation");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+            ]);
+
+        Mail::assertSent(UserInvitationMail::class, function ($mail) use ($user) {
+            return $mail->hasTo($user->email);
+        });
+    }
+
+    public function test_new_user_can_set_password_using_invitation_otp(): void
+    {
+        Mail::fake();
+
+        $owner = User::where('role', 'owner')->first();
+        Sanctum::actingAs($owner);
+
+        $res = $this->postJson('/api/users', [
+            'name' => 'Alice Kemboi',
+            'email' => 'alice.kemboi@jeotamedia.co.ke',
+            'title' => 'Graphic Designer',
+            'department' => 'Creative',
+            'role' => 'team',
+            'type' => 'Full-time',
+            'send_invite_email' => true,
+        ]);
+
+        $otp = $res->json('setup_otp');
+        $this->assertNotNull($otp);
+
+        // User sets password using OTP
+        $resetRes = $this->postJson('/api/auth/reset-password', [
+            'email' => 'alice.kemboi@jeotamedia.co.ke',
+            'otp' => $otp,
+            'password' => 'NewJeotaSecret2026!',
+            'password_confirmation' => 'NewJeotaSecret2026!',
+        ]);
+
+        $resetRes->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+            ]);
+
+        $user = User::where('email', 'alice.kemboi@jeotamedia.co.ke')->first();
+        $this->assertTrue(Hash::check('NewJeotaSecret2026!', $user->password));
     }
 }

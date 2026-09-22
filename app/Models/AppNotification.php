@@ -33,12 +33,11 @@ class AppNotification extends Model
 
     public function scopeForUser(Builder $query, ?int $userId): Builder
     {
-        return $query->where(function (Builder $q) use ($userId) {
-            $q->whereNull('user_id');
-            if ($userId) {
-                $q->orWhere('user_id', $userId);
-            }
-        });
+        if (! $userId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('user_id', $userId);
     }
 
     public function scopeUnread(Builder $query): Builder

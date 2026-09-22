@@ -8,7 +8,7 @@
       <p>Appearance preferences and system configuration.</p>
     </div>
     <div class="head-actions" data-perm="owner manager">
-      <button type="button" class="btn primary" id="saveAllSettingsBtn">
+      <button type="button" class="btn primary" id="saveAllSettingsBtn" onclick="saveAllSettings()">
         <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save all settings
       </button>
     </div>
@@ -729,6 +729,175 @@
           <div style="color:#94a3b8">[System Ready] JMOS System Software Upgrade &amp; Maintenance console initialized. Waiting for action...</div>
         </div>
       </div>
+    </div>
+
+    <!-- 6. Third-Party APIs & External Integrations Documentation Hub (IT Department & Admin Exclusive) -->
+    <div class="card" style="padding:24px;grid-column:span 2" id="thirdPartyApiDocsCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:14px;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:rgba(217,119,6,0.12);color:var(--amber);display:grid;place-items:center">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">Third-Party APIs &amp; Gateway Integrations Documentation</h3>
+              <span class="badge" style="background:var(--amber-soft);color:var(--amber);font-size:11px;font-weight:600">IT Knowledge Base</span>
+            </div>
+            <p style="font-size:12px;color:var(--muted)">Technical integration guides, live webhook URLs, authentication structures, and setup instructions for external platforms.</p>
+          </div>
+        </div>
+        <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:11px">5 Core Gateways Documented</span>
+      </div>
+
+      <!-- Navigation Tabs for API Docs -->
+      <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:16px;flex-wrap:wrap">
+        <button type="button" class="crm-nav-tab active" id="apiDocTabKra" onclick="switchApiDocsTab('kra')">
+          🇰🇪 KRA eTIMS &amp; iTax
+        </button>
+        <button type="button" class="crm-nav-tab" id="apiDocTabGoogle" onclick="switchApiDocsTab('google')">
+          📅 Google Workspace &amp; Meet
+        </button>
+        <button type="button" class="crm-nav-tab" id="apiDocTabZoho" onclick="switchApiDocsTab('zoho')">
+          💼 Zoho CRM Webhook
+        </button>
+        <button type="button" class="crm-nav-tab" id="apiDocTabMpesa" onclick="switchApiDocsTab('mpesa')">
+          💳 M-Pesa Daraja &amp; NCBA
+        </button>
+        <button type="button" class="crm-nav-tab" id="apiDocTabSmtp" onclick="switchApiDocsTab('smtp')">
+          ✉️ SMTP &amp; Web Push
+        </button>
+      </div>
+
+      <!-- PANE 1: KRA eTIMS & iTax Integration (Connect Gava) -->
+      <div class="api-doc-pane" id="apiPaneKra">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <b style="font-size:14px;color:var(--ink)">Kenya Revenue Authority (KRA) eTIMS &amp; iTax Setup Guide</b>
+            <span class="badge" style="background:var(--green-soft);color:var(--green)">PIN: P051782390X Verified</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+            JMOS integrates with the Government of Kenya (GoK) eTIMS Tax Compliance Engine via the <b>Connect Gava</b> middleware. This provides automated electronic tax invoice signing, 0% VAT exemption handling for professional media production, direct project expenses ETR validation, and 5% Withholding Tax (WHT) ledger deductions.
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">1. Entity Registration &amp; PIN</div>
+              <div style="font-size:12px;color:var(--ink)">Corporate PIN: <code>P051782390X</code> (Jeota Media Ltd). Ensure PIN status is Active on KRA iTax portal.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">2. eTIMS OSCU / VSCU Device ID</div>
+              <div style="font-size:12px;color:var(--ink)">Default Branch Code: <code>00</code>. Production environment communicates via secure virtual ETR device profile.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">3. Professional Services VAT (0%)</div>
+              <div style="font-size:12px;color:var(--ink)">Creative &amp; film services are classified as <b>0% VAT (Exempt)</b>. Invoices generated in JMOS apply 0% VAT automatically.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">4. Direct Expenses ETR Deductions</div>
+              <div style="font-size:12px;color:var(--ink)">Expense receipts uploaded in JMOS are verified against valid KRA Control Unit Numbers (CU Numbers) for tax deduction.</div>
+            </div>
+          </div>
+
+          <div style="background:#0f172a;color:#f8fafc;padding:12px 14px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;overflow-x:auto;line-height:1.5">
+            <div style="color:#94a3b8">// KRA eTIMS Transmission Payload Example (POST /api/invoices/{id})</div>
+            <div>{</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"taxpayer_pin"</span>: <span style="color:#a5f3fc">"P051782390X"</span>,</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"branch_id"</span>: <span style="color:#a5f3fc">"00"</span>,</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"invoice_number"</span>: <span style="color:#a5f3fc">"INV-2026-001"</span>,</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"vat_rate_pct"</span>: <span style="color:#f472b6">0.0</span>,</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"wht_deduction_pct"</span>: <span style="color:#f472b6">5.0</span>,</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"classification"</span>: <span style="color:#a5f3fc">"Professional Film &amp; Creative Services"</span></div>
+            <div>}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANE 2: Google Workspace, Calendar & Meet API -->
+      <div class="api-doc-pane" id="apiPaneGoogle" style="display:none">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <b style="font-size:14px;color:var(--ink)">Google Calendar &amp; Google Meet API Connection</b>
+            <span class="badge" style="background:var(--blue-soft);color:var(--blue)">OAuth 2.0 / Service Account</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+            Bi-directional synchronization pushes shoot dates, client meetings, task milestones, and production deadlines straight to Google Calendar and generates Google Meet conference rooms automatically.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--blue);margin-bottom:4px">1. Authorized Redirect URI</div>
+              <div style="font-size:12px;color:var(--ink)"><code>https://jmos.jeotamedia.co.ke/api/calendar/callback</code></div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--blue);margin-bottom:4px">2. Required OAuth Scopes</div>
+              <div style="font-size:12px;color:var(--ink)"><code>https://www.googleapis.com/auth/calendar.events</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANE 3: Zoho CRM Webhook & Lead Engine -->
+      <div class="api-doc-pane" id="apiPaneZoho" style="display:none">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <b style="font-size:14px;color:var(--ink)">Zoho CRM Inbound Lead Webhook &amp; Pipeline Engine</b>
+            <span class="badge" style="background:var(--amber-soft);color:var(--amber)">REST Inbound</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+            Configure Zoho CRM Workflow Rules to POST new website inquiries directly into the JMOS Lead Pipeline:
+          </p>
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px">
+            <b style="font-size:12px">Webhook Ingestion Endpoint:</b>
+            <div style="font-size:12px;color:var(--red);margin-top:2px;font-family:monospace">POST https://jmos.jeotamedia.co.ke/api/leads</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANE 4: M-Pesa Daraja & NCBA Banking Gateway -->
+      <div class="api-doc-pane" id="apiPaneMpesa" style="display:none">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <b style="font-size:14px;color:var(--ink)">M-Pesa Daraja &amp; NCBA Commercial Bank Reconciliation</b>
+            <span class="badge" style="background:var(--green-soft);color:var(--green)">Instant STK Push</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+            Supports instant mobile checkout via Safaricom Lipa na M-Pesa Online (STK Push) and NCBA Corporate Paybill:
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--green);margin-bottom:4px">Corporate Paybill</div>
+              <div style="font-size:12px;color:var(--ink)">Business Shortcode: <b>522522</b> (NCBA Bank)</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--green);margin-bottom:4px">Account Reference</div>
+              <div style="font-size:12px;color:var(--ink)"><code>6772740015</code> (Invoice Number appended)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANE 5: SMTP & Web Push Notifications Gateway -->
+      <div class="api-doc-pane" id="apiPaneSmtp" style="display:none">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <b style="font-size:14px;color:var(--ink)">SMTP Transactional Mail &amp; Web Push Notifications Gateway</b>
+            <span class="badge" style="background:var(--blue-soft);color:var(--blue)">VAPID / Service Worker</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+            DNS and mail server configuration for guaranteed inbox delivery:
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;margin-bottom:4px">SPF Record (TXT)</div>
+              <div style="font-size:11.5px;color:var(--ink);font-family:monospace">v=spf1 include:mail.jeotamedia.co.ke ~all</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;margin-bottom:4px">DMARC Policy (TXT)</div>
+              <div style="font-size:11.5px;color:var(--ink);font-family:monospace">v=DMARC1; p=quarantine; rua=mailto:jmos@jeotamedia.co.ke</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
   </div><!-- end data-perm="owner manager" wrapper -->

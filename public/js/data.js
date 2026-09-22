@@ -41,6 +41,7 @@ const JMOS_STATE = {
   projects: [],
   pipeline: [],
   tasks: [],
+  quotes: [],
   invoices: [],
   expenses: [],
   services: [],
@@ -158,7 +159,7 @@ const JMOS_API = {
   // Pull all database records in parallel
   async fetchAll() {
     try {
-      const [users, clients, projects, pipeline, tasks, invoices, expenses, finance, services] = await Promise.all([
+      const [users, clients, projects, pipeline, tasks, invoices, expenses, finance, services, quotes] = await Promise.all([
         this.get('/users').catch(() => []),
         this.get('/clients').catch(() => []),
         this.get('/projects').catch(() => []),
@@ -167,14 +168,15 @@ const JMOS_API = {
         this.get('/invoices').catch(() => []),
         this.get('/expenses').catch(() => []),
         this.get('/finance/overview').catch(() => null),
-        this.get('/services').catch(() => [])
+        this.get('/services').catch(() => []),
+        this.get('/quotes').catch(() => [])
       ]);
 
       function unwrapList(res) {
         if (Array.isArray(res)) return res;
         if (res && Array.isArray(res.data)) return res.data;
         if (res && typeof res === 'object') {
-          for (const k of ['projects', 'clients', 'tasks', 'invoices', 'expenses', 'services', 'deals', 'users']) {
+          for (const k of ['projects', 'clients', 'tasks', 'invoices', 'expenses', 'services', 'deals', 'users', 'quotes']) {
             if (Array.isArray(res[k])) return res[k];
           }
         }
@@ -221,6 +223,13 @@ const JMOS_API = {
 
       const sList = unwrapList(services);
       if (sList) JMOS_STATE.services = sList;
+
+      const qList = unwrapList(quotes);
+      if (qList) {
+        JMOS_STATE.quotes = qList;
+        if (typeof FINANCE_STATE !== 'undefined') FINANCE_STATE.quotes = qList;
+        if (typeof JMOS_QUOTES !== 'undefined') JMOS_QUOTES.quotes = qList;
+      }
       if (finance && finance.status === 'success') {
         JMOS_STATE.finance = finance;
         JMOS_STATE.broughtForward = finance.brought_forward;

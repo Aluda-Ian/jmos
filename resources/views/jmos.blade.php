@@ -73,7 +73,8 @@
       <div class="bdrip" style="left:77px;height:44px"></div>
     </div>
     <div class="formside">
-      <div class="formcard">
+      <!-- 1. Sign In Card -->
+      <div class="formcard" id="signinCard">
         <div class="mlogo">
           <img src="{{ asset('assets/img/jeota-logo.png') }}" alt="Jeota">
           <b>JEOTA MEDIA</b>
@@ -87,13 +88,64 @@
           <input type="email" id="loginEmail" placeholder="you@jeotamedia.co.ke" autocomplete="username">
         </div>
         <div class="field">
-          <label for="loginPass">Password</label>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <label for="loginPass" style="margin-bottom:0">Password</label>
+            <a href="javascript:void(0)" id="toForgotBtn" style="font-size:11.5px;color:var(--red);text-decoration:none;font-weight:500">Forgot password?</a>
+          </div>
           <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
         </div>
         <button type="button" class="signin" id="signinBtn">Sign in</button>
-        <div class="demohint">
-          <b>Try a role:</b> click any name below to fill their login (all use password <span class="mono">jeota2024</span>):
-          <div class="accts" id="demoAccts"></div>
+      </div>
+
+      <!-- 2. Request Password Reset OTP Card -->
+      <div class="formcard" id="forgotCard" style="display:none">
+        <div class="mlogo">
+          <img src="{{ asset('assets/img/jeota-logo.png') }}" alt="Jeota">
+          <b>JEOTA MEDIA</b>
+        </div>
+        <h2>Reset password</h2>
+        <p class="sub">Enter your account email to receive a 6-digit OTP verification code</p>
+        <div class="notice" id="forgotNotice"></div>
+        <div class="err" id="forgotErr"></div>
+        <div class="field">
+          <label for="forgotEmail">Account Email</label>
+          <input type="email" id="forgotEmail" placeholder="you@jeotamedia.co.ke" autocomplete="email">
+        </div>
+        <button type="button" class="signin" id="sendOtpBtn">Send verification code</button>
+        <div style="margin-top:16px;text-align:center">
+          <a href="javascript:void(0)" id="backToSigninFromForgot" style="font-size:12.5px;color:var(--muted);text-decoration:none;font-weight:500">&larr; Back to sign in</a>
+        </div>
+      </div>
+
+      <!-- 3. Verify OTP & Reset Password Card -->
+      <div class="formcard" id="resetCard" style="display:none">
+        <div class="mlogo">
+          <img src="{{ asset('assets/img/jeota-logo.png') }}" alt="Jeota">
+          <b>JEOTA MEDIA</b>
+        </div>
+        <h2>Enter security code</h2>
+        <p class="sub">A 6-digit verification code was sent to <strong id="resetTargetEmail" style="color:#2B2625"></strong></p>
+        <div class="notice" id="resetNotice"></div>
+        <div class="err" id="resetErr"></div>
+        <div class="field">
+          <label for="resetOtp">6-Digit Verification Code</label>
+          <input type="text" id="resetOtp" maxlength="6" placeholder="000000" style="font-family:'IBM Plex Mono',monospace;font-size:20px;letter-spacing:6px;text-align:center;font-weight:700">
+        </div>
+        <div class="field">
+          <label for="resetNewPass">New Password</label>
+          <input type="password" id="resetNewPass" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label for="resetConfirmPass">Confirm New Password</label>
+          <input type="password" id="resetConfirmPass" placeholder="Repeat new password" autocomplete="new-password">
+        </div>
+        <button type="button" class="signin" id="submitResetBtn">Reset password &amp; Sign in</button>
+        <div style="margin-top:14px;font-size:12px;text-align:center;color:var(--muted)">
+          Didn't get the code? <a href="javascript:void(0)" id="resendOtpBtn" style="color:var(--red);font-weight:600;text-decoration:none">Resend code</a>
+          <span id="resendTimer" style="display:none;color:var(--muted)">(<span id="resendSecs">60</span>s)</span>
+        </div>
+        <div style="margin-top:12px;text-align:center">
+          <a href="javascript:void(0)" id="backToSigninFromReset" style="font-size:12.5px;color:var(--muted);text-decoration:none;font-weight:500">&larr; Back to sign in</a>
         </div>
       </div>
     </div>
@@ -120,10 +172,18 @@
         Dashboard
       </a>
 
-      <div class="grp">Live Data</div>
-      <a class="item" href="#" data-view="clients" data-perm="owner finance sales manager">
+      <div class="grp">Lead Generation</div>
+      <a class="item" href="#" data-view="pipeline" data-perm="owner finance sales manager">
+        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20v-11"/></svg>
+        Pipeline
+      </a>
+      <a class="item" href="#" data-view="fundraising" data-perm="owner finance sales manager">
+        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M12 18v4M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        Grants &amp; Open Calls
+      </a>
+      <a class="item" href="#" data-view="partnerships" data-perm="owner finance sales manager">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Clients
+        Partnership Exploration
       </a>
       <a class="item" href="#" data-view="calendar">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
@@ -134,17 +194,11 @@
         Team Chat
         <span class="chat-nav-badge" id="sidebarChatBadge" style="display:none">0</span>
       </a>
-      <a class="item" href="#" data-view="pipeline" data-perm="owner finance sales manager">
-        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20v-11"/></svg>
-        Pipeline
-      </a>
-      <a class="item" href="#" data-view="fundraising" data-perm="owner finance sales manager">
-        <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M12 18v4M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        Fundraiser
-      </a>
-      <a class="item" href="#" data-view="documents" data-perm="owner finance sales manager editor crew">
-        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        Documents
+
+      <div class="grp">Project Management</div>
+      <a class="item" href="#" data-view="clients" data-perm="owner finance sales manager">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clients
       </a>
       <a class="item" href="#" data-view="projects">
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M10 4v16"/></svg>
@@ -153,6 +207,10 @@
       <a class="item" href="#" data-view="tasks">
         <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         Tasks
+      </a>
+      <a class="item" href="#" data-view="documents" data-perm="owner finance sales manager editor crew">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        Documents
       </a>
 
       <div class="grp" data-perm="owner finance">Money</div>
@@ -344,6 +402,9 @@
 
         <!-- 16. FUNDRAISER & IMPACT PROJECTS VIEW -->
         @include('pages.fundraising')
+
+        <!-- 16b. PARTNERSHIP EXPLORATION VIEW (SEPARATE INSTITUTIONAL MASTER) -->
+        @include('pages.partnerships')
 
         <!-- 17. FINANCIAL STATEMENTS & CLIENT LEDGER VIEW -->
         @include('pages.statements')

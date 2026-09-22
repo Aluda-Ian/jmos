@@ -24,7 +24,7 @@
 
     loadQuotes: async function () {
       try {
-        const token = localStorage.getItem('jmos_api_token');
+        const token = localStorage.getItem('jmos_api_token') || JMOS_STATE.apiToken;
         const res = await fetch('/api/quotes', {
           headers: {
             'Accept': 'application/json',
@@ -34,10 +34,51 @@
         const data = await res.json();
         if (res.ok && data.data) {
           this.quotes = data.data;
+          if (typeof JMOS_STATE !== 'undefined') JMOS_STATE.quotes = data.data;
+          if (typeof FINANCE_STATE !== 'undefined') FINANCE_STATE.quotes = data.data;
           this.renderQuotesTable();
+          if (typeof window.renderFinanceQuotes === 'function') {
+            window.renderFinanceQuotes();
+          }
         }
       } catch (err) {
         console.error('Error fetching quotes:', err);
+      }
+    },
+
+    openCreateModal: function (leadId, clientId) {
+      if (typeof window.openCreateQuoteModal === 'function') {
+        window.openCreateQuoteModal(leadId, clientId);
+      } else if (typeof window.openModal === 'function') {
+        window.openModal('quoteModal');
+      }
+    },
+
+    openCreateQuoteModal: function (leadId, clientId) {
+      return this.openCreateModal(leadId, clientId);
+    },
+
+    viewDetail: function (id) {
+      if (typeof window.viewQuoteDetail === 'function') {
+        window.viewQuoteDetail(id);
+      }
+    },
+
+    sendWhatsApp: function (id) {
+      if (typeof window.sendQuoteWhatsApp === 'function') {
+        window.sendQuoteWhatsApp(id);
+      }
+    },
+
+    sendEmail: function (id) {
+      if (typeof window.sendQuoteEmail === 'function') {
+        window.sendQuoteEmail(id);
+      }
+    },
+
+    openUpgradeModal: function (quote) {
+      if (typeof window.openUpgradeQuoteModal === 'function') {
+        window.openUpgradeQuoteModal(quote);
       }
     },
 
@@ -516,6 +557,11 @@
     document.getElementById('upgAmount').value = Math.round(total * 0.6); // Default 60% deposit
     document.getElementById('upgInvoiceType').value = 'Deposit 60%';
 
+    const upgDue = document.getElementById('upgDueDate');
+    if (upgDue) {
+      upgDue.value = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    }
+
     window.openModal('upgradeQuoteModal');
   };
 
@@ -543,7 +589,7 @@
   window.submitUpgradeQuoteToInvoice = async function () {
     const quoteId = document.getElementById('upgQuoteId')?.value;
     const amount = parseFloat(document.getElementById('upgAmount')?.value) || 0;
-    const dueDate = document.getElementById('upgDueDate')?.value || '7 days';
+    const dueDate = document.getElementById('upgDueDate')?.value || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     const invoiceType = document.getElementById('upgInvoiceType')?.value || 'Deposit 60%';
 
     if (amount <= 0) {

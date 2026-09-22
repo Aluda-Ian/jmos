@@ -70,15 +70,35 @@
       <span>All Projects</span>
       <span class="project-tab-badge" id="projFilterAllCount">0</span>
     </button>
+    <button type="button" class="project-tab-btn" data-proj-filter="development">
+      <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <span>Development &amp; Systems</span>
+      <span class="project-tab-badge" id="projFilterDevCount">0</span>
+    </button>
+    <button type="button" class="project-tab-btn" data-proj-filter="graphic_design">
+      <svg viewBox="0 0 24 24" width="13" height="13"><circle cx="12" cy="12" r="10"/><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"/></svg>
+      <span>Graphic Design</span>
+      <span class="project-tab-badge" id="projFilterDesignCount">0</span>
+    </button>
+    <button type="button" class="project-tab-btn" data-proj-filter="content_calendar">
+      <svg viewBox="0 0 24 24" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Content Calendar</span>
+      <span class="project-tab-badge" id="projFilterContentCount">0</span>
+    </button>
+    <button type="button" class="project-tab-btn" data-proj-filter="video_production">
+      <svg viewBox="0 0 24 24" width="13" height="13"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <span>Video &amp; Film</span>
+      <span class="project-tab-badge" id="projFilterVideoCount">0</span>
+    </button>
+    <button type="button" class="project-tab-btn" data-proj-filter="internal">
+      <svg viewBox="0 0 24 24" width="13" height="13"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+      <span>Internal &amp; R&amp;D</span>
+      <span class="project-tab-badge" id="projFilterInternalCount">0</span>
+    </button>
     <button type="button" class="project-tab-btn" data-proj-filter="client">
       <svg viewBox="0 0 24 24" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       <span>Client Deliverables</span>
       <span class="project-tab-badge" id="projFilterClientCount">0</span>
-    </button>
-    <button type="button" class="project-tab-btn" data-proj-filter="internal">
-      <svg viewBox="0 0 24 24" width="13" height="13"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-      <span>Internal &amp; Systems</span>
-      <span class="project-tab-badge" id="projFilterInternalCount">0</span>
     </button>
   </div>
 

@@ -1390,3 +1390,17 @@ window.updateUserRoleDropdowns = function() {
   }
 };
 
+window.switchApiDocsTab = function(tabName) {
+  const tabs = ['kra', 'google', 'zoho', 'mpesa', 'smtp'];
+  tabs.forEach(t => {
+    const tabBtn = document.getElementById(`apiDocTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    const pane = document.getElementById(`apiPane${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    if (tabBtn) {
+      tabBtn.classList.toggle('active', t === tabName);
+    }
+    if (pane) {
+      pane.style.display = (t === tabName) ? 'block' : 'none';
+    }
+  });
+};
+

@@ -111,7 +111,7 @@ class NotificationTest extends TestCase
                 'unread_count' => 0,
             ]);
 
-        $this->assertEquals(0, AppNotification::unread()->count());
+        $this->assertEquals(0, AppNotification::forUser($user->id)->unread()->count());
     }
 
     public function test_can_delete_notification(): void

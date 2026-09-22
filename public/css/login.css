@@ -163,7 +163,7 @@ html.jmos-authenticated #appRoot {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #4A4340;
+  color: var(--ink);
   margin-bottom: 6px;
 }
 
@@ -175,12 +175,14 @@ html.jmos-authenticated #appRoot {
   font-family: inherit;
   font-size: 14px;
   background: var(--surface);
+  color: var(--ink);
   outline: none;
-  transition: border-color .15s;
+  transition: border-color .15s, box-shadow .15s;
 }
 
 .field input:focus, .field select:focus {
   border-color: var(--red);
+  box-shadow: 0 0 0 3px rgba(197, 37, 35, 0.15);
 }
 
 .notice {

@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -53,6 +56,7 @@ class UserController extends Controller
             'color' => 'nullable|string',
             'initials' => 'nullable|string',
             'avatar' => 'nullable|file|image|max:10240',
+            'send_invite_email' => 'nullable|boolean',
         ]);
 
         if ($request->hasFile('avatar')) {
@@ -84,10 +88,12 @@ class UserController extends Controller
             $roleId = $matchedRole?->id;
         }
 
+        $temporaryPassword = $validated['password'] ?? Str::random(12);
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => strtolower($validated['email']),
-            'password' => Hash::make($validated['password'] ?? 'jeota2024'),
+            'password' => Hash::make($temporaryPassword),
             'title' => $validated['title'] ?? 'Team',
             'department' => $validated['department'] ?? 'Production',
             'role' => $roleSlug,
@@ -101,15 +107,42 @@ class UserController extends Controller
             'initials' => $validated['initials'] ?? $initials,
         ]);
 
-        AuditLog::record('CREATE', "Added team member '{$user->name}' ({$user->role})", 'User', $user->id, ['role' => $user->role, 'department' => $user->department], $request);
+        // Generate password setup token / OTP for new user onboarding
+        $otp = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => Hash::make($otp),
+            'created_at' => now(),
+        ]);
+
+        $setupUrl = url('/?email='.urlencode($user->email).'&otp='.$otp);
+
+        $sendInvite = $request->boolean('send_invite_email', true);
+        if ($sendInvite) {
+            $inviter = $request->user()?->name ?? 'Admin';
+            NotificationService::sendUserInvitation([
+                'userName' => $user->name,
+                'email' => $user->email,
+                'role' => $user->roleModel?->name ?? ucfirst($user->role),
+                'department' => $user->department,
+                'invitedBy' => $inviter,
+                'otp' => $otp,
+                'setupUrl' => $setupUrl,
+                'expiresInHours' => 48,
+            ], $user->email);
+        }
+
+        AuditLog::record('CREATE', "Added team member '{$user->name}' ({$user->role}) and sent password setup invite", 'User', $user->id, ['role' => $user->role, 'department' => $user->department, 'email_sent' => $sendInvite], $request);
 
         $userData = $user->toArray();
         $userData['permissions'] = $user->allPermissions();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Person added to team.',
+            'message' => 'Person added to team. Invitation email sent to '.$user->email,
             'data' => $userData,
+            'setup_otp' => $otp,
         ], 201);
     }
 
@@ -210,6 +243,39 @@ class UserController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'User removed.',
+        ]);
+    }
+
+    public function resendInvitation(Request $request, User $user): JsonResponse
+    {
+        $otp = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->email,
+            'token' => Hash::make($otp),
+            'created_at' => now(),
+        ]);
+
+        $setupUrl = url('/?email='.urlencode($user->email).'&otp='.$otp);
+        $inviter = $request->user()?->name ?? 'Admin';
+
+        NotificationService::sendUserInvitation([
+            'userName' => $user->name,
+            'email' => $user->email,
+            'role' => $user->roleModel?->name ?? ucfirst($user->role),
+            'department' => $user->department,
+            'invitedBy' => $inviter,
+            'otp' => $otp,
+            'setupUrl' => $setupUrl,
+            'expiresInHours' => 48,
+        ], $user->email);
+
+        AuditLog::record('AUTH', "Resent password setup invite to '{$user->name}' ({$user->email})", 'User', $user->id, [], $request);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Invitation email with password setup instructions sent to {$user->email}",
+            'setup_otp' => $otp,
         ]);
     }
 }

@@ -268,6 +268,9 @@ function initPeople() {
       saveUserBtn.disabled = true;
       saveUserBtn.textContent = isEdit ? 'Updating…' : 'Adding…';
 
+      const sendInviteEl = document.getElementById('nuSendInviteEmail');
+      const sendInvite = sendInviteEl ? sendInviteEl.checked : true;
+
       try {
         if (avatarFile) {
           // Send via FormData to handle file upload
@@ -280,6 +283,7 @@ function initPeople() {
           formData.append('role', role);
           formData.append('type', type);
           formData.append('pay', pay);
+          formData.append('send_invite_email', sendInvite ? '1' : '0');
           if (password) formData.append('password', password);
           formData.append('avatar', avatarFile);
 
@@ -298,7 +302,8 @@ function initPeople() {
             phone,
             role,
             type,
-            pay
+            pay,
+            send_invite_email: sendInvite
           };
           if (password) payload.password = password;
 
@@ -313,7 +318,7 @@ function initPeople() {
         closeModal('userModal');
         showToast(
           isEdit ? 'Team member updated' : name + ' added',
-          isEdit ? 'Details, department, salary and role saved.' : email + ' can now sign in.'
+          isEdit ? 'Details, department, salary and role saved.' : (sendInvite ? `Invitation & password setup email sent to ${email}` : `${email} can now sign in.`)
         );
         await ensurePeople();
       } catch (err) {

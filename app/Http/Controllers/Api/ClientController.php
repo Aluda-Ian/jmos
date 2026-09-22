@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Project;
+use App\Models\Quote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -74,6 +75,12 @@ class ClientController extends Controller
             ->latest()
             ->get();
 
+        $quotes = Quote::where('client_id', $client->id)
+            ->orWhere('recipient_name', 'like', "%{$clientName}%")
+            ->orWhere('title', 'like', "%{$clientName}%")
+            ->latest()
+            ->get();
+
         $events = CalendarEvent::where('description', 'like', "%{$clientName}%")
             ->orWhere('title', 'like', "%{$clientName}%")
             ->latest('start_time')
@@ -99,12 +106,56 @@ class ClientController extends Controller
         $totalUnpaid = (float) $invoices->filter(function ($i) {
             return strtolower((string) ($i->status ?? '')) !== 'paid';
         })->sum('amount');
+        $totalQuotes = (float) $quotes->sum('total_amount');
+
+        // Build running balance statement ledger
+        $ledgerEntries = collect();
+        $runningBalance = 0;
+
+        foreach ($invoices->sortBy('created_at') as $inv) {
+            $isPaid = strtolower((string) ($inv->status ?? '')) === 'paid';
+            $amt = (float) ($inv->amount ?? 0);
+            $runningBalance += $amt;
+
+            $ledgerEntries->push([
+                'id' => 'inv_'.$inv->id,
+                'date' => $inv->created_at?->toDateString() ?? $inv->due_date,
+                'ref_no' => $inv->invoice_no ?? "INV-{$inv->id}",
+                'type' => 'Invoice',
+                'description' => $inv->type ?? 'Commercial Invoice',
+                'debit' => $amt,
+                'credit' => 0,
+                'balance' => $runningBalance,
+                'status' => $inv->status ?? 'Pending',
+                'raw_id' => $inv->id,
+                'entity' => 'invoice',
+            ]);
+
+            if ($isPaid) {
+                $runningBalance -= $amt;
+                $ledgerEntries->push([
+                    'id' => 'pay_'.$inv->id,
+                    'date' => $inv->updated_at?->toDateString() ?? $inv->created_at?->toDateString(),
+                    'ref_no' => 'PAY-'.($inv->invoice_no ?? $inv->id),
+                    'type' => 'Payment',
+                    'description' => 'Payment received ('.($inv->method ?? 'Direct Transfer').')',
+                    'debit' => 0,
+                    'credit' => $amt,
+                    'balance' => $runningBalance,
+                    'status' => 'Settled',
+                    'raw_id' => $inv->id,
+                    'entity' => 'payment',
+                ]);
+            }
+        }
 
         $responseData = array_merge($client->toArray(), [
             'client' => $client,
             'projects' => $projects,
             'invoices' => $invoices,
+            'quotes' => $quotes,
             'events' => $events,
+            'statement_ledger' => $ledgerEntries->values(),
             'stats' => [
                 'total_projects' => $projects->count(),
                 'active_projects' => $activeCount,
@@ -113,6 +164,9 @@ class ClientController extends Controller
                 'total_invoiced' => $totalInvoiced,
                 'total_paid' => $totalPaid,
                 'total_unpaid' => $totalUnpaid,
+                'total_quotes' => $totalQuotes,
+                'quotes_count' => $quotes->count(),
+                'closing_balance' => $runningBalance,
             ],
         ]);
 

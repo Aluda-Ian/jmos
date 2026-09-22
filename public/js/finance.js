@@ -184,7 +184,11 @@
       } catch (_) {}
     }
 
-    let list = FINANCE_STATE.quotes || [];
+    let list = (FINANCE_STATE.quotes && FINANCE_STATE.quotes.length) 
+      ? FINANCE_STATE.quotes 
+      : ((window.JMOS_QUOTES && Array.isArray(window.JMOS_QUOTES.quotes) && window.JMOS_QUOTES.quotes.length) 
+          ? window.JMOS_QUOTES.quotes 
+          : (JMOS_STATE.quotes || []));
 
     // Apply Search
     if (FINANCE_STATE.searchQuery) {
@@ -198,7 +202,7 @@
     }
 
     const badgeEl = document.getElementById('finBadgeQuotes');
-    if (badgeEl) badgeEl.textContent = (FINANCE_STATE.quotes || []).length;
+    if (badgeEl) badgeEl.textContent = list.length;
 
     if (!list.length) {
       tbody.innerHTML = `
@@ -496,6 +500,9 @@
 
   window.refreshFinanceData = function () {
     window.recomputeFinance();
+    if (window.JMOS_QUOTES && typeof window.JMOS_QUOTES.loadQuotes === 'function') {
+      window.JMOS_QUOTES.loadQuotes();
+    }
   };
 
   window.openKraTaxReconciliation = function () {

@@ -166,9 +166,12 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
+        $defaultUser = User::where('email', 'ian@jeotamedia.co.ke')->first() ?? User::first();
+
         foreach ($sampleNotifications as $notif) {
+            $notif['user_id'] = $defaultUser?->id;
             AppNotification::firstOrCreate(
-                ['title' => $notif['title']],
+                ['title' => $notif['title'], 'user_id' => $notif['user_id']],
                 $notif
             );
         }

@@ -20,7 +20,9 @@
   /* Surfaces & Borders */
   --paper: #FAF7F6;
   --surface: #FFFFFF;
+  --panel: #FFFFFF;
   --panel-2: #F5F1EF;
+  --panel-3: #ECE6E4;
   --line: #ECE6E4;
   --line-strong: #DCD4D1;
 
@@ -55,7 +57,9 @@
   /* Surfaces & Borders — true black palette */
   --paper: #000000;
   --surface: #0A0A0A;
-  --panel-2: #111111;
+  --panel: #111111;
+  --panel-2: #161616;
+  --panel-3: #222222;
   --line: #1E1E1E;
   --line-strong: #2A2A2A;
 

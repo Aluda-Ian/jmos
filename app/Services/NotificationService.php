@@ -6,7 +6,9 @@ use App\Mail\DealWonAlertMail;
 use App\Mail\InvoiceReminderMail;
 use App\Mail\MeetingReminderMail;
 use App\Mail\NewChatMessageMail;
+use App\Mail\PasswordResetOtpMail;
 use App\Mail\TaskAssignedMail;
+use App\Mail\UserInvitationMail;
 use App\Models\SystemSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
@@ -166,6 +168,44 @@ class NotificationService
             return true;
         } catch (\Exception $e) {
             \Log::warning('New chat message email notice: '.$e->getMessage());
+
+            return false;
+        }
+    }
+
+    public static function sendPasswordResetOtp(array $data, string $recipientEmail): bool
+    {
+        self::applySmtpSettings();
+        try {
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new PasswordResetOtpMail($data));
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::warning('Password reset OTP email notice: '.$e->getMessage());
+
+            return false;
+        }
+    }
+
+    public static function sendUserInvitation(array $data, string $recipientEmail): bool
+    {
+        self::applySmtpSettings();
+        try {
+            $mail = Mail::to($recipientEmail);
+            $cc = self::resolveSecondaryEmail($recipientEmail);
+            if ($cc) {
+                $mail->cc($cc);
+            }
+            $mail->send(new UserInvitationMail($data));
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::warning('User invitation email notice: '.$e->getMessage());
 
             return false;
         }

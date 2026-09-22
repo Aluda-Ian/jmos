@@ -32,10 +32,10 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'project_name' => 'required|string|max:255',
             'client' => 'required|string|max:255',
-            'project_type' => 'nullable|string|max:100',
-            'category' => 'nullable|string|max:50',
+            'project_type' => 'nullable|string|max:150',
+            'category' => 'nullable|string|max:100',
             'project_manager' => 'nullable|string|max:255',
-            'stage' => 'nullable|string|max:100',
+            'stage' => 'nullable|string|max:150',
             'status' => 'nullable|string|max:100',
             'priority' => 'nullable|string|max:50',
             'deadline' => 'nullable|string|max:100',
@@ -55,7 +55,7 @@ class ProjectController extends Controller
             $isInternal = str_contains(strtolower((string) ($validated['project_type'] ?? '')), 'internal')
                 || str_contains(strtolower((string) ($validated['project_type'] ?? '')), 'system')
                 || str_contains(strtolower((string) ($validated['client'] ?? '')), 'internal');
-            $validated['category'] = $isInternal ? 'internal' : 'client';
+            $validated['category'] = $isInternal ? 'internal' : 'video_production';
         }
 
         $project = Project::create($validated);
@@ -89,10 +89,10 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'project_name' => 'sometimes|required|string|max:255',
             'client' => 'nullable|string|max:255',
-            'project_type' => 'nullable|string|max:100',
-            'category' => 'nullable|string|max:50',
+            'project_type' => 'nullable|string|max:150',
+            'category' => 'nullable|string|max:100',
             'project_manager' => 'nullable|string|max:255',
-            'stage' => 'nullable|string|max:100',
+            'stage' => 'nullable|string|max:150',
             'status' => 'nullable|string|max:100',
             'priority' => 'nullable|string|max:50',
             'deadline' => 'nullable|string|max:100',

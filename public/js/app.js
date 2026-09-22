@@ -9,12 +9,17 @@ function renderDashboard() {
   const invs = JMOS_STATE.invoices || [];
   const tasks = JMOS_STATE.tasks || [];
   const users = JMOS_STATE.users || [];
+  const user = JMOS_STATE.currentUser;
+
+  const isOwner = user && (user.role === 'owner' || (Array.isArray(user.permissions) && user.permissions.includes('*')));
+  const isFinance = user && (user.role === 'finance' || isOwner);
+  const isSales = user && (user.role === 'sales' || isOwner);
 
   // Time-Bound Greeting and Operations Brief
   const greetName = document.getElementById('greetName');
-  if (greetName && JMOS_STATE.currentUser) {
+  if (greetName && user) {
     const greeting = typeof getTimeBoundGreeting === 'function' ? getTimeBoundGreeting() : 'Good day';
-    const firstName = JMOS_STATE.currentUser.name ? JMOS_STATE.currentUser.name.split(' ')[0] : 'there';
+    const firstName = user.name ? user.name.split(' ')[0] : 'there';
     greetName.textContent = `${greeting}, ${firstName}.`;
   }
 
@@ -23,29 +28,84 @@ function renderDashboard() {
     briefTagText.textContent = getTimeBoundBriefTag();
   }
 
-  const overdueInvs = invs.filter(v => (v.status || '').toLowerCase() === 'overdue');
-  const openDeals = pipe.filter(d => d.stage !== 'won');
+  // Filter items specifically for the current user according to access rights & involvement
+  const uId = user ? Number(user.id) : 0;
+  const uName = (user?.name || '').toLowerCase();
+  const uFirst = uName.split(' ')[0] || '';
+
+  // User's involved projects (Manager OR has tasks in project OR is owner)
+  const userProjects = isOwner ? pList : pList.filter(p => {
+    if (!user) return false;
+    const pm = (p.project_manager || '').toLowerCase();
+    if (pm && (pm.includes(uName) || (uFirst.length >= 3 && pm.includes(uFirst)))) return true;
+    const hasTask = tasks.some(t => t.project_id === p.id && (
+      (t.assigned_to_id && Number(t.assigned_to_id) === uId) ||
+      (t.assigned_to && t.assigned_to.toLowerCase().includes(uFirst))
+    ));
+    return hasTask;
+  });
+
+  // User's assigned tasks (not completed)
+  const userTasks = tasks.filter(t => {
+    if (!user) return false;
+    if (t.stage === 'done') return false;
+    if (isOwner) return true;
+    return (t.assigned_to_id && Number(t.assigned_to_id) === uId) ||
+      (t.assigned_to && (t.assigned_to.toLowerCase().includes(uName) || (uFirst.length >= 3 && t.assigned_to.toLowerCase().includes(uFirst))));
+  });
+
+  const overdueInvs = isOwner ? invs.filter(v => (v.status || '').toLowerCase() === 'overdue') : [];
+  const openDeals = (isOwner || isSales) ? pipe.filter(d => d.stage !== 'won') : [];
+
   const briefHeadline = document.getElementById('briefHeadline');
   const briefBody = document.getElementById('briefBody');
 
   if (briefHeadline && briefBody) {
-    const alertCount = overdueInvs.length + (openDeals.length ? 1 : 0) + (pList.length ? 1 : 0);
-    if (alertCount === 0) {
-      briefHeadline.textContent = 'Operations dashboard ready.';
-      briefBody.innerHTML = `Welcome to JMOS. Your workspace is clean and ready. Click <b>Quick Action</b> or add your first client, pipeline deal, or live project to begin tracking your operations.`;
+    if (isOwner) {
+      // Owner Brief: Full visibility into pipeline, operations, overdue invoices & budgets
+      const alertCount = overdueInvs.length + (openDeals.length ? 1 : 0) + (pList.length ? 1 : 0);
+      if (alertCount === 0) {
+        briefHeadline.textContent = 'Operations dashboard ready.';
+        briefBody.innerHTML = `Welcome to JMOS. Your workspace is clean and ready. Click <b>Quick Action</b> or add your first client, pipeline deal, or live project to begin tracking your operations.`;
+      } else {
+        briefHeadline.textContent = `${alertCount} items active in your pipeline & operations.`;
+        let briefParts = [];
+        if (overdueInvs.length) {
+          briefParts.push(`Invoice <b>${escHtml(overdueInvs[0].invoice_no)}</b> (${escHtml(overdueInvs[0].client)}, ${fmt(overdueInvs[0].amount)}) is <span class="u">overdue</span>.`);
+        }
+        if (openDeals.length) {
+          briefParts.push(`<b>${escHtml(openDeals[0].title)}</b> is currently in <b>${escHtml(openDeals[0].stage)}</b> (${fmt(openDeals[0].value)}).`);
+        }
+        if (pList.length) {
+          briefParts.push(`<b>${escHtml(pList[0].project_name)}</b> is at stage <b>${escHtml(pList[0].stage)}</b> (${escHtml(pList[0].status)}).`);
+        }
+        briefBody.innerHTML = briefParts.join(' ');
+      }
     } else {
-      briefHeadline.textContent = `${alertCount} items active in your pipeline & operations.`;
-      let briefParts = [];
-      if (overdueInvs.length) {
-        briefParts.push(`Invoice <b>${escHtml(overdueInvs[0].invoice_no)}</b> (${escHtml(overdueInvs[0].client)}, ${fmt(overdueInvs[0].amount)}) is <span class="u">overdue</span>.`);
+      // Non-Owner Team Member Brief: Strictly ONLY involved projects & assigned tasks (NO invoices, NO budgets)
+      const userActiveProjects = userProjects.filter(p => (p.status || '').toLowerCase() !== 'completed');
+      const alertCount = userActiveProjects.length + (userTasks.length ? 1 : 0) + (isSales && openDeals.length ? 1 : 0);
+
+      if (alertCount === 0) {
+        briefHeadline.textContent = 'All clear for today.';
+        briefBody.innerHTML = `You have no pending tasks or active assigned projects at the moment.`;
+      } else {
+        briefHeadline.textContent = `${userActiveProjects.length} project${userActiveProjects.length === 1 ? '' : 's'} & ${userTasks.length} task${userTasks.length === 1 ? '' : 's'} active for you.`;
+        let briefParts = [];
+        if (userActiveProjects.length) {
+          const topP = userActiveProjects[0];
+          briefParts.push(`<b>${escHtml(topP.project_name)}</b> is at stage <b>${escHtml(topP.stage || 'Planning')}</b> (${escHtml(topP.status || 'On track')}).`);
+        }
+        if (userTasks.length) {
+          const topT = userTasks[0];
+          const dueNote = topT.due_date ? ` (Due: ${escHtml(topT.due_date)})` : '';
+          briefParts.push(`Your task <b>${escHtml(topT.title)}</b> is at stage <b>${escHtml(topT.stage || 'To do')}</b>${dueNote}.`);
+        }
+        if (isSales && openDeals.length) {
+          briefParts.push(`Pipeline deal <b>${escHtml(openDeals[0].title)}</b> is in <b>${escHtml(openDeals[0].stage)}</b>.`);
+        }
+        briefBody.innerHTML = briefParts.join(' ');
       }
-      if (openDeals.length) {
-        briefParts.push(`<b>${escHtml(openDeals[0].title)}</b> is currently in <b>${escHtml(openDeals[0].stage)}</b> (${fmt(openDeals[0].value)}).`);
-      }
-      if (pList.length) {
-        briefParts.push(`<b>${escHtml(pList[0].project_name)}</b> is at stage <b>${escHtml(pList[0].stage)}</b> (${escHtml(pList[0].status)}).`);
-      }
-      briefBody.innerHTML = briefParts.join(' ');
     }
   }
 
@@ -56,37 +116,70 @@ function renderDashboard() {
   if (kpiPipeline) kpiPipeline.innerHTML = fmtK(pipeTotal).replace(/(M|K)$/, '<small>$1</small>');
   if (kpiPipelineSub) kpiPipelineSub.innerHTML = `<span class="mono">${pipe.length}</span> open deals`;
 
-  // Triage List
+  // Triage List ("Needs you")
   const triageList = document.getElementById('triageList');
   const triageCount = document.getElementById('triageCount');
   if (triageList) {
     const triageItems = [];
-    overdueInvs.forEach(inv => {
-      triageItems.push(`
-        <div class="titem">
-          <span class="flag" style="background:var(--red)"></span>
-          <div class="body">
-            <div class="t">Overdue — invoice ${escHtml(inv.invoice_no)} (${escHtml(inv.client)})</div>
-            <div class="m"><span class="tc">${fmt(inv.amount)}</span> · Awaiting payment</div>
-          </div>
-          <button class="act" data-pay-invoice-id="${inv.id}">Record payment</button>
-        </div>
-      `);
-    });
 
-    openDeals.slice(0, 3).forEach(deal => {
-      const isNeg = deal.stage === 'negotiation' || deal.stage === 'proposal';
-      triageItems.push(`
-        <div class="titem">
-          <span class="flag" style="background:${isNeg ? 'var(--red)' : 'var(--amber)'}"></span>
-          <div class="body">
-            <div class="t">${escHtml(deal.title)}</div>
-            <div class="m">Stage: <b>${escHtml(deal.stage)}</b> · ${fmt(deal.value)}</div>
+    if (isOwner) {
+      overdueInvs.forEach(inv => {
+        triageItems.push(`
+          <div class="titem">
+            <span class="flag" style="background:var(--red)"></span>
+            <div class="body">
+              <div class="t">Overdue — invoice ${escHtml(inv.invoice_no)} (${escHtml(inv.client)})</div>
+              <div class="m"><span class="tc">${fmt(inv.amount)}</span> · Awaiting payment</div>
+            </div>
+            <button class="act" data-pay-invoice-id="${inv.id}">Record payment</button>
           </div>
-          <button class="act" data-win-deal-id="${deal.id}">Win deal</button>
-        </div>
-      `);
-    });
+        `);
+      });
+
+      openDeals.slice(0, 3).forEach(deal => {
+        const isNeg = deal.stage === 'negotiation' || deal.stage === 'proposal';
+        triageItems.push(`
+          <div class="titem">
+            <span class="flag" style="background:${isNeg ? 'var(--red)' : 'var(--amber)'}"></span>
+            <div class="body">
+              <div class="t">${escHtml(deal.title)}</div>
+              <div class="m">Stage: <b>${escHtml(deal.stage)}</b> · ${fmt(deal.value)}</div>
+            </div>
+            <button class="act" data-win-deal-id="${deal.id}">Win deal</button>
+          </div>
+        `);
+      });
+    } else {
+      // Non-owner triage: Assigned tasks requiring attention
+      userTasks.slice(0, 4).forEach(task => {
+        const isUrgent = task.priority === 'urgent' || task.priority === 'high';
+        triageItems.push(`
+          <div class="titem">
+            <span class="flag" style="background:${isUrgent ? 'var(--red)' : 'var(--amber)'}"></span>
+            <div class="body">
+              <div class="t">${escHtml(task.title)}</div>
+              <div class="m">Stage: <b>${escHtml(task.stage || 'To do')}</b>${task.due_date ? ` · Due: ${escHtml(task.due_date)}` : ''}</div>
+            </div>
+            <button class="act" onclick="openTaskModal(${task.project_id || 'null'})">Open task</button>
+          </div>
+        `);
+      });
+
+      if (isSales) {
+        openDeals.slice(0, 2).forEach(deal => {
+          triageItems.push(`
+            <div class="titem">
+              <span class="flag" style="background:var(--amber)"></span>
+              <div class="body">
+                <div class="t">${escHtml(deal.title)} (${escHtml(deal.client_name || '')})</div>
+                <div class="m">Stage: <b>${escHtml(deal.stage)}</b></div>
+              </div>
+              <button class="act" data-win-deal-id="${deal.id}">Open deal</button>
+            </div>
+          `);
+        });
+      }
+    }
 
     if (triageCount) triageCount.textContent = triageItems.length;
     triageList.innerHTML = triageItems.length ? triageItems.join('') : '<div style="padding:20px;text-align:center;color:var(--muted)">All clear — no pending alerts!</div>';
@@ -96,9 +189,10 @@ function renderDashboard() {
   const dashProjectsList = document.getElementById('dashProjectsList');
   const dashProjectsCount = document.getElementById('dashProjectsCount');
   if (dashProjectsList) {
-    if (dashProjectsCount) dashProjectsCount.textContent = pList.length;
-    if (pList.length) {
-      dashProjectsList.innerHTML = pList.slice(0, 4).map(p => {
+    const visibleProjects = isOwner ? pList : userProjects;
+    if (dashProjectsCount) dashProjectsCount.textContent = visibleProjects.length;
+    if (visibleProjects.length) {
+      dashProjectsList.innerHTML = visibleProjects.slice(0, 4).map(p => {
         const pTasks = (p.tasks && Array.isArray(p.tasks) && p.tasks.length)
           ? p.tasks
           : ((JMOS_STATE.tasks && Array.isArray(JMOS_STATE.tasks)) ? JMOS_STATE.tasks.filter(t => t.project_id === p.id) : []);
@@ -121,7 +215,9 @@ function renderDashboard() {
         `;
       }).join('');
     } else {
-      dashProjectsList.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted)">No projects yet. Click “New” or add a project.</div>';
+      dashProjectsList.innerHTML = isOwner
+        ? '<div style="padding:24px;text-align:center;color:var(--muted)">No projects yet. Click “New” or add a project.</div>'
+        : '<div style="padding:24px;text-align:center;color:var(--muted)">No projects assigned to you currently.</div>';
     }
   }
 
@@ -245,7 +341,41 @@ function renderTasks() {
   const board = document.getElementById('tasksBoard');
   if (!board) return;
 
-  const tasks = JMOS_STATE.tasks || [];
+  const allTasks = JMOS_STATE.tasks || [];
+  const user = JMOS_STATE.currentUser;
+  const isOwnerOrSuper = user && (user.role === 'owner' || (Array.isArray(user.permissions) && user.permissions.includes('*')));
+  const isItOrManager = user && (['admin', 'manager', 'it_manager'].includes(user.role) || (Array.isArray(user.permissions) && (user.permissions.includes('system.upgrade') || user.permissions.includes('roles.manage'))));
+
+  // Requirement 1: Tasks visibility isolation for non-manager team members
+  const tasks = (isOwnerOrSuper || isItOrManager || !user) ? allTasks : allTasks.filter(t => {
+    const uId = Number(user.id);
+    const uName = (user.name || '').toLowerCase();
+    const uFirst = uName.split(' ')[0] || '';
+
+    // Directly assigned to or by user
+    if (t.assigned_to_id && Number(t.assigned_to_id) === uId) return true;
+    if (t.assigned_by_id && Number(t.assigned_by_id) === uId) return true;
+    if (t.assigned_to && (t.assigned_to.toLowerCase().includes(uName) || (uFirst.length >= 3 && t.assigned_to.toLowerCase().includes(uFirst)))) return true;
+
+    // Project PM or project participant
+    const proj = t.project || (t.project_id && JMOS_STATE.projects ? JMOS_STATE.projects.find(p => p.id === t.project_id) : null);
+    if (proj && proj.project_manager) {
+      const pm = proj.project_manager.toLowerCase();
+      if (pm.includes(uName) || (uFirst.length >= 3 && pm.includes(uFirst))) return true;
+    }
+
+    // Has any other task in project
+    if (t.project_id) {
+      const userHasProjTask = allTasks.some(ot => ot.project_id === t.project_id && (
+        (ot.assigned_to_id && Number(ot.assigned_to_id) === uId) ||
+        (ot.assigned_to && ot.assigned_to.toLowerCase().includes(uFirst))
+      ));
+      if (userHasProjTask) return true;
+    }
+
+    return false;
+  });
+
   const stages = [
     { key: 'todo', name: 'To do' },
     { key: 'in_progress', name: 'In progress' },
@@ -258,27 +388,58 @@ function renderTasks() {
     const inStage = tasks.filter(t => t.stage === st.key);
     const cards = inStage.map(t => {
       const ini = t.assigned_initials || getInitials(t.assigned_to || 'JM');
-      const color = t.assigned_color || '#C52523';
+      const personColor = t.assigned_color || '#C52523';
+      const stickyBg = t.sticky_color || '#FFFBEB';
       const who = (t.assigned_to || '').split(' ')[0] || 'Team';
+
+      const isAssigner = user && (t.assigned_by_id && (Number(t.assigned_by_id) === Number(user.id)));
+      const isAssignee = user && (
+        (t.assigned_to_id && Number(t.assigned_to_id) === Number(user.id)) ||
+        (t.assigned_to && user.name && (t.assigned_to.toLowerCase().includes(user.name.split(' ')[0].toLowerCase())))
+      );
+      const isManager = isOwnerOrSuper || isItOrManager;
+      const canAdvance = isManager || isAssigner || isAssignee;
 
       // Quick advance action
       let nextStageBtn = '';
-      if (st.key === 'todo') nextStageBtn = `<button class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="in_progress">Start →</button>`;
-      else if (st.key === 'in_progress') nextStageBtn = `<button class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="review_internal">Submit review →</button>`;
-      else if (st.key === 'review_internal') nextStageBtn = `<button class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="done">Mark done ✓</button>`;
+      if (canAdvance) {
+        if (st.key === 'todo') nextStageBtn = `<button type="button" class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="in_progress" onclick="event.stopPropagation()">Start →</button>`;
+        else if (st.key === 'in_progress') nextStageBtn = `<button type="button" class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="review_internal" onclick="event.stopPropagation()">Submit review →</button>`;
+        else if (st.key === 'review_internal') nextStageBtn = `<button type="button" class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="done" onclick="event.stopPropagation()">Mark done ✓</button>`;
+      } else {
+        nextStageBtn = `<span style="font-size:10px;color:var(--muted);font-style:italic">Assigned to ${escHtml(who)}</span>`;
+      }
 
       const proj = t.project || (t.project_id && JMOS_STATE.projects ? JMOS_STATE.projects.find(p => p.id === t.project_id) : null);
-      const projBadge = proj ? `<div style="margin-bottom:6px"><span class="badge" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(197,37,35,0.08);color:var(--red);font-weight:600;display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Attached to ${escHtml(proj.project_name)}">${escHtml(proj.project_name)}</span></div>` : '';
+      const projBadge = proj ? `<span class="badge" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(197,37,35,0.08);color:var(--red);font-weight:600;display:inline-block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Attached to ${escHtml(proj.project_name)}">${escHtml(proj.project_name)}</span>` : '';
+
+      const priorityBadge = (t.priority && t.priority !== 'medium') ? `<span class="badge" style="font-size:9.5px;padding:1px 5px;text-transform:uppercase;${t.priority === 'urgent' ? 'background:rgba(220,38,38,0.15);color:#DC2626' : (t.priority === 'high' ? 'background:rgba(245,158,11,0.15);color:#D97706' : 'background:var(--panel-2);color:var(--muted)')}">${escHtml(t.priority)}</span>` : '';
+
+      const linksCount = Array.isArray(t.links) ? t.links.length : 0;
+      const commentsCount = Array.isArray(t.comments) ? t.comments.length : 0;
+
+      const linksPill = linksCount > 0 ? `<span class="tcard-pill-stat has-links" title="${linksCount} deliverable review link(s)">📎 ${linksCount}</span>` : '';
+      const commentsPill = commentsCount > 0 ? `<span class="tcard-pill-stat has-comments" title="${commentsCount} discussion comment(s)">💬 ${commentsCount}</span>` : '';
 
       return `
-        <div class="tcard">
-          ${projBadge}
-          <div class="tn">${escHtml(t.title)}</div>
-          <div class="tf">
-            <span class="av" style="background:${color}">${escHtml(ini)}</span>
-            <span class="who">${escHtml(who)}</span>
+        <div class="tcard sticky-tcard" data-task-id="${t.id}" style="border-left: 4px solid ${personColor}; background: linear-gradient(180deg, ${stickyBg} 0%, rgba(255,255,255,0.02) 100%), var(--paper);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px">
+            ${projBadge || '<span></span>'}
+            ${priorityBadge}
           </div>
-          ${nextStageBtn ? `<div style="margin-top:6px">${nextStageBtn}</div>` : ''}
+          <div class="tn">${escHtml(t.title)}</div>
+          
+          <div class="tf">
+            <div class="tf-left">
+              <span class="av" style="background:${personColor}">${escHtml(ini)}</span>
+              <span class="who">${escHtml(who)}</span>
+            </div>
+            <div class="tcard-stats-row">
+              ${linksPill}
+              ${commentsPill}
+            </div>
+          </div>
+          ${nextStageBtn ? `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--line-soft, rgba(0,0,0,0.06));display:flex;justify-content:flex-end">${nextStageBtn}</div>` : ''}
         </div>
       `;
     }).join('');
@@ -399,6 +560,15 @@ document.addEventListener('click', async (e) => {
 
   if (e.target.closest('#dashQuickActionBtn') || e.target.closest('#quickAddDeal')) {
     openModal('dealModal');
+  }
+
+  // Task Kanban card click -> open sticky note task detail modal
+  const taskCard = e.target.closest('.tcard[data-task-id]');
+  if (taskCard && !e.target.closest('[data-move-task]') && !e.target.closest('button') && !e.target.closest('a')) {
+    const taskId = taskCard.getAttribute('data-task-id');
+    if (typeof window.openTaskDetailModal === 'function') {
+      window.openTaskDetailModal(taskId);
+    }
   }
 
   // Pipeline Kanban card click -> open deal detail modal

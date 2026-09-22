@@ -66,18 +66,18 @@
 <!-- 1b. Client Detailed Workspace & Overview Modal -->
 <div class="modal" id="clientDetailModal" role="dialog" aria-modal="true" aria-labelledby="cdmTitle">
   <div class="mbg" data-close="clientDetailModal"></div>
-  <div class="mbox" style="max-height:92vh;overflow-y:auto;padding:0;overflow-x:hidden;max-width:880px;width:95%">
+  <div class="mbox workspace-modal">
     <!-- Notion-style Cover Banner -->
-    <div style="height:120px;background:linear-gradient(135deg, #182848 0%, #2B6E8A 55%, #C52523 100%);position:relative;border-radius:16px 16px 0 0">
+    <div class="workspace-cover-banner" style="background:linear-gradient(135deg, #050507 0%, #121316 28%, #5a0c0b 68%, #C52523 100%)">
       <button class="mclose" data-close="clientDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
       
       <!-- Dynamic Client Initials Avatar -->
-      <div id="cdmAvatar" style="position:absolute;bottom:-24px;left:28px;width:56px;height:56px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;border:3px solid var(--surface)">
+      <div id="cdmAvatar" style="position:absolute;bottom:-24px;left:32px;width:60px;height:60px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:22px;border:3px solid var(--surface)">
         CL
       </div>
     </div>
 
-    <div style="padding:36px 28px 24px">
+    <div class="workspace-modal-body">
       <!-- Title & Header Actions -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap">
         <div style="flex:1;min-width:260px">
@@ -95,6 +95,9 @@
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <button type="button" class="btn" id="cdmNewProjectBtn" style="font-size:12px;padding:6px 12px" title="Create new live project for this client">
             <svg viewBox="0 0 24 24" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>+ Project
+          </button>
+          <button type="button" class="btn" id="cdmNewQuoteBtn" style="font-size:12px;padding:6px 12px" title="Draft new quotation for this client">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>+ Quotation
           </button>
           <button type="button" class="btn" id="cdmNewInvoiceBtn" style="font-size:12px;padding:6px 12px" title="Draft new invoice for this client">
             <svg viewBox="0 0 24 24" width="13" height="13"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>+ Invoice
@@ -142,6 +145,11 @@
           <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
           <span>Information &amp; Contacts</span>
         </button>
+        <button type="button" class="client-tab-btn" data-cdm-tab="quotes">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          <span>Quotations</span>
+          <span class="client-tab-badge" id="cdmTabQuotesCount">0</span>
+        </button>
         <button type="button" class="client-tab-btn" data-cdm-tab="invoices">
           <svg viewBox="0 0 24 24" width="14" height="14"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
           <span>Invoices</span>
@@ -151,6 +159,11 @@
           <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span>Shoots &amp; Dates</span>
           <span class="client-tab-badge" id="cdmTabShootsCount">0</span>
+        </button>
+        <button type="button" class="client-tab-btn" data-cdm-tab="statement">
+          <svg viewBox="0 0 24 24" width="14" height="14"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Financial Statement</span>
+          <span class="badge" style="font-size:10px;padding:2px 6px;background:rgba(197,37,35,0.15);color:var(--red);font-weight:700">Ledger</span>
         </button>
       </div>
 
@@ -257,10 +270,29 @@
         </div>
       </div>
 
-      <!-- Tab 3: Invoices & Billing -->
+      <!-- Tab 3: Quotations & Proposals -->
+      <div id="cdmTabPaneQuotes" class="cdm-tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink)">Commercial Quotations &amp; Proposals</div>
+            <div style="font-size:11.5px;color:var(--muted)">Proposals created directly for this client profile</div>
+          </div>
+          <button type="button" class="btn primary" id="cdmAddQuoteFromTabBtn" style="padding:4px 10px;font-size:11.5px">
+            <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ New Quotation
+          </button>
+        </div>
+        <div id="cdmQuotesList" style="display:flex;flex-direction:column;gap:8px">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab 4: Invoices & Billing -->
       <div id="cdmTabPaneInvoices" class="cdm-tab-pane" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-size:13px;font-weight:600;color:var(--ink)">Invoices &amp; Retainer Records</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink)">Invoices &amp; Retainer Records</div>
+            <div style="font-size:11.5px;color:var(--muted)">Invoices issued and payment statuses</div>
+          </div>
           <button type="button" class="btn primary" id="cdmAddInvoiceFromTabBtn" style="padding:4px 10px;font-size:11.5px">
             <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ Issue Invoice
           </button>
@@ -270,7 +302,7 @@
         </div>
       </div>
 
-      <!-- Tab 4: Shoots & Calendar -->
+      <!-- Tab 5: Shoots & Calendar -->
       <div id="cdmTabPaneShoots" class="cdm-tab-pane" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div style="font-size:13px;font-weight:600;color:var(--ink)">Production Shoots &amp; Scheduled Meetings</div>
@@ -280,6 +312,77 @@
         </div>
         <div id="cdmShootsList" style="display:flex;flex-direction:column;gap:8px">
           <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Tab 6: Client Financial Statement & Ledger -->
+      <div id="cdmTabPaneStatement" class="cdm-tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px">
+              <span>Client Financial Statement</span>
+              <span class="badge" style="background:rgba(43,138,90,0.15);color:#2B8A5A;font-size:10px;font-weight:600">LIVE LEDGER</span>
+            </div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:2px">Chronological accounting statement &amp; balances for this client profile</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn" id="cdmPrintStatementBtn" style="font-size:11.5px;padding:5px 11px">
+              <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print Statement
+            </button>
+            <button type="button" class="btn primary" id="cdmOpenMainStatementsBtn" style="font-size:11.5px;padding:5px 11px">
+              <svg viewBox="0 0 24 24" width="13" height="13"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Open in Main Statements ↗
+            </button>
+          </div>
+        </div>
+
+        <!-- Statement Metrics Grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:10px;margin-bottom:18px">
+          <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Total Invoiced</div>
+            <div class="mono" id="cdmStmtInvoiced" style="font-size:16px;font-weight:700;color:var(--ink);margin-top:3px">KES 0</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px" id="cdmStmtInvoicesCount">0 invoices billed</div>
+          </div>
+          <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Total Collected</div>
+            <div class="mono" id="cdmStmtCollected" style="font-size:16px;font-weight:700;color:var(--green);margin-top:3px">KES 0</div>
+            <div style="font-size:10.5px;color:var(--green);margin-top:2px" id="cdmStmtCollectedPct">0% recovered</div>
+          </div>
+          <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Outstanding Balance</div>
+            <div class="mono" id="cdmStmtBalance" style="font-size:16px;font-weight:700;color:var(--ink);margin-top:3px">KES 0</div>
+            <div style="font-size:10.5px;margin-top:2px" id="cdmStmtBalanceStatus"><span class="pill tint-green" style="font-size:9.5px">Settled</span></div>
+          </div>
+          <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Quotation Pipeline</div>
+            <div class="mono" id="cdmStmtQuotes" style="font-size:16px;font-weight:700;color:var(--ink);margin-top:3px">KES 0</div>
+            <div style="font-size:10.5px;color:var(--muted);margin-top:2px" id="cdmStmtQuotesCount">0 active proposals</div>
+          </div>
+        </div>
+
+        <!-- Statement Table -->
+        <div class="tablewrap" style="border:1px solid var(--line);border-radius:8px;max-height:380px;overflow-y:auto;background:var(--surface)">
+          <table class="dtable" style="font-size:12px;width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="position:sticky;top:0;background:var(--panel-2);z-index:2;box-shadow:0 1px 0 var(--line)">
+                <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Date</th>
+                <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Ref #</th>
+                <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Type</th>
+                <th style="padding:10px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Description</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Debit (+)</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Credit (-)</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Balance</th>
+                <th style="padding:10px 12px;text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Status</th>
+              </tr>
+            </thead>
+            <tbody id="cdmStatementTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--muted);flex-wrap:wrap;gap:8px">
+          <div>* Linked dynamically to JMOS Main Statement Hub and eTIMS accounting records.</div>
+          <div id="cdmStatementClosingSummary" style="font-weight:600;color:var(--ink)">Closing Balance: KES 0</div>
         </div>
       </div>
 
@@ -333,72 +436,153 @@
         <input type="hidden" id="npClient" name="client">
       </div>
     </div>
+    <div class="grid2">
       <div class="field">
         <label for="npCategory">Category</label>
-        <select id="npCategory">
-          <option value="client">Client Deliverable</option>
-          <option value="internal">Internal &amp; Systems (e.g. JMOS Development)</option>
+        <select id="npCategory" onchange="window.onProjectCategoryChange(this.value, 'np')">
+          <option value="video_production">Video &amp; Film Production (Brand Film, Commercial, Doc)</option>
+          <option value="development">Development &amp; Software (JMOS, Web, Mobile, Systems)</option>
+          <option value="graphic_design">Graphic Design &amp; Branding (Identity, Posters, UI/UX)</option>
+          <option value="content_calendar">Content Calendar &amp; Social Media (Monthly, Reels, Copy)</option>
+          <option value="internal">Internal Operations, Studio &amp; R&amp;D</option>
+          <option value="custom">Other / Custom Category…</option>
         </select>
+        <div id="npCustomCategoryWrap" style="display:none;margin-top:6px">
+          <input id="npCustomCategoryInput" placeholder="Enter custom project category name" autocomplete="off" style="font-size:12.5px;padding:6px 10px">
+        </div>
       </div>
       <div class="field">
         <label for="npType">Project type</label>
-        <select id="npType">
-          <option value="Internal System Development">Internal System Development (JMOS / Tech)</option>
-          <option value="Internal Operations &amp; Studio R&amp;D">Internal Operations &amp; Studio R&amp;D</option>
-          <option value="Brand film">Brand film</option>
-          <option value="Documentary">Documentary</option>
-          <option value="Social media reels">Social media reels</option>
-          <option value="Corporate photography">Corporate photography</option>
-          <option value="Event coverage">Event coverage</option>
-          <option value="Podcast production">Podcast production</option>
-          <option value="Livestream">Livestream</option>
-          <option value="Social media management">Social media management</option>
-          <option value="Commercial">Commercial</option>
-          <option value="Other">Other</option>
+        <select id="npType" onchange="window.onProjectTypeChange(this.value, 'np')">
+          <optgroup label="Development &amp; Software Engineering">
+            <option value="Internal System Development (JMOS / Tech)">Internal System Development (JMOS / Tech)</option>
+            <option value="Web Application Development">Web Application Development</option>
+            <option value="Mobile App Development (iOS / Android)">Mobile App Development (iOS / Android)</option>
+            <option value="API &amp; Database Engineering">API &amp; Database Engineering</option>
+            <option value="DevOps, Cloud &amp; Hosting Infra">DevOps, Cloud &amp; Hosting Infra</option>
+            <option value="Automation &amp; Internal Tooling">Automation &amp; Internal Tooling</option>
+          </optgroup>
+          <optgroup label="Graphic Design &amp; Creative Branding">
+            <option value="Brand Identity &amp; Logo Design">Brand Identity &amp; Logo Design</option>
+            <option value="Social Media Graphics &amp; Posters">Social Media Graphics &amp; Posters</option>
+            <option value="UI/UX Design &amp; Prototyping (Figma)">UI/UX Design &amp; Prototyping (Figma)</option>
+            <option value="Motion Graphics &amp; 2D/3D Animation">Motion Graphics &amp; 2D/3D Animation</option>
+            <option value="Pitch Decks &amp; Print Collateral">Pitch Decks &amp; Print Collateral</option>
+            <option value="Merchandise &amp; Marketing Design">Merchandise &amp; Marketing Design</option>
+          </optgroup>
+          <optgroup label="Content Calendar &amp; Digital Media">
+            <option value="Monthly Content Calendar &amp; Production">Monthly Content Calendar &amp; Production</option>
+            <option value="Social Media Reels &amp; TikTok Series">Social Media Reels &amp; TikTok Series</option>
+            <option value="Copywriting &amp; Editorial Series">Copywriting &amp; Editorial Series</option>
+            <option value="Influencer &amp; Distribution Campaign">Influencer &amp; Distribution Campaign</option>
+            <option value="Newsletter &amp; Email Marketing Campaign">Newsletter &amp; Email Marketing Campaign</option>
+          </optgroup>
+          <optgroup label="Video &amp; Film Production">
+            <option value="Brand film">Brand film</option>
+            <option value="Commercial &amp; Advert">Commercial &amp; Advert</option>
+            <option value="Documentary">Documentary</option>
+            <option value="Social media reels">Social media reels</option>
+            <option value="Podcast production">Podcast production</option>
+            <option value="Event coverage">Event coverage</option>
+            <option value="Livestream Broadcasting">Livestream Broadcasting</option>
+            <option value="Corporate photography">Corporate photography</option>
+          </optgroup>
+          <optgroup label="Internal Studio Operations">
+            <option value="Internal Operations &amp; Studio R&amp;D">Internal Operations &amp; Studio R&amp;D</option>
+            <option value="Equipment &amp; Studio Engineering">Equipment &amp; Studio Engineering</option>
+            <option value="Business Development &amp; Partnerships">Business Development &amp; Partnerships</option>
+          </optgroup>
+          <option value="custom">Other / Custom Project Type…</option>
         </select>
+        <div id="npCustomTypeWrap" style="display:none;margin-top:6px">
+          <input id="npCustomTypeInput" placeholder="Enter custom project type" autocomplete="off" style="font-size:12.5px;padding:6px 10px">
+        </div>
       </div>
+    </div>
+    <div class="field">
+      <label for="npManager">Project manager / Lead</label>
+      <select id="npManager">
+        <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
+        <option value="Ian Aluda">Ian Aluda (IT & Systems)</option>
+        <option value="Stephen Otieno">Stephen Otieno (Video Editor)</option>
+        <option value="Amos Muthama">Amos Muthama (Cinematographer)</option>
+        <option value="Matthew Muange">Matthew Muange (Finance)</option>
+        <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
+        <option value="Lesley Chacha">Lesley Chacha (Copywriter)</option>
+      </select>
     </div>
     <div class="grid2">
       <div class="field">
-        <label for="npManager">Project manager</label>
-        <select id="npManager">
-          <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
-          <option value="Ian Aluda">Ian Aluda (IT & Systems)</option>
-          <option value="Stephen Otieno">Stephen Otieno (Video Editor)</option>
-          <option value="Amos Muthama">Amos Muthama (Cinematographer)</option>
-          <option value="Matthew Muange">Matthew Muange (Finance)</option>
-          <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
-          <option value="Lesley Chacha">Lesley Chacha (Copywriter)</option>
+        <label for="npStage">Current stage / Workflow</label>
+        <select id="npStage" onchange="window.onProjectStageChange(this.value, 'np')">
+          <optgroup label="Video &amp; Film Production">
+            <option value="Brief">Brief</option>
+            <option value="Concept">Concept</option>
+            <option value="Pre-production">Pre-production</option>
+            <option value="Shoot">Shoot / Production</option>
+            <option value="Edit">Post-Production / Edit</option>
+            <option value="Client review">Client review</option>
+            <option value="Delivery">Delivery</option>
+          </optgroup>
+          <optgroup label="Development &amp; Systems">
+            <option value="Backlog / Requirements">Backlog / Requirements</option>
+            <option value="UI/UX Design &amp; Spec">UI/UX Design &amp; Spec</option>
+            <option value="In Development / Building">In Development / Building</option>
+            <option value="Code Review &amp; Testing">Code Review &amp; Testing</option>
+            <option value="Staging &amp; QA">Staging &amp; QA</option>
+            <option value="Deployed / Live">Deployed / Live</option>
+          </optgroup>
+          <optgroup label="Graphic Design &amp; Creative">
+            <option value="Creative Brief">Creative Brief</option>
+            <option value="Moodboard &amp; Concept">Moodboard &amp; Concept</option>
+            <option value="Design Drafting">Design Drafting</option>
+            <option value="Internal Review">Internal Review</option>
+            <option value="Client Revisions">Client Revisions</option>
+            <option value="Final Assets &amp; Export">Final Assets &amp; Export</option>
+          </optgroup>
+          <optgroup label="Content Calendar &amp; Media">
+            <option value="Content Strategy">Content Strategy</option>
+            <option value="Drafting &amp; Copywriting">Drafting &amp; Copywriting</option>
+            <option value="Asset Creation &amp; Design">Asset Creation &amp; Design</option>
+            <option value="Review &amp; Approval">Review &amp; Approval</option>
+            <option value="Scheduled &amp; Queued">Scheduled &amp; Queued</option>
+            <option value="Published / Live">Published / Live</option>
+          </optgroup>
+          <optgroup label="General Workflow">
+            <option value="Planning">Planning</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Under Review">Under Review</option>
+            <option value="Revisions">Revisions</option>
+            <option value="Completed">Completed</option>
+          </optgroup>
+          <option value="custom">Custom Stage…</option>
         </select>
-      </div>
-    </div>
-    <div class="grid2">
-      <div class="field">
-        <label for="npStage">Current stage</label>
-        <select id="npStage">
-          <option value="brief">Brief</option>
-          <option value="concept">Concept</option>
-          <option value="pre-pro">Pre-production</option>
-          <option value="shoot">Shoot</option>
-          <option value="edit">Edit</option>
-          <option value="client review">Client review</option>
-          <option value="delivery">Delivery</option>
-        </select>
+        <div id="npCustomStageWrap" style="display:none;margin-top:6px">
+          <input id="npCustomStageInput" placeholder="Enter custom project stage" autocomplete="off" style="font-size:12.5px;padding:6px 10px">
+        </div>
       </div>
       <div class="field">
         <label for="npStatus">Status</label>
-        <select id="npStatus">
+        <select id="npStatus" onchange="window.onProjectStatusChange(this.value, 'np')">
           <option value="On track">On track</option>
+          <option value="In Progress">In Progress</option>
+          <option value="In Review">In Review</option>
           <option value="At risk">At risk</option>
           <option value="Delivering">Delivering</option>
           <option value="Blocked">Blocked</option>
+          <option value="Completed">Completed</option>
+          <option value="On Hold">On Hold</option>
+          <option value="custom">Custom Status…</option>
         </select>
+        <div id="npCustomStatusWrap" style="display:none;margin-top:6px">
+          <input id="npCustomStatusInput" placeholder="Enter custom status" autocomplete="off" style="font-size:12.5px;padding:6px 10px">
+        </div>
       </div>
     </div>
     <div class="grid2">
       <div class="field">
         <label for="npDeadline">Deadline Date *</label>
-        <input id="npDeadline" type="date" class="date-input" required autocomplete="off" style="font-family:inherit">
+        <input id="npDeadline" type="date" class="date-input" required autocomplete="off" style="font-family:inherit;cursor:pointer" onclick="this.showPicker && this.showPicker()">
       </div>
       <div class="field">
         <label for="npBudget">Budget (KES)</label>
@@ -415,105 +599,212 @@
 <!-- 2b. Project Details & Notion-style Workspace Modal -->
 <div class="modal" id="projectDetailModal" role="dialog" aria-modal="true" aria-labelledby="pdmTitle">
   <div class="mbg" data-close="projectDetailModal"></div>
-  <div class="mbox" style="max-height:92vh;overflow-y:auto;padding:0;overflow-x:hidden">
+  <div class="mbox workspace-modal">
     <!-- Notion-style Cover Banner -->
-    <div style="height:110px;background:linear-gradient(135deg, #E02826 0%, #C52523 25%, #6B0E0D 58%, #1F0505 82%, #080709 100%);position:relative;border-radius:16px 16px 0 0">
+    <div class="workspace-cover-banner" style="background:linear-gradient(135deg, #E02826 0%, #C52523 25%, #6B0E0D 58%, #1F0505 82%, #080709 100%)">
       <button class="mclose" data-close="projectDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
-      <div style="position:absolute;bottom:-20px;left:28px;width:44px;height:44px;border-radius:10px;background:var(--surface);box-shadow:0 4px 14px rgba(0,0,0,0.15);display:grid;place-items:center;color:var(--ink)">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+      <div style="position:absolute;bottom:-20px;left:32px;width:52px;height:52px;border-radius:12px;background:var(--surface);box-shadow:0 4px 16px rgba(0,0,0,0.2);display:grid;place-items:center;color:var(--ink);border:3px solid var(--surface)">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
       </div>
     </div>
 
-    <div style="padding:32px 28px 24px">
+    <div class="workspace-modal-body">
       <!-- Title & Client Header -->
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px">
-        <div style="flex:1">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="flex:1;min-width:280px">
           <input type="hidden" id="pdmProjectId">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
             <span class="badge" id="pdmCategoryBadge" style="background:rgba(110,43,138,0.15);color:#8A2BE2;font-size:11px;font-weight:600">Internal</span>
             <span class="badge" id="pdmClientBadge" style="background:var(--red-soft);color:var(--red);font-size:11px;cursor:pointer" title="Click to open client workspace">Client</span>
             <span class="badge" id="pdmTypeBadge" style="background:var(--panel-2);color:var(--muted);font-size:11px">Brand Film</span>
           </div>
-          <h2 id="pdmTitle" style="font-family:'Poppins',sans-serif;font-size:24px;font-weight:700;margin:0;color:var(--ink);line-height:1.2">Project Name</h2>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input id="pdmNameInput" type="text" placeholder="Project Name" style="font-family:'Poppins',sans-serif;font-size:22px;font-weight:700;margin:0;color:var(--ink);line-height:1.2;border:1px solid transparent;background:transparent;border-radius:6px;padding:2px 6px;width:100%;transition:border 0.2s ease" onfocus="this.style.borderColor='var(--line)';" onblur="this.style.borderColor='transparent';">
+            <h2 id="pdmTitle" style="display:none">Project Name</h2>
+          </div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px">Budget</div>
-          <div class="mono" id="pdmBudgetBadge" style="font-size:16px;font-weight:700;color:var(--ink)">KES 0</div>
+          <label for="pdmHeaderBudgetInput" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;display:block;margin-bottom:3px;cursor:pointer">Project Budget</label>
+          <div style="display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:3px 10px;transition:border-color 0.15s ease">
+            <span style="font-size:12px;font-weight:700;color:var(--muted)">KES</span>
+            <input type="number" id="pdmHeaderBudgetInput" placeholder="0" min="0" step="any" style="width:130px;font-family:monospace;font-size:18px;font-weight:700;color:var(--ink);background:transparent;border:none;text-align:right;padding:0;outline:none" title="Click to edit project budget">
+          </div>
+          <div class="mono" id="pdmBudgetBadge" style="display:none">KES 0</div>
         </div>
       </div>
 
-      <!-- Properties Grid (Notion Style) -->
-      <div class="project-props-list" style="background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:22px">
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+      <!-- Properties Grid (Notion Style 2-Column Responsive) -->
+      <div class="project-props-grid">
+        <div class="project-prop-row">
+          <div class="project-prop-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Budget (KES):</span>
+          </div>
+          <div class="project-prop-control" style="display:flex;align-items:center;gap:8px">
+            <input type="number" id="pdmBudgetInput" placeholder="e.g. 350000" style="padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface);flex:1;font-family:monospace;font-weight:600">
+            <span style="font-size:11px;color:var(--muted);white-space:nowrap">KES</span>
+          </div>
+        </div>
+
+        <div class="project-prop-row">
+          <div class="project-prop-label">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
             <span>Category:</span>
           </div>
-          <div style="flex:1">
-            <select id="pdmCategorySelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
-              <option value="client">Client Deliverable</option>
-              <option value="internal">Internal &amp; Systems (e.g. JMOS Development)</option>
+          <div class="project-prop-control">
+            <select id="pdmCategorySelect" onchange="window.onProjectCategoryChange(this.value, 'pdm')" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <option value="video_production">Video &amp; Film Production</option>
+              <option value="development">Development &amp; Software (JMOS, Web, Apps)</option>
+              <option value="graphic_design">Graphic Design &amp; Branding (Identity, UI/UX)</option>
+              <option value="content_calendar">Content Calendar &amp; Social Media</option>
+              <option value="internal">Internal Operations, Studio &amp; R&amp;D</option>
+              <option value="client">General Client Deliverable</option>
+              <option value="custom">Other / Custom Category…</option>
             </select>
+            <div id="pdmCustomCategoryWrap" style="display:none;margin-top:6px">
+              <input id="pdmCustomCategoryInput" placeholder="Enter custom category name" autocomplete="off" style="width:100%;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+            </div>
           </div>
         </div>
 
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+        <div class="project-prop-row">
+          <div class="project-prop-label">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span>Project Type:</span>
           </div>
-          <div style="flex:1">
-            <select id="pdmTypeSelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
-              <option value="Internal System Development">Internal System Development (JMOS / Tech)</option>
-              <option value="Internal Operations &amp; Studio R&amp;D">Internal Operations &amp; Studio R&amp;D</option>
-              <option value="Brand film">Brand film</option>
-              <option value="Documentary">Documentary</option>
-              <option value="Social media reels">Social media reels</option>
-              <option value="Corporate photography">Corporate photography</option>
-              <option value="Event coverage">Event coverage</option>
-              <option value="Podcast production">Podcast production</option>
-              <option value="Livestream">Livestream</option>
-              <option value="Social media management">Social media management</option>
-              <option value="Commercial">Commercial</option>
-              <option value="Other">Other</option>
+          <div class="project-prop-control">
+            <select id="pdmTypeSelect" onchange="window.onProjectTypeChange(this.value, 'pdm')" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <optgroup label="Development &amp; Software Engineering">
+                <option value="Internal System Development (JMOS / Tech)">Internal System Development (JMOS / Tech)</option>
+                <option value="Web Application Development">Web Application Development</option>
+                <option value="Mobile App Development (iOS / Android)">Mobile App Development (iOS / Android)</option>
+                <option value="API &amp; Database Engineering">API &amp; Database Engineering</option>
+                <option value="DevOps, Cloud &amp; Hosting Infra">DevOps, Cloud &amp; Hosting Infra</option>
+                <option value="Automation &amp; Internal Tooling">Automation &amp; Internal Tooling</option>
+              </optgroup>
+              <optgroup label="Graphic Design &amp; Creative Branding">
+                <option value="Brand Identity &amp; Logo Design">Brand Identity &amp; Logo Design</option>
+                <option value="Social Media Graphics &amp; Posters">Social Media Graphics &amp; Posters</option>
+                <option value="UI/UX Design &amp; Prototyping (Figma)">UI/UX Design &amp; Prototyping (Figma)</option>
+                <option value="Motion Graphics &amp; 2D/3D Animation">Motion Graphics &amp; 2D/3D Animation</option>
+                <option value="Pitch Decks &amp; Print Collateral">Pitch Decks &amp; Print Collateral</option>
+                <option value="Merchandise &amp; Marketing Design">Merchandise &amp; Marketing Design</option>
+              </optgroup>
+              <optgroup label="Content Calendar &amp; Digital Media">
+                <option value="Monthly Content Calendar &amp; Production">Monthly Content Calendar &amp; Production</option>
+                <option value="Social Media Reels &amp; TikTok Series">Social Media Reels &amp; TikTok Series</option>
+                <option value="Copywriting &amp; Editorial Series">Copywriting &amp; Editorial Series</option>
+                <option value="Influencer &amp; Distribution Campaign">Influencer &amp; Distribution Campaign</option>
+                <option value="Newsletter &amp; Email Marketing Campaign">Newsletter &amp; Email Marketing Campaign</option>
+              </optgroup>
+              <optgroup label="Video &amp; Film Production">
+                <option value="Brand film">Brand film</option>
+                <option value="Commercial &amp; Advert">Commercial &amp; Advert</option>
+                <option value="Documentary">Documentary</option>
+                <option value="Social media reels">Social media reels</option>
+                <option value="Podcast production">Podcast production</option>
+                <option value="Event coverage">Event coverage</option>
+                <option value="Livestream Broadcasting">Livestream Broadcasting</option>
+                <option value="Corporate photography">Corporate photography</option>
+              </optgroup>
+              <optgroup label="Internal Studio Operations">
+                <option value="Internal Operations &amp; Studio R&amp;D">Internal Operations &amp; Studio R&amp;D</option>
+                <option value="Equipment &amp; Studio Engineering">Equipment &amp; Studio Engineering</option>
+                <option value="Business Development &amp; Partnerships">Business Development &amp; Partnerships</option>
+              </optgroup>
+              <option value="custom">Other / Custom Project Type…</option>
             </select>
+            <div id="pdmCustomTypeWrap" style="display:none;margin-top:6px">
+              <input id="pdmCustomTypeInput" placeholder="Enter custom project type" autocomplete="off" style="width:100%;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+            </div>
           </div>
         </div>
 
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span>Dates / Deadline:</span>
+        <div class="project-prop-row">
+          <div class="project-prop-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>Workflow Stage:</span>
           </div>
-          <div style="flex:1;display:flex;align-items:center;gap:8px">
-            <input type="text" id="pdmDeadlineInput" placeholder="e.g. 2026-09-30 or Sep 30" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);width:180px">
-            <span style="font-size:11px;color:var(--muted)">Syncs to Operations Calendar</span>
+          <div class="project-prop-control">
+            <select id="pdmStageSelect" onchange="window.onProjectStageChange(this.value, 'pdm')" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
+              <optgroup label="Development &amp; Systems">
+                <option value="Backlog / Requirements">Backlog / Requirements</option>
+                <option value="UI/UX Design &amp; Spec">UI/UX Design &amp; Spec</option>
+                <option value="In Development / Building">In Development / Building</option>
+                <option value="Code Review &amp; Testing">Code Review &amp; Testing</option>
+                <option value="Staging &amp; QA">Staging &amp; QA</option>
+                <option value="Deployed / Live">Deployed / Live</option>
+              </optgroup>
+              <optgroup label="Graphic Design &amp; Creative">
+                <option value="Creative Brief">Creative Brief</option>
+                <option value="Moodboard &amp; Concept">Moodboard &amp; Concept</option>
+                <option value="Design Drafting">Design Drafting</option>
+                <option value="Internal Review">Internal Review</option>
+                <option value="Client Revisions">Client Revisions</option>
+                <option value="Final Assets &amp; Export">Final Assets &amp; Export</option>
+              </optgroup>
+              <optgroup label="Content Calendar &amp; Media">
+                <option value="Content Strategy">Content Strategy</option>
+                <option value="Drafting &amp; Copywriting">Drafting &amp; Copywriting</option>
+                <option value="Asset Creation &amp; Design">Asset Creation &amp; Design</option>
+                <option value="Review &amp; Approval">Review &amp; Approval</option>
+                <option value="Scheduled &amp; Queued">Scheduled &amp; Queued</option>
+                <option value="Published / Live">Published / Live</option>
+              </optgroup>
+              <optgroup label="Video &amp; Film Production">
+                <option value="Brief">Brief</option>
+                <option value="Concept">Concept</option>
+                <option value="Pre-production">Pre-production</option>
+                <option value="Shoot">Shoot / Production</option>
+                <option value="Edit">Post-Production / Edit</option>
+                <option value="Client review">Client review</option>
+                <option value="Delivery">Delivery</option>
+              </optgroup>
+              <optgroup label="General Workflow">
+                <option value="Planning">Planning</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Revisions">Revisions</option>
+                <option value="Completed">Completed</option>
+              </optgroup>
+              <option value="custom">Custom Stage…</option>
+            </select>
+            <div id="pdmCustomStageWrap" style="display:none;margin-top:6px">
+              <input id="pdmCustomStageInput" placeholder="Enter custom stage" autocomplete="off" style="width:100%;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+            </div>
           </div>
         </div>
 
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+        <div class="project-prop-row">
+          <div class="project-prop-label">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span>Status:</span>
           </div>
-          <div style="flex:1">
-            <select id="pdmStatusSelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+          <div class="project-prop-control">
+            <select id="pdmStatusSelect" onchange="window.onProjectStatusChange(this.value, 'pdm')" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
               <option value="On track">On track</option>
+              <option value="In Progress">In Progress</option>
+              <option value="In Review">In Review</option>
               <option value="At risk">At risk</option>
               <option value="Delivering">Delivering</option>
               <option value="Blocked">Blocked</option>
               <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+              <option value="custom">Custom Status…</option>
             </select>
+            <div id="pdmCustomStatusWrap" style="display:none;margin-top:6px">
+              <input id="pdmCustomStatusInput" placeholder="Enter custom status" autocomplete="off" style="width:100%;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+            </div>
           </div>
         </div>
 
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+        <div class="project-prop-row">
+          <div class="project-prop-label">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             <span>Owner / Lead:</span>
           </div>
-          <div style="flex:1">
-            <select id="pdmManagerSelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+          <div class="project-prop-control">
+            <select id="pdmManagerSelect" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
               <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
               <option value="Ian Aluda">Ian Aluda (IT &amp; Systems)</option>
               <option value="Lesley Chacha">Lesley Chacha (Client Relations)</option>
@@ -525,26 +816,13 @@
           </div>
         </div>
 
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            <span>Completion:</span>
-          </div>
-          <div style="flex:1;display:flex;align-items:center;gap:12px">
-            <div style="flex:1;max-width:240px;height:8px;background:var(--surface);border-radius:999px;overflow:hidden;border:1px solid var(--line)">
-              <div id="pdmProgressBar" style="height:100%;background:var(--green);width:0%;border-radius:999px;transition:width 0.3s ease"></div>
-            </div>
-            <span class="mono" id="pdmProgressPct" style="font-size:13px;font-weight:700;color:var(--ink)">0%</span>
-          </div>
-        </div>
-
-        <div class="project-prop-row" style="display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500">
+        <div class="project-prop-row">
+          <div class="project-prop-label">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
             <span>Priority:</span>
           </div>
-          <div style="flex:1">
-            <select id="pdmPrioritySelect" style="padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+          <div class="project-prop-control">
+            <select id="pdmPrioritySelect" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
               <option value="High">High</option>
               <option value="Medium">Medium</option>
               <option value="Low">Low</option>
@@ -552,80 +830,99 @@
           </div>
         </div>
 
+        <div class="project-prop-row">
+          <div class="project-prop-label">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Completion:</span>
+          </div>
+          <div class="project-prop-control" style="display:flex;align-items:center;gap:12px">
+            <div style="flex:1;height:8px;background:var(--surface);border-radius:999px;overflow:hidden;border:1px solid var(--line)">
+              <div id="pdmProgressBar" style="height:100%;background:var(--green);width:0%;border-radius:999px;transition:width 0.3s ease"></div>
+            </div>
+            <span class="mono" id="pdmProgressPct" style="font-size:13px;font-weight:700;color:var(--ink)">0%</span>
+          </div>
+        </div>
+
         <!-- Files & Media Storage Links -->
-        <div class="project-prop-row" style="display:flex;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line-soft)">
-          <div style="width:140px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:500;margin-top:4px">
+        <div class="project-prop-row full-width" style="display:flex;align-items:flex-start;padding:12px 0 4px">
+          <div class="project-prop-label" style="margin-top:6px">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             <span>Storage Drives:</span>
           </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div class="project-prop-control" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:8px 14px">
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:11.5px;min-width:90px;color:var(--muted)">Google Drive:</span>
-              <input id="pdmDriveLink" placeholder="https://drive.google.com/drive/folders/..." style="flex:1;padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+              <span style="font-size:11.5px;min-width:75px;color:var(--muted)">Google Drive:</span>
+              <input id="pdmDriveLink" placeholder="https://drive.google.com/..." style="flex:1;padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
               <a id="pdmDriveOpenBtn" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Open Drive Folder">Open ↗</a>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:11.5px;min-width:90px;color:var(--muted)">Client Brief:</span>
-              <input id="pdmBriefLink" placeholder="Link to project brief / creative doc" style="flex:1;padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+              <span style="font-size:11.5px;min-width:75px;color:var(--muted)">Client Brief:</span>
+              <input id="pdmBriefLink" placeholder="Link to project brief" style="flex:1;padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
               <a id="pdmBriefOpenBtn" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Open Brief">Open ↗</a>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:11.5px;min-width:90px;color:var(--muted)">Treatment:</span>
-              <input id="pdmTreatmentLink" placeholder="Director's treatment / storyboard URL" style="flex:1;padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+              <span style="font-size:11.5px;min-width:75px;color:var(--muted)">Treatment:</span>
+              <input id="pdmTreatmentLink" placeholder="Director's treatment URL" style="flex:1;padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
               <a id="pdmTreatmentOpenBtn" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Open Treatment">Open ↗</a>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:11.5px;min-width:90px;color:var(--muted)">Playbook:</span>
-              <input id="pdmPlaybookLink" placeholder="Production playbook URL or guide" style="flex:1;padding:4px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
+              <span style="font-size:11.5px;min-width:75px;color:var(--muted)">Playbook:</span>
+              <input id="pdmPlaybookLink" placeholder="Production playbook URL" style="flex:1;padding:5px 8px;font-size:12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)">
               <a id="pdmPlaybookOpenBtn" href="#" target="_blank" class="btn" style="padding:4px 8px;font-size:11px;display:none" title="Open Playbook">Open ↗</a>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- About this project (Description / Notes) -->
-      <div style="margin-bottom:24px">
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--ink);display:flex;align-items:center;gap:6px">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          <span>About this project</span>
-        </h4>
-        <textarea id="pdmNotes" rows="3" placeholder="Add scope details, shoot locations, deliverable specs, client contacts..." style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;background:var(--surface);resize:vertical"></textarea>
-      </div>
+      <!-- Split Grid: Tasks & Notes (Left) + Comments & Discussion (Right) -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));gap:24px;margin-bottom:20px">
+        <!-- Left: Scope & Tasks -->
+        <div>
+          <!-- About this project (Description / Notes) -->
+          <div style="margin-bottom:24px">
+            <h4 style="font-size:14px;font-weight:600;margin-bottom:8px;color:var(--ink);display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span>About this project</span>
+            </h4>
+            <textarea id="pdmNotes" rows="3" placeholder="Add scope details, shoot locations, deliverable specs, client contacts..." style="width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px;background:var(--surface);resize:vertical"></textarea>
+          </div>
 
-      <!-- Project Tasks Section -->
-      <div style="margin-bottom:24px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <h4 style="font-size:14px;font-weight:600;margin:0;color:var(--ink);display:flex;align-items:center;gap:6px">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <span>Project Tasks</span> <span class="count" id="pdmTasksCount" style="font-size:11px;padding:1px 7px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px">0</span>
+          <!-- Project Tasks Section -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <h4 style="font-size:14px;font-weight:600;margin:0;color:var(--ink);display:flex;align-items:center;gap:6px">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                <span>Project Tasks</span> <span class="count" id="pdmTasksCount" style="font-size:11px;padding:1px 7px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px">0</span>
+              </h4>
+              <button type="button" class="btn primary" id="pdmAddTaskBtn" style="padding:4px 10px;font-size:11.5px">
+                <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ Add Task
+              </button>
+            </div>
+
+            <div id="pdmTasksList" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);max-height:280px;overflow-y:auto">
+              <!-- Populated dynamically with tasks -->
+              <div style="padding:18px;text-align:center;font-size:12px;color:var(--muted)">No tasks attached to this project yet.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Comments Thread & Activity -->
+        <div style="display:flex;flex-direction:column">
+          <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--ink);display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Comments &amp; Activity Stream</span>
           </h4>
-          <button type="button" class="btn primary" id="pdmAddTaskBtn" style="padding:4px 10px;font-size:11.5px">
-            <svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg>+ Add Task
-          </button>
-        </div>
 
-        <div id="pdmTasksList" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)">
-          <!-- Populated dynamically with tasks -->
-          <div style="padding:18px;text-align:center;font-size:12px;color:var(--muted)">No tasks attached to this project yet.</div>
-        </div>
-      </div>
+          <!-- Comments Stream -->
+          <div id="pdmCommentsStream" style="flex:1;min-height:180px;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:12px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px">
+            <div style="font-size:12px;color:var(--muted);font-style:italic">No comments yet. Start a discussion below.</div>
+          </div>
 
-      <!-- Comments Thread Section -->
-      <div style="margin-bottom:16px">
-        <h4 style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--ink);display:flex;align-items:center;gap:6px">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span>Comments &amp; Activity</span>
-        </h4>
-
-        <!-- Comments Stream -->
-        <div id="pdmCommentsStream" style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;padding:6px 0">
-          <div style="font-size:12px;color:var(--muted);font-style:italic">No comments yet. Start a discussion below.</div>
-        </div>
-
-        <!-- Add Comment Input -->
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="pdmCommentInput" placeholder="Add a comment, note, or update..." style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12.5px;background:var(--surface)">
-          <button type="button" class="btn primary" id="pdmPostCommentBtn" style="padding:8px 14px;font-size:12px">Post</button>
+          <!-- Add Comment Input -->
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="pdmCommentInput" placeholder="Add a comment, note, or update..." style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12.5px;background:var(--surface)">
+            <button type="button" class="btn primary" id="pdmPostCommentBtn" style="padding:8px 16px;font-size:12px">Post</button>
+          </div>
         </div>
       </div>
 
@@ -773,10 +1070,10 @@
 <!-- 4. Add Task Modal -->
 <div class="modal" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
   <div class="mbg" data-close="taskModal"></div>
-  <div class="mbox">
+  <div class="mbox" style="max-width:680px">
     <button class="mclose" data-close="taskModal" title="Close" aria-label="Close modal">&times;</button>
     <h3 id="taskModalTitle">Create a task</h3>
-    <p class="msub">Assign a task to team members across project workflows.</p>
+    <p class="msub">Assign a task to team members across project workflows with sticky-note styling & deliverables tracking.</p>
     <div class="field" id="taskProjectPickerField">
       <label for="taskProjectTrigger">Attach to Project</label>
       <input type="hidden" id="ntProject" name="project_id" value="">
@@ -807,7 +1104,11 @@
       <label for="ntTitle">Task title *</label>
       <input id="ntTitle" placeholder="e.g. Color grade & sound master" required autocomplete="off">
     </div>
-    <div class="grid2">
+    <div class="field">
+      <label for="ntDescription">Description / Brief Instructions</label>
+      <textarea id="ntDescription" rows="2" placeholder="Specific deliverables, technical notes, or reference links…" style="resize:vertical"></textarea>
+    </div>
+    <div class="grid3">
       <div class="field">
         <label for="ntStage">Stage</label>
         <select id="ntStage">
@@ -818,6 +1119,21 @@
           <option value="done">Done</option>
         </select>
       </div>
+      <div class="field">
+        <label for="ntPriority">Priority</label>
+        <select id="ntPriority">
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="ntDueDate">Due Date</label>
+        <input type="date" id="ntDueDate" style="cursor:pointer" onclick="this.showPicker && this.showPicker()">
+      </div>
+    </div>
+    <div class="grid2">
       <div class="field">
         <label for="ntAssigned">Assign to</label>
         <select id="ntAssigned">
@@ -830,11 +1146,235 @@
           <option value="Patrick Mwendwa">Patrick Mwendwa (PM)</option>
         </select>
       </div>
+      <div class="field">
+        <label>Sticky Note Theme</label>
+        <input type="hidden" id="ntStickyColor" value="#FFFBEB">
+        <div class="sticky-color-swatches" id="taskStickyColorSwatches" style="display:flex;align-items:center;gap:8px;padding-top:6px">
+          <button type="button" class="color-swatch-btn active" data-color="#FFFBEB" style="width:26px;height:26px;border-radius:50%;background:#FFFBEB;border:2px solid #F59E0B;cursor:pointer" title="Sunny Amber"></button>
+          <button type="button" class="color-swatch-btn" data-color="#FDF2F8" style="width:26px;height:26px;border-radius:50%;background:#FDF2F8;border:2px solid #EC4899;cursor:pointer" title="Rose Blush"></button>
+          <button type="button" class="color-swatch-btn" data-color="#ECFDF5" style="width:26px;height:26px;border-radius:50%;background:#ECFDF5;border:2px solid #10B981;cursor:pointer" title="Mint Fresh"></button>
+          <button type="button" class="color-swatch-btn" data-color="#F0F9FF" style="width:26px;height:26px;border-radius:50%;background:#F0F9FF;border:2px solid #0284C7;cursor:pointer" title="Sky Azure"></button>
+          <button type="button" class="color-swatch-btn" data-color="#F5F3FF" style="width:26px;height:26px;border-radius:50%;background:#F5F3FF;border:2px solid #8B5CF6;cursor:pointer" title="Lavender Soft"></button>
+          <button type="button" class="color-swatch-btn" data-color="#FFF7ED" style="width:26px;height:26px;border-radius:50%;background:#FFF7ED;border:2px solid #F97316;cursor:pointer" title="Warm Peach"></button>
+          <button type="button" class="color-swatch-btn" data-color="#FEF9C3" style="width:26px;height:26px;border-radius:50%;background:#FEF9C3;border:2px solid #CA8A04;cursor:pointer" title="Lemon Yellow"></button>
+        </div>
+      </div>
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="taskModal">Cancel</button>
       <button type="button" class="btn primary" id="saveTaskBtn">Create task</button>
     </div>
+  </div>
+</div>
+
+<!-- 4.1 Sticky Note Task Detail & Review Workspace Modal -->
+<div class="modal" id="taskDetailModal" role="dialog" aria-modal="true" aria-labelledby="tdTaskTitle">
+  <div class="mbg" data-close="taskDetailModal"></div>
+  <div class="mbox workspace-modal sticky-note-modal" id="tdModalBox">
+    
+    <!-- Notion-style Task Workspace Cover Banner -->
+    <div class="workspace-cover-banner sticky-note-banner" id="tdBanner">
+      <button class="mclose" data-close="taskDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.35);color:#fff;border:none">&times;</button>
+      
+      <!-- Dynamic Task Avatar Badge -->
+      <div id="tdTaskAvatar" style="position:absolute;bottom:-24px;left:32px;width:60px;height:60px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;border:3px solid var(--surface)">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+
+      <!-- Quick Color Theme Palette (Top Right in Banner) -->
+      <div class="sticky-color-picker-mini" id="tdColorPickerMini" title="Change sticky note color" style="position:absolute;top:12px;right:56px">
+        <button type="button" class="swatch-mini" data-color="#FFFBEB" style="background:#FFFBEB;border-color:#F59E0B" title="Sunny Amber"></button>
+        <button type="button" class="swatch-mini" data-color="#FDF2F8" style="background:#FDF2F8;border-color:#EC4899" title="Rose Blush"></button>
+        <button type="button" class="swatch-mini" data-color="#ECFDF5" style="background:#ECFDF5;border-color:#10B981" title="Mint Fresh"></button>
+        <button type="button" class="swatch-mini" data-color="#F0F9FF" style="background:#F0F9FF;border-color:#0284C7" title="Sky Azure"></button>
+        <button type="button" class="swatch-mini" data-color="#F5F3FF" style="background:#F5F3FF;border-color:#8B5CF6" title="Lavender Soft"></button>
+        <button type="button" class="swatch-mini" data-color="#FFF7ED" style="background:#FFF7ED;border-color:#F97316" title="Warm Peach"></button>
+        <button type="button" class="swatch-mini" data-color="#FEF9C3" style="background:#FEF9C3;border-color:#CA8A04" title="Lemon Yellow"></button>
+      </div>
+    </div>
+
+    <!-- Sticky Note Workspace Body -->
+    <div class="workspace-modal-body sticky-modal-body">
+      <input type="hidden" id="tdTaskId" value="">
+
+      <!-- Title & Assignee Header -->
+      <div class="sticky-header-row" style="margin-left:72px">
+        <div class="sticky-title-wrap">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <span class="badge sticky-badge-project" id="tdProjectBadge">No Project</span>
+            <span class="badge" id="tdPriorityBadge">Medium Priority</span>
+            <span class="badge" id="tdStageBadge">To do</span>
+          </div>
+          <h2 id="tdTaskTitle" class="sticky-title">Task Title</h2>
+          <div class="sticky-meta-chips">
+            <span class="sticky-chip" id="tdAssigneeChip">
+              <span class="av-chip" id="tdAssigneeAvatar" style="background:#C52523">BK</span>
+              <span id="tdAssigneeName">Barny Kiome</span>
+            </span>
+            <span class="sticky-chip" id="tdAssignerChip">
+              <span style="color:var(--muted)">Assigned by:</span> <b id="tdAssignerName">Production Lead</b>
+            </span>
+            <span class="sticky-chip" id="tdDueDateChip">
+              <span style="color:var(--muted)">Due:</span> <b id="tdDueDateText">Flexible</b>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main 2-Column Split: Deliverables/Details & Review/Comments -->
+      <div class="sticky-workspace-grid">
+        
+        <!-- Left Pane: Details & Deliverable Review Links -->
+        <div class="sticky-col-left">
+          
+          <!-- Task Description / Brief Card -->
+          <div class="sticky-card-section">
+            <div class="sticky-section-head">
+              <h4>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Task Brief & Deliverable Notes
+              </h4>
+            </div>
+            <div class="sticky-description-box" id="tdDescriptionBox">
+              No specific instructions recorded.
+            </div>
+          </div>
+
+          <!-- Deliverables & Review Links (Requirement 2) -->
+          <div class="sticky-card-section">
+            <div class="sticky-section-head">
+              <h4>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Deliverable Review Links
+              </h4>
+              <span class="badge" id="tdLinksCountBadge" style="font-size:11px;background:var(--panel-2)">0 links</span>
+            </div>
+            <p class="section-subtext">Add Google Drive, Frame.io, Dropbox, Playbook, Figma, or report links for review by the Owner & Project Manager.</p>
+
+            <!-- Links List -->
+            <div class="sticky-links-list" id="tdLinksList">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Add Review Link Form -->
+            <div class="sticky-add-link-box">
+              <div class="grid2" style="gap:10px;margin-bottom:8px">
+                <input type="text" id="tdNewLinkTitle" placeholder="Link label (e.g. Rough Cut v2 for Review)" autocomplete="off">
+                <div style="position:relative">
+                  <input type="url" id="tdNewLinkUrl" placeholder="Paste link (Google Drive, Frame.io, Figma…)" autocomplete="off">
+                  <span id="tdProviderDetectBadge" class="provider-detect-badge" style="display:none">Cloud Link</span>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:flex-end">
+                <button type="button" class="btn primary" id="tdAddLinkBtn" style="font-size:12px;padding:6px 14px">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Attach Review Link
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Pane: PM Workflow Controls & Recommendations / Comments -->
+        <div class="sticky-col-right">
+          
+          <!-- Project Manager / Reviewer Workflow Control Bar (Requirement 3) -->
+          <div class="sticky-card-section pm-workflow-card">
+            <div class="sticky-section-head">
+              <h4>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Stage Stepper & Workflow Review
+              </h4>
+              <span class="badge" id="tdCurrentStagePill" style="font-weight:700">Stage</span>
+            </div>
+
+            <!-- 5-Stage Stepper -->
+            <div class="task-stage-stepper" id="tdStageStepper">
+              <button type="button" class="stage-step-btn" data-stage="todo"><span>1</span> To do</button>
+              <button type="button" class="stage-step-btn" data-stage="in_progress"><span>2</span> In progress</button>
+              <button type="button" class="stage-step-btn" data-stage="review_internal"><span>3</span> Internal Review</button>
+              <button type="button" class="stage-step-btn" data-stage="review_client"><span>4</span> Client Review</button>
+              <button type="button" class="stage-step-btn" data-stage="done"><span>5</span> Done ✓</button>
+            </div>
+
+            <!-- Workflow Action Buttons -->
+            <div class="workflow-action-buttons" id="tdWorkflowActions">
+              <button type="button" class="btn btn-revert" id="tdSendBackBtn" title="Request revisions and revert to In Progress">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                Send Back for Changes
+              </button>
+              <button type="button" class="btn primary btn-advance" id="tdProceedBtn" title="Approve and move to next stage">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                Proceed to Next Level →
+              </button>
+            </div>
+
+            <!-- Expandable Send Back Revision Note Box -->
+            <div class="revision-note-box" id="tdRevisionNoteBox" style="display:none">
+              <label for="tdRevisionText"><b>Revision Recommendation & Required Changes *</b></label>
+              <textarea id="tdRevisionText" rows="2" placeholder="Specify what adjustments are needed (e.g. fix color cast at 01:20, adjust audio ducking)..."></textarea>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+                <button type="button" class="btn" id="tdCancelRevisionBtn">Cancel</button>
+                <button type="button" class="btn primary" id="tdConfirmSendBackBtn" style="background:#DC2626">Submit Revisions & Revert</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Discussion, Recommendations & Activity Stream (Requirement 3) -->
+          <div class="sticky-card-section activity-stream-card">
+            <div class="sticky-section-head">
+              <h4>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Discussion & Recommendations
+              </h4>
+              <span class="badge" id="tdCommentsCountBadge" style="font-size:11px;background:var(--panel-2)">0 entries</span>
+            </div>
+
+            <!-- Comments Feed -->
+            <div class="sticky-comments-feed" id="tdCommentsFeed">
+              <!-- Populated dynamically -->
+            </div>
+
+            <!-- Add Comment Form -->
+            <div class="sticky-comment-form">
+              <div class="comment-input-header">
+                <select id="tdCommentTypeSelect" style="font-size:12px;padding:4px 8px;width:auto">
+                  <option value="comment">💬 General Comment</option>
+                  <option value="recommendation">💡 Recommendation</option>
+                  <option value="change_request">⚠️ Revision Note</option>
+                </select>
+                <span style="font-size:11px;color:var(--muted)">Visible to project team & managers</span>
+              </div>
+              <textarea id="tdCommentMessage" rows="2" placeholder="Write a comment or recommendation for this task…" style="margin-bottom:8px;resize:vertical"></textarea>
+              <div style="display:flex;justify-content:flex-end">
+                <button type="button" class="btn primary" id="tdPostCommentBtn" style="font-size:12px;padding:6px 14px">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Post Comment
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Workspace Modal Footer -->
+    <div class="workspace-modal-footer">
+      <div class="workspace-modal-footer-left">
+        <button type="button" class="btn btn-outline-danger" id="tdDeleteTaskBtn">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Remove Task
+        </button>
+      </div>
+      <div class="workspace-modal-footer-right">
+        <button type="button" class="btn" data-close="taskDetailModal">Close</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -890,8 +1430,8 @@
     </div>
     <div class="grid2">
       <div class="field">
-        <label for="niDue">Due Date</label>
-        <input id="niDue" placeholder="e.g. Sep 15" autocomplete="off">
+        <label for="niDue">Due Date *</label>
+        <input id="niDue" type="date" required autocomplete="off" style="cursor:pointer" onclick="this.showPicker && this.showPicker()">
       </div>
       <div class="field">
         <label for="niEtims">eTIMS Compliant?</label>
@@ -1007,8 +1547,8 @@
         <input id="neEtimsNumber" placeholder="e.g. KRA-ETIMS-002194 or CU01-08123" autocomplete="off">
       </div>
       <div class="field">
-        <label for="neDate">Expense Date</label>
-        <input id="neDate" placeholder="e.g. Aug 15 or 2026-09-14" autocomplete="off">
+        <label for="neDate">Expense Date *</label>
+        <input id="neDate" type="date" required autocomplete="off" style="cursor:pointer" onclick="this.showPicker && this.showPicker()">
       </div>
     </div>
 
@@ -1147,6 +1687,16 @@
         <input id="nuPass" placeholder="they can change it later" value="jeota2024" autocomplete="off">
       </div>
     </div>
+
+    <!-- Email Setup Notification Option -->
+    <div style="margin-top:4px;margin-bottom:14px;padding:12px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px">
+      <label style="display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink);cursor:pointer;margin:0">
+        <input type="checkbox" id="nuSendInviteEmail" checked style="width:16px;height:16px;accent-color:var(--red);cursor:pointer">
+        <span><b>Send email invitation &amp; password setup link</b> to user's inbox</span>
+      </label>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;margin-left:26px">The user will receive an onboarding email with a direct link and 6-digit verification code to choose their personal password.</div>
+    </div>
+
     <div class="mfoot">
       <button type="button" class="btn" data-close="userModal">Cancel</button>
       <button type="button" class="btn primary" id="saveUserBtn">Add person &amp; create login</button>
@@ -1797,18 +2347,18 @@
 <!-- B. Zoho CRM Lead Workspace & Journey Drawer Modal -->
 <div class="modal" id="leadDetailModal" role="dialog" aria-modal="true" aria-labelledby="ldmLeadName">
   <div class="mbg" data-close="leadDetailModal"></div>
-  <div class="mbox" style="max-height:92vh;overflow-y:auto;padding:0;overflow-x:hidden;max-width:880px;width:95%">
+  <div class="mbox workspace-modal">
     <!-- Notion / Zoho Banner Header -->
-    <div style="height:110px;background:linear-gradient(135deg, #182848 0%, #2B6E8A 50%, #C52523 100%);position:relative;border-radius:16px 16px 0 0">
+    <div class="workspace-cover-banner" style="background:linear-gradient(135deg, #050507 0%, #121316 28%, #5a0c0b 68%, #C52523 100%)">
       <button class="mclose" data-close="leadDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
       
       <!-- Dynamic Lead Initials Avatar -->
-      <div id="ldmAvatar" style="position:absolute;bottom:-22px;left:28px;width:54px;height:54px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;border:3px solid var(--surface)">
+      <div id="ldmAvatar" style="position:absolute;bottom:-24px;left:32px;width:60px;height:60px;border-radius:14px;background:var(--red);box-shadow:0 4px 16px rgba(0,0,0,0.25);display:grid;place-items:center;color:#fff;font-family:'Poppins',sans-serif;font-weight:700;font-size:22px;border:3px solid var(--surface)">
         IA
       </div>
     </div>
 
-    <div style="padding:32px 28px 24px">
+    <div class="workspace-modal-body">
       <!-- Title & Header Actions -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap">
         <div style="flex:1;min-width:260px">
@@ -2313,15 +2863,15 @@
 <!-- H. Quotation Detailed Preview & Dispatch Modal -->
 <div class="modal" id="quoteDetailModal" role="dialog" aria-modal="true" aria-labelledby="qdmTitle">
   <div class="mbg" data-close="quoteDetailModal"></div>
-  <div class="mbox" style="max-width:680px;max-height:92vh;overflow-y:auto;padding:0">
-    <div style="background:linear-gradient(135deg, #182848 0%, #C52523 100%);padding:22px 24px;color:#fff;border-radius:16px 16px 0 0;position:relative">
+  <div class="mbox workspace-modal">
+    <div class="workspace-cover-banner" style="background:linear-gradient(135deg, #050507 0%, #121316 28%, #5a0c0b 68%, #C52523 100%);padding:24px 32px;color:#fff;display:flex;flex-direction:column;justify-content:center">
       <button class="mclose" data-close="quoteDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
       <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.85;font-weight:700">JEOTA MEDIA · COMMERCIAL QUOTATION</div>
-      <h3 id="qdmTitle" style="margin:4px 0 0;font-size:22px;color:#fff;font-family:'Poppins',sans-serif">Quotation Preview</h3>
-      <div style="font-size:12px;opacity:0.9;margin-top:4px" id="qdmSubtitle">Quote #QT-2026-001 · Prepared for Client</div>
+      <h3 id="qdmTitle" style="margin:4px 0 0;font-size:24px;color:#fff;font-family:'Poppins',sans-serif">Quotation Preview</h3>
+      <div style="font-size:12.5px;opacity:0.9;margin-top:4px" id="qdmSubtitle">Quote #QT-2026-001 · Prepared for Client</div>
     </div>
 
-    <div style="padding:22px 26px">
+    <div class="workspace-modal-body" style="padding:28px 36px">
       <!-- Quick Dispatch Action Bar -->
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:6px">
@@ -2393,8 +2943,8 @@
     </div>
 
     <div class="field">
-      <label for="upgDueDate">Due Date</label>
-      <input id="upgDueDate" placeholder="e.g. Oct 15" value="7 days">
+      <label for="upgDueDate">Due Date *</label>
+      <input id="upgDueDate" type="date" required autocomplete="off" style="cursor:pointer" onclick="this.showPicker && this.showPicker()">
     </div>
 
     <div class="mfoot">
@@ -2404,128 +2954,229 @@
   </div>
 </div>
 
-<!-- J. Upload Document / Cloud Link Modal -->
+<!-- J. Cloud Document Link Modal (Google Drive, Dropbox, Playbook, Notion) -->
 <div class="modal" id="documentModal" role="dialog" aria-modal="true" aria-labelledby="docModalTitle">
   <div class="mbg" data-close="documentModal"></div>
   <div class="mbox" style="max-width:540px">
     <button class="mclose" data-close="documentModal" title="Close" aria-label="Close modal">&times;</button>
-    <h3 id="docModalTitle">Upload Document</h3>
-    <p class="msub">Add contracts, proposals, brand assets, or cloud drive links.</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:rgba(37,211,102,0.15);color:#128C7E;font-size:11px;font-weight:700">ZERO HOST STORAGE</span>
+    </div>
+    <h3 id="docModalTitle">Add Document Link</h3>
+    <p class="msub">Attach Google Drive, Dropbox, Playbook, Notion, or Frame.io links directly to save hosting space and data traffic.</p>
 
-    <input type="hidden" id="docUploadType" value="file">
+    <!-- Cloud Provider Badges -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="badge" style="background:rgba(26,115,232,0.1);color:#1a73e8;font-size:11px;font-weight:600;padding:3px 8px">Google Drive</span>
+      <span class="badge" style="background:rgba(0,97,255,0.1);color:#0061ff;font-size:11px;font-weight:600;padding:3px 8px">Dropbox</span>
+      <span class="badge" style="background:rgba(124,58,237,0.1);color:#7c3aed;font-size:11px;font-weight:600;padding:3px 8px">Playbook</span>
+      <span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;font-size:11px;font-weight:600;padding:3px 8px">Frame.io</span>
+      <span class="badge" style="background:rgba(17,24,39,0.1);color:var(--ink);font-size:11px;font-weight:600;padding:3px 8px">Notion</span>
+      <span class="badge" style="background:rgba(234,88,12,0.1);color:#ea580c;font-size:11px;font-weight:600;padding:3px 8px">Figma / Other</span>
+    </div>
+
+    <input type="hidden" id="docUploadType" value="link">
+
+    <div class="field">
+      <label for="docUrlInput">Cloud Document / Storage Link *</label>
+      <input type="url" id="docUrlInput" placeholder="https://drive.google.com/file/d/... or https://playbook.com/..." required autocomplete="off" oninput="window.onDocUrlInput(this.value)">
+      <div id="docDetectedProvider" style="font-size:11.5px;color:var(--muted);margin-top:4px;display:none"></div>
+    </div>
 
     <div class="field">
       <label for="docInputTitle">Document Title *</label>
-      <input id="docInputTitle" placeholder="e.g. Safari Park Hotel — Master Production Contract" required autocomplete="off">
+      <input id="docInputTitle" placeholder="e.g. Moyo Honey — Master Production Treatment &amp; Storyboard" required autocomplete="off">
     </div>
 
-    <div class="field">
-      <label for="docFolderSelect">Folder Category *</label>
-      <select id="docFolderSelect">
-        <option value="contracts">Contracts &amp; Legal</option>
-        <option value="proposals">Proposals &amp; Quotes</option>
-        <option value="brand_guides">Brand Guides &amp; Logos</option>
-        <option value="briefs">Production Briefs</option>
-        <option value="grants">Grant Applications</option>
-        <option value="general">General Assets</option>
-      </select>
-    </div>
-
-    <div class="field" id="docFileInputWrap">
-      <label for="docFileInput">File Attachment (PDF, DOCX, XLSX, MP4, PNG, ZIP)</label>
-      <input type="file" id="docFileInput">
-    </div>
-
-    <div class="field" id="docUrlInputWrap" style="display:none">
-      <label for="docUrlInput">Cloud Storage Link (Google Drive / Dropbox / Notion)</label>
-      <input type="url" id="docUrlInput" placeholder="https://drive.google.com/file/d/...">
+    <div class="grid2">
+      <div class="field">
+        <label for="docFolderSelect">Folder Category *</label>
+        <select id="docFolderSelect">
+          <option value="contracts">Contracts &amp; Legal</option>
+          <option value="proposals">Proposals &amp; Quotes</option>
+          <option value="brand_guides">Brand Guides &amp; Logos</option>
+          <option value="briefs">Production Briefs</option>
+          <option value="grants">Grant Applications</option>
+          <option value="general">General Assets &amp; Footage</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="docProviderSelect">Cloud Platform</label>
+        <select id="docProviderSelect">
+          <option value="auto">Auto-Detect from Link</option>
+          <option value="Google Drive">Google Drive</option>
+          <option value="Dropbox">Dropbox</option>
+          <option value="Playbook">Playbook</option>
+          <option value="Frame.io">Frame.io</option>
+          <option value="Notion">Notion</option>
+          <option value="Figma">Figma</option>
+          <option value="OneDrive">OneDrive / SharePoint</option>
+          <option value="Cloud Link">Other Cloud Link</option>
+        </select>
+      </div>
     </div>
 
     <div class="field">
       <label for="docInputNotes">Description / Version Notes</label>
-      <textarea id="docInputNotes" rows="2" placeholder="e.g. Final signed copy, v2.0 revision..."></textarea>
+      <textarea id="docInputNotes" rows="2" placeholder="e.g. Final approved treatment with shot list, moodboard and references..."></textarea>
     </div>
 
     <div class="mfoot">
       <button type="button" class="btn" data-close="documentModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveDocBtn" onclick="window.submitDocumentForm()">Save Document</button>
+      <button type="button" class="btn primary" id="saveDocBtn" onclick="window.submitDocumentForm()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Save Document Link
+      </button>
     </div>
   </div>
 </div>
 
-<!-- K. Create / Edit Impact Grant Opportunity Modal -->
+<!-- K. Create / Edit Impact Grant & Partnership Exploration Modal -->
 <div class="modal" id="fundraisingModal" role="dialog" aria-modal="true" aria-labelledby="frModalTitle">
   <div class="mbg" data-close="fundraisingModal"></div>
-  <div class="mbox" style="max-width:580px">
+  <div class="mbox" style="max-width:620px">
     <button class="mclose" data-close="fundraisingModal" title="Close" aria-label="Close modal">&times;</button>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span class="badge" style="background:rgba(43,138,90,0.15);color:#2B8A5A;font-weight:700">IMPACT FUNDING LEAD</span>
+      <span class="badge" id="frModalBadge" style="background:rgba(43,138,90,0.15);color:#2B8A5A;font-weight:700">JEOTA FUNDRAISING MASTER</span>
     </div>
-    <h3 id="frModalTitle">Add Grant / Call Opportunity</h3>
-    <p class="msub">Log open funding calls, fellowships, and philanthropic grants.</p>
+    <h3 id="frModalTitle">Add Opportunity / Partner</h3>
+    <p class="msub" id="frModalSub">Log open funding calls, grants application, or strategic partnership entities.</p>
 
     <input type="hidden" id="frFormId">
 
     <div class="grid2">
       <div class="field">
-        <label for="frOrg">Organization / Grantmaker *</label>
-        <input id="frOrg" placeholder="e.g. D-Prize" required autocomplete="off">
+        <label for="frCategory">Master Module *</label>
+        <select id="frCategory" onchange="window.onFrCategoryChange && window.onFrCategoryChange(this.value)">
+          <option value="open_calls">Grants &amp; Open Calls</option>
+          <option value="partnerships">Partnership Exploration</option>
+          <option value="fellowships">Fellowships &amp; Residencies</option>
+        </select>
       </div>
       <div class="field">
-        <label for="frProgram">Program / Particulars *</label>
-        <input id="frProgram" placeholder="e.g. Custom Solution Challenge" required autocomplete="off">
-      </div>
-    </div>
-
-    <div class="field">
-      <label for="frLink">Application Portal Link</label>
-      <input type="url" id="frLink" placeholder="https://..." autocomplete="off">
-    </div>
-
-    <div class="grid3">
-      <div class="field">
-        <label for="frAmount">Amount (KES)</label>
-        <input id="frAmount" type="number" placeholder="e.g. 2500000" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="frDeadline">Deadline</label>
-        <input id="frDeadline" placeholder="e.g. Nov 15 or Rolling basis" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="frStatus">Status</label>
-        <select id="frStatus">
-          <option value="Identified">Identified</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Submitted">Submitted</option>
-          <option value="Won / Awarded">Won / Awarded</option>
-          <option value="Missed">Missed</option>
+        <label for="frNature">Nature of Opportunity *</label>
+        <select id="frNature">
+          <option value="Grants Application">Grants Application</option>
+          <option value="Partnership Invitation">Partnership Invitation</option>
+          <option value="Grant">Grant</option>
+          <option value="Fellowship">Fellowship</option>
+          <option value="Competition">Competition</option>
         </select>
       </div>
     </div>
 
     <div class="grid2">
       <div class="field">
-        <label for="frCategory">Category</label>
-        <select id="frCategory">
-          <option value="open_calls">Open Calls &amp; Grants</option>
-          <option value="partnerships">Partnership Exploration</option>
-          <option value="fellowships">Fellowships &amp; Residencies</option>
+        <label for="frOrg">Entity / Organization Name *</label>
+        <input id="frOrg" placeholder="e.g. Oak Foundation, Altérra, D-Prize" required autocomplete="off">
+      </div>
+      <div class="field" id="frEntityTypeWrap">
+        <label for="frEntityType">Section / Classification</label>
+        <select id="frEntityType">
+          <option value="Grantmakers / CBOs">a. Grantmakers / CBOs</option>
+          <option value="Associations / Cooperatives">b. Associations / Cooperatives</option>
+          <option value="Corporate Institutions">c. Corporate Institutions</option>
+          <option value="Academia / Educational Institutions">d. Academia / Educational Institutions</option>
         </select>
       </div>
+    </div>
+
+    <div class="grid2">
       <div class="field">
-        <label for="frPartner">Partner Organization</label>
-        <input id="frPartner" placeholder="e.g. Pankaj Social Service, Kilimora" autocomplete="off">
+        <label for="frProgram">Program Title / Particulars</label>
+        <input id="frProgram" placeholder="e.g. Grants &amp; Environment Programme" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="frLink">Website / Portal URL</label>
+        <input id="frLink" placeholder="https://..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div class="field">
+        <label for="frAmount">Funding Value (KES)</label>
+        <input id="frAmount" type="number" placeholder="e.g. 15000000" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="frDeadline">Deadline / Timeline</label>
+        <input id="frDeadline" type="text" placeholder="e.g. Rolling basis or YYYY-MM-DD" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="frStatus">Status</label>
+        <select id="frStatus">
+          <option value="Pending">Pending</option>
+          <option value="Identified">Identified</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Submitted">Submitted</option>
+          <option value="Won / Awarded">Won / Awarded</option>
+          <option value="Closed">Closed</option>
+        </select>
       </div>
     </div>
 
     <div class="field">
-      <label for="frNotes">Notes &amp; Criteria</label>
-      <textarea id="frNotes" rows="2" placeholder="Eligibility criteria, consortium requirements, pitch angle..."></textarea>
+      <label for="frNotes">Comments, Criteria &amp; Strategy</label>
+      <textarea id="frNotes" rows="2" placeholder="Notes on outreach angle, eligibility, co-production partners..."></textarea>
     </div>
 
     <div class="mfoot">
       <button type="button" class="btn" data-close="fundraisingModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveFrBtn" onclick="window.submitFundraisingForm()">Save Opportunity</button>
+      <button type="button" class="btn primary" id="saveFrBtn" onclick="window.submitFundraisingForm()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- K2. Import Fundraising & Partnerships Master CSV Modal -->
+<div class="modal" id="importFundraisingModal" role="dialog" aria-modal="true" aria-labelledby="importFrModalTitle">
+  <div class="mbg" data-close="importFundraisingModal"></div>
+  <div class="mbox" style="max-width:580px">
+    <button class="mclose" data-close="importFundraisingModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:rgba(43,138,90,0.15);color:#2B8A5A;font-weight:700">MASTER SPREADSHEET IMPORT</span>
+    </div>
+    <h3 id="importFrModalTitle">Import CSV / Excel Records</h3>
+    <p class="msub">Upload your exported CSV from the JEOTA FUNDRAISING MASTER FILE to sync all grants, open calls, and partnership entities.</p>
+
+    <!-- Destination Category Selector -->
+    <div class="field">
+      <label for="importFrTargetCategory">Target Directory / Module *</label>
+      <select id="importFrTargetCategory">
+        <option value="partnerships">Partnership Exploration (Foundations, CBOs, Corporate, Academia)</option>
+        <option value="open_calls">Grants &amp; Open Calls</option>
+      </select>
+    </div>
+
+    <!-- Dropzone / File Picker -->
+    <div class="field">
+      <label for="importFrFileInput">Choose CSV File (.csv) *</label>
+      <div id="importFrDropzone" style="border:2px dashed var(--line-strong);border-radius:12px;padding:24px;text-align:center;background:var(--panel-2);cursor:pointer;transition:all 0.2s ease" onclick="document.getElementById('importFrFileInput').click()">
+        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom:8px;color:var(--muted)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <div style="font-weight:600;color:var(--ink);font-size:13px" id="importFrFileNameDisplay">Click to browse or drag and drop CSV file</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Supports CSV exported from Google Sheets or Microsoft Excel</div>
+      </div>
+      <input type="file" id="importFrFileInput" accept=".csv,text/csv" style="display:none" onchange="window.onImportFrFileSelected(event)">
+    </div>
+
+    <!-- Live Preview Box -->
+    <div id="importFrPreviewBox" style="display:none;margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--ink)" id="importFrPreviewSummary">0 records ready to import</span>
+        <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:10px">Validated</span>
+      </div>
+      <div id="importFrPreviewList" style="max-height:140px;overflow-y:auto;font-size:11.5px;color:var(--muted)"></div>
+    </div>
+
+    <!-- Sample Templates Helper -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:10px 14px;background:var(--panel-2);border-radius:8px;font-size:11.5px">
+      <span style="color:var(--muted)">Need a format template?</span>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn" onclick="window.downloadSampleCsv('partnerships')" style="padding:3px 8px;font-size:11px">Partnership CSV</button>
+        <button type="button" class="btn" onclick="window.downloadSampleCsv('grants')" style="padding:3px 8px;font-size:11px">Grants CSV</button>
+      </div>
+    </div>
+
+    <div class="mfoot">
+      <button type="button" class="btn" data-close="importFundraisingModal">Cancel</button>
+      <button type="button" class="btn primary" id="importFrSubmitBtn" onclick="window.submitFundraisingCsvImport()">Import Records</button>
     </div>
   </div>
 </div>
@@ -2643,7 +3294,7 @@
 <!-- 16. Custom Role & Permissions Modal -->
 <div class="modal" id="roleModal" role="dialog" aria-modal="true" aria-labelledby="roleModalTitle">
   <div class="mbg" data-close="roleModal"></div>
-  <div class="mbox" style="max-width:720px;max-height:90vh;display:flex;flex-direction:column;padding:24px">
+  <div class="mbox workspace-modal" style="padding:28px 36px">
     <button class="mclose" data-close="roleModal" title="Close" aria-label="Close modal">&times;</button>
     <div style="flex-shrink:0;margin-bottom:12px">
       <h3 id="roleModalTitle" style="font-family:'Poppins',sans-serif;font-size:18px;font-weight:600;margin-bottom:4px">Create Custom Role</h3>

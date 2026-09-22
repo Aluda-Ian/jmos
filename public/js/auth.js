@@ -285,25 +285,7 @@ async function setAuthenticatedSession(user, token, isRestore = false) {
   }
 }
 
-// 5. Demo Accounts Display
-function renderDemoAccounts() {
-  const demoContainer = document.getElementById('demoAccts');
-  if (!demoContainer) return;
-
-  const users = JMOS_STATE.users.length ? JMOS_STATE.users : [
-    { name: 'Barny Kiome', role: 'owner', email: 'barny@jeotamedia.co.ke' },
-    { name: 'Matthew Muange', role: 'finance', email: 'matthew@jeotamedia.co.ke' },
-    { name: 'Patrick Mwendwa', role: 'sales', email: 'patrick@jeotamedia.co.ke' },
-    { name: 'Stephen Otieno', role: 'team', email: 'stephen@jeotamedia.co.ke' },
-    { name: 'Ian Aluda', role: 'team', email: 'ian@jeotamedia.co.ke' }
-  ];
-
-  demoContainer.innerHTML = users.map(u => 
-    `<span class="acct" data-fill="${u.email}">${u.name.split(' ')[0]} · ${u.role}</span>`
-  ).join('');
-}
-
-// 6. Main Auth Initializer
+// 5. Main Auth Initializer
 function initAuth() {
   const loginScreen = document.getElementById('loginScreen');
   const appRoot = document.getElementById('appRoot');
@@ -313,7 +295,6 @@ function initAuth() {
   const loginPass = document.getElementById('loginPass');
   const loginErr = document.getElementById('loginErr');
   const loginNotice = document.getElementById('loginNotice');
-  const demoContainer = document.getElementById('demoAccts');
 
   // Capture target view from incoming notification or deep link
   const targetFromUrl = typeof resolveTargetViewFromUrl === 'function' ? resolveTargetViewFromUrl() : null;
@@ -331,7 +312,6 @@ function initAuth() {
 
   if (storedToken && storedUserRaw) {
     if (lastActive > 0 && (now - lastActive >= IDLE_TIMEOUT_MS)) {
-      // Idle for 15+ minutes while away/refreshed
       performLogout('idle');
     } else {
       try {
@@ -341,45 +321,6 @@ function initAuth() {
         performLogout('corrupt');
       }
     }
-  }
-
-  // Load team members for demo pills from database
-  JMOS_API.get('/users')
-    .then(res => {
-      const users = Array.isArray(res) ? res : (res && Array.isArray(res.data) ? res.data : []);
-      if (Array.isArray(users) && users.length) {
-        JMOS_STATE.users = users.map((u, i) => ({
-          id: u.id,
-          name: u.name,
-          title: u.title || 'Team',
-          department: u.department || '',
-          email: u.email,
-          phone: u.phone || '',
-          secondary_email: u.secondary_email || null,
-          avatar_url: u.avatar_url || null,
-          bio: u.bio || '',
-          role: u.role || 'team',
-          type: u.type || 'Full-time',
-          pay: u.pay || '—',
-          color: u.color || (typeof JMOS_COLORS !== 'undefined' ? JMOS_COLORS[i % JMOS_COLORS.length] : '#C52523'),
-          ini: u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : 'TM')
-        }));
-        renderDemoAccounts();
-      }
-    })
-    .catch(() => renderDemoAccounts());
-
-  // Quick-fill from demo pills
-  if (demoContainer) {
-    demoContainer.addEventListener('click', (e) => {
-      const pill = e.target.closest('[data-fill]');
-      if (pill) {
-        loginEmail.value = pill.getAttribute('data-fill');
-        loginPass.value = 'jeota2024';
-        if (loginErr) loginErr.classList.remove('show');
-        if (loginNotice) loginNotice.classList.remove('show');
-      }
-    });
   }
 
   // Sign In Action
@@ -467,11 +408,296 @@ function initAuth() {
     signoutBtn.onclick = () => performLogout('user');
   }
 
-  // Pre-fill default account if empty and not logged in
-  if (!JMOS_STATE.currentUser) {
-    if (loginEmail && !loginEmail.value) loginEmail.value = 'barny@jeotamedia.co.ke';
-    if (loginPass && !loginPass.value) loginPass.value = 'jeota2024';
+  // --- Password Reset & OTP Flow ---
+  const signinCard = document.getElementById('signinCard');
+  const forgotCard = document.getElementById('forgotCard');
+  const resetCard = document.getElementById('resetCard');
+  const toForgotBtn = document.getElementById('toForgotBtn');
+  const backToSigninFromForgot = document.getElementById('backToSigninFromForgot');
+  const backToSigninFromReset = document.getElementById('backToSigninFromReset');
+  const sendOtpBtn = document.getElementById('sendOtpBtn');
+  const submitResetBtn = document.getElementById('submitResetBtn');
+  const resendOtpBtn = document.getElementById('resendOtpBtn');
+  const forgotEmail = document.getElementById('forgotEmail');
+  const forgotNotice = document.getElementById('forgotNotice');
+  const forgotErr = document.getElementById('forgotErr');
+  const resetOtp = document.getElementById('resetOtp');
+  const resetNewPass = document.getElementById('resetNewPass');
+  const resetConfirmPass = document.getElementById('resetConfirmPass');
+  const resetNotice = document.getElementById('resetNotice');
+  const resetErr = document.getElementById('resetErr');
+  const resetTargetEmail = document.getElementById('resetTargetEmail');
+  const resendTimer = document.getElementById('resendTimer');
+  const resendSecs = document.getElementById('resendSecs');
+
+  let activeResetEmail = '';
+  let resendInterval = null;
+
+  function showAuthCard(cardToShow) {
+    [signinCard, forgotCard, resetCard].forEach(card => {
+      if (card) card.style.display = 'none';
+    });
+    if (cardToShow) cardToShow.style.display = 'block';
+
+    // Clear notices/errors
+    [loginNotice, loginErr, forgotNotice, forgotErr, resetNotice, resetErr].forEach(el => {
+      if (el) {
+        el.classList.remove('show');
+        el.style.display = 'none';
+        el.textContent = '';
+      }
+    });
   }
+
+  function startResendCountdown(seconds = 60) {
+    if (resendInterval) clearInterval(resendInterval);
+    if (!resendTimer || !resendSecs || !resendOtpBtn) return;
+
+    let remaining = seconds;
+    resendOtpBtn.style.pointerEvents = 'none';
+    resendOtpBtn.style.opacity = '0.5';
+    resendTimer.style.display = 'inline';
+    resendSecs.textContent = remaining;
+
+    resendInterval = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(resendInterval);
+        resendOtpBtn.style.pointerEvents = 'auto';
+        resendOtpBtn.style.opacity = '1';
+        resendTimer.style.display = 'none';
+      } else {
+        resendSecs.textContent = remaining;
+      }
+    }, 1000);
+  }
+
+  if (toForgotBtn) {
+    toForgotBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthCard(forgotCard);
+      if (forgotEmail) {
+        forgotEmail.value = (loginEmail && loginEmail.value) ? loginEmail.value : '';
+        forgotEmail.focus();
+      }
+    });
+  }
+
+  if (backToSigninFromForgot) {
+    backToSigninFromForgot.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthCard(signinCard);
+    });
+  }
+
+  if (backToSigninFromReset) {
+    backToSigninFromReset.addEventListener('click', (e) => {
+      e.preventDefault();
+      showAuthCard(signinCard);
+    });
+  }
+
+  // Action: Request OTP
+  async function doSendOtp() {
+    const em = forgotEmail ? forgotEmail.value.trim().toLowerCase() : '';
+    if (!em) {
+      if (forgotErr) {
+        forgotErr.textContent = 'Please enter your account email address.';
+        forgotErr.style.display = 'block';
+        forgotErr.classList.add('show');
+      }
+      return;
+    }
+
+    if (sendOtpBtn) {
+      sendOtpBtn.textContent = 'Sending code…';
+      sendOtpBtn.disabled = true;
+    }
+    if (forgotErr) forgotErr.classList.remove('show');
+    if (forgotNotice) forgotNotice.classList.remove('show');
+
+    try {
+      const res = await JMOS_API.post('/auth/forgot-password', { email: em });
+      if (res && res.status === 'success') {
+        activeResetEmail = em;
+        if (resetTargetEmail) resetTargetEmail.textContent = em;
+        showAuthCard(resetCard);
+        if (resetNotice) {
+          resetNotice.textContent = res.message || 'Verification code sent to your email.';
+          resetNotice.style.display = 'block';
+          resetNotice.classList.add('show');
+        }
+        if (resetOtp) {
+          resetOtp.value = '';
+          resetOtp.focus();
+        }
+        startResendCountdown(60);
+      } else {
+        throw new Error(res.message || 'Could not send verification code.');
+      }
+    } catch (err) {
+      if (forgotErr) {
+        forgotErr.textContent = err.message || 'No account found with this email address.';
+        forgotErr.style.display = 'block';
+        forgotErr.classList.add('show');
+      }
+    } finally {
+      if (sendOtpBtn) {
+        sendOtpBtn.textContent = 'Send verification code';
+        sendOtpBtn.disabled = false;
+      }
+    }
+  }
+
+  if (sendOtpBtn) sendOtpBtn.onclick = doSendOtp;
+  if (forgotEmail) {
+    forgotEmail.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSendOtp();
+    });
+  }
+
+  // Action: Resend OTP
+  if (resendOtpBtn) {
+    resendOtpBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!activeResetEmail) return;
+
+      resendOtpBtn.textContent = 'Resending…';
+      try {
+        const res = await JMOS_API.post('/auth/forgot-password', { email: activeResetEmail });
+        if (res && res.status === 'success') {
+          if (resetNotice) {
+            resetNotice.textContent = 'New 6-digit verification code sent!';
+            resetNotice.style.display = 'block';
+            resetNotice.classList.add('show');
+          }
+          if (resetErr) resetErr.classList.remove('show');
+          startResendCountdown(60);
+        }
+      } catch (err) {
+        if (resetErr) {
+          resetErr.textContent = err.message || 'Failed to resend verification code.';
+          resetErr.style.display = 'block';
+          resetErr.classList.add('show');
+        }
+      } finally {
+        resendOtpBtn.textContent = 'Resend code';
+      }
+    });
+  }
+
+  // Action: Submit OTP and Reset Password
+  async function doResetPassword() {
+    const otp = resetOtp ? resetOtp.value.trim() : '';
+    const newPass = resetNewPass ? resetNewPass.value : '';
+    const confirmPass = resetConfirmPass ? resetConfirmPass.value : '';
+
+    if (!otp || otp.length !== 6) {
+      if (resetErr) {
+        resetErr.textContent = 'Please enter the complete 6-digit verification code.';
+        resetErr.style.display = 'block';
+        resetErr.classList.add('show');
+      }
+      return;
+    }
+
+    if (!newPass || newPass.length < 6) {
+      if (resetErr) {
+        resetErr.textContent = 'Password must be at least 6 characters in length.';
+        resetErr.style.display = 'block';
+        resetErr.classList.add('show');
+      }
+      return;
+    }
+
+    if (newPass !== confirmPass) {
+      if (resetErr) {
+        resetErr.textContent = 'Passwords do not match. Please check and try again.';
+        resetErr.style.display = 'block';
+        resetErr.classList.add('show');
+      }
+      return;
+    }
+
+    if (submitResetBtn) {
+      submitResetBtn.textContent = 'Resetting password…';
+      submitResetBtn.disabled = true;
+    }
+    if (resetErr) resetErr.classList.remove('show');
+
+    try {
+      const res = await JMOS_API.post('/auth/reset-password', {
+        email: activeResetEmail,
+        otp: otp,
+        password: newPass,
+        password_confirmation: confirmPass
+      });
+
+      if (res && res.status === 'success') {
+        showAuthCard(signinCard);
+        if (loginEmail) loginEmail.value = activeResetEmail;
+        if (loginPass) loginPass.value = newPass;
+
+        if (loginNotice) {
+          loginNotice.textContent = 'Password reset successfully! Signing you in…';
+          loginNotice.style.display = 'block';
+          loginNotice.classList.add('show');
+        }
+
+        // Auto sign-in with the new credentials
+        setTimeout(() => {
+          doLogin();
+        }, 600);
+      } else {
+        throw new Error(res.message || 'Could not reset password.');
+      }
+    } catch (err) {
+      if (resetErr) {
+        resetErr.textContent = err.message || 'Invalid or expired verification code.';
+        resetErr.style.display = 'block';
+        resetErr.classList.add('show');
+      }
+    } finally {
+      if (submitResetBtn) {
+        submitResetBtn.textContent = 'Reset password & Sign in';
+        submitResetBtn.disabled = false;
+      }
+    }
+  }
+
+  if (submitResetBtn) submitResetBtn.onclick = doResetPassword;
+  [resetOtp, resetNewPass, resetConfirmPass].forEach(input => {
+    if (input) {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') doResetPassword();
+      });
+    }
+  });
+
+  // Auto-detect invitation setup link / OTP from URL query parameters
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email');
+    const otpParam = urlParams.get('otp');
+    const setupParam = urlParams.get('setup') || urlParams.get('reset');
+
+    if (emailParam && (otpParam || setupParam)) {
+      activeResetEmail = emailParam.toLowerCase().trim();
+      if (resetTargetEmail) resetTargetEmail.textContent = activeResetEmail;
+      showAuthCard(resetCard);
+      if (resetOtp && otpParam) {
+        resetOtp.value = otpParam;
+      }
+      if (resetNotice) {
+        resetNotice.textContent = 'Welcome to JMOS! Choose your password to activate your workspace.';
+        resetNotice.style.display = 'block';
+        resetNotice.classList.add('show');
+      }
+      if (resetNewPass) {
+        setTimeout(() => resetNewPass.focus(), 200);
+      }
+    }
+  } catch (e) {}
 }
 
 /* ==========================================================================

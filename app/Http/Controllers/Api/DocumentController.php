@@ -83,17 +83,20 @@ class DocumentController extends Controller
         $filePath = null;
         $fileName = null;
         $fileSize = 0;
-        $fileType = $validated['file_type'] ?? 'pdf';
+        $fileType = $validated['file_type'] ?? 'Cloud Link';
 
-        if ($request->hasFile('file')) {
+        if (! empty($validated['external_url'])) {
+            $provider = $this->detectProvider($validated['external_url']);
+            $fileType = (! empty($validated['file_type']) && $validated['file_type'] !== 'auto' && $validated['file_type'] !== 'pdf' && $validated['file_type'] !== 'url')
+                ? $validated['file_type']
+                : $provider;
+            $fileName = $provider;
+        } elseif ($request->hasFile('file')) {
             $uploaded = $request->file('file');
             $fileName = $uploaded->getClientOriginalName();
             $fileSize = $uploaded->getSize();
             $fileType = strtolower($uploaded->getClientOriginalExtension());
             $filePath = $uploaded->store('documents', 'public');
-        } elseif (! empty($validated['external_url'])) {
-            $fileName = 'Cloud Link';
-            $fileType = 'url';
         }
 
         $doc = Document::create([
@@ -111,13 +114,54 @@ class DocumentController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        AuditLog::record('UPLOAD', "Uploaded document '{$doc->title}' to {$doc->folder} folder", 'Document', $doc->id, [], $request);
+        $actionType = $doc->external_url ? 'LINK' : 'UPLOAD';
+        $logMsg = $doc->external_url
+            ? "Linked {$doc->file_type} document '{$doc->title}' to {$doc->folder}"
+            : "Uploaded document '{$doc->title}' to {$doc->folder} folder";
+
+        AuditLog::record($actionType, $logMsg, 'Document', $doc->id, [], $request);
 
         return response()->json([
             'status' => 'success',
-            'message' => "Document '{$doc->title}' added to {$doc->folder}.",
+            'message' => "Document link '{$doc->title}' added to {$doc->folder}.",
             'data' => $doc->load(['lead', 'client', 'project']),
         ], 201);
+    }
+
+    protected function detectProvider(?string $url): string
+    {
+        if (empty($url)) {
+            return 'Cloud Link';
+        }
+
+        $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+
+        if (str_contains($host, 'drive.google.com') || str_contains($host, 'docs.google.com')) {
+            return 'Google Drive';
+        }
+        if (str_contains($host, 'dropbox.com')) {
+            return 'Dropbox';
+        }
+        if (str_contains($host, 'playbook.com')) {
+            return 'Playbook';
+        }
+        if (str_contains($host, 'frame.io')) {
+            return 'Frame.io';
+        }
+        if (str_contains($host, 'notion.so') || str_contains($host, 'notion.site')) {
+            return 'Notion';
+        }
+        if (str_contains($host, 'figma.com')) {
+            return 'Figma';
+        }
+        if (str_contains($host, 'onedrive') || str_contains($host, 'sharepoint.com')) {
+            return 'OneDrive';
+        }
+        if (str_contains($host, 'canva.com')) {
+            return 'Canva';
+        }
+
+        return 'Cloud Link';
     }
 
     public function download(Document $document): BinaryFileResponse|JsonResponse

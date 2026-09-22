@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -196,6 +199,129 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Password updated successfully.',
+        ]);
+    }
+
+    public function sendPasswordResetOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = strtolower(trim($request->email));
+        $user = User::where('email', $email)->first();
+
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No account found with this email address.',
+            ], 404);
+        }
+
+        $otp = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        DB::table('password_reset_tokens')->insert([
+            'email' => $email,
+            'token' => Hash::make($otp),
+            'created_at' => now(),
+        ]);
+
+        NotificationService::sendPasswordResetOtp([
+            'userName' => $user->name,
+            'email' => $user->email,
+            'otp' => $otp,
+            'expiresInMinutes' => 15,
+            'ipAddress' => $request->ip(),
+        ], $user->email);
+
+        AuditLog::record('AUTH', "Password reset OTP requested for {$user->name} ({$email})", 'User', $user->id, ['ip' => $request->ip()], $request, $user);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'A 6-digit verification code has been sent to your email address.',
+            'email' => $email,
+            'expires_in_minutes' => 15,
+        ]);
+    }
+
+    public function verifyPasswordResetOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $email = strtolower(trim($request->email));
+        $record = DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if (! $record || ! Hash::check($request->otp, $record->token)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid verification code. Please check and try again.',
+            ], 422);
+        }
+
+        $createdAt = Carbon::parse($record->created_at);
+        if ($createdAt->addMinutes(15)->isPast()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'The verification code has expired. Please request a new one.',
+            ], 422);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Verification code confirmed successfully.',
+        ]);
+    }
+
+    public function resetPasswordWithOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $email = strtolower(trim($request->email));
+        $record = DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if (! $record || ! Hash::check($request->otp, $record->token)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid verification code. Please check and try again.',
+            ], 422);
+        }
+
+        $createdAt = Carbon::parse($record->created_at);
+        if ($createdAt->addMinutes(15)->isPast()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'The verification code has expired. Please request a new code.',
+            ], 422);
+        }
+
+        $user = User::where('email', $email)->first();
+        if (! $user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Account not found.',
+            ], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        // Invalidate OTP and existing active tokens
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        $user->tokens()->delete();
+
+        AuditLog::record('AUTH', "Password reset completed via OTP for {$user->name} ({$email})", 'User', $user->id, ['ip' => $request->ip()], $request, $user);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Your password has been reset successfully. You can now sign in.',
         ]);
     }
 }
