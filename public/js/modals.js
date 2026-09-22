@@ -340,6 +340,11 @@ window.openModal = function(id) {
     });
     const nsStages = document.getElementById('nsStages');
     if (nsStages) nsStages.value = 'brief, concept, pre-pro, shoot, edit, review, delivery';
+  } else if (modalId === 'quoteModal') {
+    if (typeof window.populateQuoteClientLeadDropdown === 'function') {
+      const currentVal = document.getElementById('quoteSelectClientOrLead')?.value || '';
+      window.populateQuoteClientLeadDropdown(currentVal);
+    }
   }
 
   // Calculate dynamic z-index for stacking overlays (ensures action & danger modals always appear on top)

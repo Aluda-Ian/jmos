@@ -8,6 +8,8 @@
   window.JMOS_QUOTES = {
     quotes: [],
     activeQuote: null,
+    activeFilter: 'all',
+    searchQuery: '',
 
     init: function () {
       this.bindEvents();
@@ -24,7 +26,7 @@
 
     loadQuotes: async function () {
       try {
-        const token = localStorage.getItem('jmos_api_token') || JMOS_STATE.apiToken;
+        const token = localStorage.getItem('jmos_api_token') || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE.apiToken : null);
         const res = await fetch('/api/quotes', {
           headers: {
             'Accept': 'application/json',
@@ -37,6 +39,7 @@
           if (typeof JMOS_STATE !== 'undefined') JMOS_STATE.quotes = data.data;
           if (typeof FINANCE_STATE !== 'undefined') FINANCE_STATE.quotes = data.data;
           this.renderQuotesTable();
+          this.renderQuotesMainPageTable();
           if (typeof window.renderFinanceQuotes === 'function') {
             window.renderFinanceQuotes();
           }
@@ -47,10 +50,38 @@
     },
 
     openCreateModal: function (leadId, clientId) {
-      if (typeof window.openCreateQuoteModal === 'function') {
-        window.openCreateQuoteModal(leadId, clientId);
-      } else if (typeof window.openModal === 'function') {
-        window.openModal('quoteModal');
+      if (typeof window.showView === 'function') {
+        window.showView('budget');
+      }
+      // If lead or client is provided, send to budget calculator iframe
+      if (leadId || clientId) {
+        setTimeout(() => {
+          let clientName = '';
+          let projectName = '';
+          if (clientId && typeof JMOS_STATE !== 'undefined' && JMOS_STATE.clients) {
+            const client = JMOS_STATE.clients.find(c => String(c.id) === String(clientId));
+            if (client) {
+              clientName = client.client_name || client.name || '';
+              projectName = `${clientName} — Brand Film`;
+            }
+          } else if (leadId && typeof CRM_STATE !== 'undefined' && CRM_STATE.leads) {
+            const lead = CRM_STATE.leads.find(l => String(l.id) === String(leadId));
+            if (lead) {
+              clientName = lead.lead_name || lead.company || '';
+              projectName = `${lead.company || lead.lead_name} — Commercial`;
+            }
+          }
+          const frame = document.getElementById('budgetFrame');
+          if (frame && frame.contentWindow) {
+            frame.contentWindow.postMessage({
+              action: 'setClient',
+              client: clientName,
+              project: projectName,
+              leadId: leadId,
+              clientId: clientId
+            }, '*');
+          }
+        }, 120);
       }
     },
 
@@ -111,7 +142,7 @@
         let pillClass = 'tint-amber';
         let statusLabel = 'DRAFT';
         if (st === 'sent') { pillClass = 'tint-blue'; statusLabel = 'SENT'; }
-        if (st === 'accepted') { pillClass = 'tint-green'; statusLabel = 'APPROVED'; }
+        if (st === 'accepted' || st === 'approved') { pillClass = 'tint-green'; statusLabel = 'APPROVED'; }
         if (st === 'invoiced') { pillClass = 'tint-green'; statusLabel = 'INVOICED'; }
         if (st === 'rejected' || st === 'expired' || st === 'declined') { pillClass = 'tint-red'; statusLabel = 'REJECTED'; }
 
@@ -132,6 +163,121 @@
               <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap">
                 <button type="button" class="btn small" onclick="window.viewQuoteDetail(${q.id})" style="font-size:11px;padding:3px 7px" title="View & Print Quote PDF">PDF / View</button>
                 <button type="button" class="btn small" onclick="window.openEditQuoteModal(${q.id})" style="font-size:11px;padding:3px 7px" title="Edit quotation deliverables">Edit</button>
+                ${canUpgrade ? `
+                  <button type="button" class="btn small primary" onclick="window.openUpgradeQuoteModalFromRow(${q.id})" style="font-size:11px;padding:3px 8px;background:var(--red);border-color:var(--red)" title="Generate official invoice from quote">➔ Invoice</button>
+                ` : `
+                  <button type="button" class="btn small" onclick="if(window.openInvoiceDetailModal && ${q.converted_invoice_id || 'null'}){ window.openInvoiceDetailModal(${q.converted_invoice_id}); }" style="font-size:11px;padding:3px 7px;color:var(--green);border-color:rgba(19,115,51,0.3)" title="View converted invoice">✓ Invoiced</button>
+                `}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    renderQuotesMainPageTable: function () {
+      const tbody = document.getElementById('quotesMainTableBody');
+      const allQuotes = this.quotes || [];
+
+      // Calculate Metrics
+      let totalCount = allQuotes.length;
+      let totalValue = 0;
+      let approvedValue = 0;
+      let invoicedValue = 0;
+
+      allQuotes.forEach(q => {
+        const amt = parseFloat(q.total_amount) || 0;
+        const st = (q.status || 'draft').toLowerCase();
+        totalValue += amt;
+        if (st === 'accepted' || st === 'approved') {
+          approvedValue += amt;
+        } else if (st === 'invoiced') {
+          invoicedValue += amt;
+        }
+      });
+
+      const kpiCount = document.getElementById('qKpiTotalCount');
+      const kpiTotal = document.getElementById('qKpiTotalValue');
+      const kpiApproved = document.getElementById('qKpiApprovedValue');
+      const kpiInvoiced = document.getElementById('qKpiInvoicedValue');
+      const badgeAll = document.getElementById('qBadgeAll');
+
+      if (kpiCount) kpiCount.textContent = totalCount;
+      if (kpiTotal) kpiTotal.textContent = 'KES ' + Math.round(totalValue).toLocaleString();
+      if (kpiApproved) kpiApproved.textContent = 'KES ' + Math.round(approvedValue).toLocaleString();
+      if (kpiInvoiced) kpiInvoiced.textContent = 'KES ' + Math.round(invoicedValue).toLocaleString();
+      if (badgeAll) badgeAll.textContent = totalCount;
+
+      if (!tbody) return;
+
+      // Filter by status & search
+      const filter = this.activeFilter || 'all';
+      const search = (this.searchQuery || '').toLowerCase().trim();
+
+      let filtered = allQuotes.filter(q => {
+        const st = (q.status || 'draft').toLowerCase();
+        if (filter !== 'all') {
+          if (filter === 'accepted' || filter === 'approved') {
+            if (st !== 'accepted' && st !== 'approved') return false;
+          } else if (st !== filter) {
+            return false;
+          }
+        }
+        if (search) {
+          const num = (q.quote_number || '').toLowerCase();
+          const title = (q.title || '').toLowerCase();
+          const recip = (q.recipient_name || '').toLowerCase();
+          const clientName = q.client ? (q.client.client_name || q.client.name || '').toLowerCase() : '';
+          const leadName = q.lead ? (q.lead.lead_name || q.lead.company || '').toLowerCase() : '';
+          if (!num.includes(search) && !title.includes(search) && !recip.includes(search) && !clientName.includes(search) && !leadName.includes(search)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align:center;padding:36px 20px;color:var(--muted)">
+              ${allQuotes.length === 0 ? 'No quotations created yet. Click <b>+ Create Quotation</b> or generate one from the <b>Production Budget</b>.' : 'No quotations matching current search/filter.'}
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(q => {
+        const total = parseFloat(q.total_amount) || 0;
+        const recipient = q.recipient_name || (q.client ? (q.client.client_name || q.client.name) : (q.lead ? (q.lead.lead_name || q.lead.company) : 'Client'));
+        const dateStr = q.created_at ? q.created_at.split('T')[0] : '—';
+        const st = (q.status || 'draft').toLowerCase();
+        let pillClass = 'tint-amber';
+        let statusLabel = 'DRAFT';
+        if (st === 'sent') { pillClass = 'tint-blue'; statusLabel = 'SENT'; }
+        if (st === 'accepted' || st === 'approved') { pillClass = 'tint-green'; statusLabel = 'APPROVED ✓'; }
+        if (st === 'invoiced') { pillClass = 'tint-green'; statusLabel = 'INVOICED'; }
+        if (st === 'rejected' || st === 'expired' || st === 'declined') { pillClass = 'tint-red'; statusLabel = 'REJECTED'; }
+
+        const canUpgrade = st !== 'invoiced';
+
+        return `
+          <tr style="cursor:pointer" onclick="window.viewQuoteDetail(${q.id})">
+            <td class="mono" style="font-weight:700;color:var(--red)">${q.quote_number || ('QT-' + q.id)}</td>
+            <td>
+              <div style="font-weight:600;color:var(--ink)">${esc(q.title || 'Commercial Proposal')}</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(recipient)}</div>
+            </td>
+            <td class="mono" style="font-weight:700;color:var(--ink)">KES ${total.toLocaleString()}</td>
+            <td><span class="pill ${pillClass}">${statusLabel}</span></td>
+            <td style="font-size:12px;color:var(--muted)">${q.validity_days ? q.validity_days + ' days' : '14 days'}</td>
+            <td style="font-size:12px;color:var(--muted)">${dateStr}</td>
+            <td style="text-align:right" onclick="event.stopPropagation()">
+              <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap">
+                <button type="button" class="btn small" onclick="window.viewQuoteDetail(${q.id})" style="font-size:11px;padding:3px 7px" title="View & Print Quote PDF">PDF / View</button>
+                <button type="button" class="btn small" onclick="window.openEditQuoteModal(${q.id})" style="font-size:11px;padding:3px 7px" title="Edit quotation deliverables">Edit</button>
+                <button type="button" class="btn small" onclick="window.sendQuoteEmail(${q.id})" style="font-size:11px;padding:3px 7px" title="Send email with client approval button">📧</button>
+                <button type="button" class="btn small" onclick="window.sendQuoteWhatsApp(${q.id})" style="font-size:11px;padding:3px 7px" title="Send via WhatsApp with approval link">💬</button>
                 ${canUpgrade ? `
                   <button type="button" class="btn small primary" onclick="window.openUpgradeQuoteModalFromRow(${q.id})" style="font-size:11px;padding:3px 8px;background:var(--red);border-color:var(--red)" title="Generate official invoice from quote">➔ Invoice</button>
                 ` : `
@@ -202,49 +348,145 @@
     if (hiddenTotal) hiddenTotal.value = finalTotal;
   };
 
-  // Open Create Quote Modal
-  window.openCreateQuoteModal = function (leadId, clientId) {
-    document.getElementById('quoteFormId').value = '';
-    document.getElementById('quoteModalTitle').textContent = 'Generate Quotation';
-    document.getElementById('quoteLeadId').value = leadId || '';
-    document.getElementById('quoteClientId').value = clientId || '';
-    document.getElementById('quoteRecipient').value = '';
-    document.getElementById('quoteTitle').value = '';
-    document.getElementById('quoteEmail').value = '';
-    document.getElementById('quotePhone').value = '';
-    document.getElementById('quoteValidity').value = '14';
-    document.getElementById('quoteDiscount').value = '0';
-    document.getElementById('quoteNotes').value = '';
+  // Populate Client / Lead dropdown for Quotation Modals
+  window.populateQuoteClientLeadDropdown = async function (selectedVal = '') {
+    const select = document.getElementById('quoteSelectClientOrLead');
+    if (!select) return;
 
-    // Auto fill from lead if present
-    if (leadId && typeof CRM_STATE !== 'undefined' && CRM_STATE.leads) {
-      const lead = CRM_STATE.leads.find(l => String(l.id) === String(leadId));
-      if (lead) {
-        document.getElementById('quoteRecipient').value = lead.lead_name || lead.company;
-        document.getElementById('quoteTitle').value = `${lead.company || lead.lead_name} · Production Proposal`;
-        document.getElementById('quoteEmail').value = lead.email || '';
-        document.getElementById('quotePhone').value = lead.phone || '';
-      }
+    let clients = (typeof JMOS_STATE !== 'undefined' && JMOS_STATE.clients) ? JMOS_STATE.clients : [];
+    let leads = (typeof CRM_STATE !== 'undefined' && CRM_STATE.leads) ? CRM_STATE.leads : [];
+
+    // If memory cache is empty, fetch in background
+    if (clients.length === 0 || leads.length === 0) {
+      try {
+        const token = localStorage.getItem('jmos_api_token') || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE.apiToken : null);
+        const headers = { 'Accept': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' };
+        const [cRes, lRes] = await Promise.all([
+          fetch('/api/clients', { headers }).then(r => r.json()).catch(() => null),
+          fetch('/api/leads', { headers }).then(r => r.json()).catch(() => null)
+        ]);
+        if (cRes && cRes.data) {
+          clients = cRes.data;
+          if (typeof JMOS_STATE !== 'undefined') JMOS_STATE.clients = clients;
+        }
+        if (lRes && lRes.data) {
+          leads = lRes.data;
+          if (typeof CRM_STATE !== 'undefined') CRM_STATE.leads = leads;
+        }
+      } catch (_) {}
     }
 
-    // Auto fill from client if present
-    if (clientId && typeof JMOS_STATE !== 'undefined' && JMOS_STATE.clients) {
-      const client = JMOS_STATE.clients.find(c => String(c.id) === String(clientId));
+    let html = '<option value="">— Choose Client or Lead in System (or enter new) —</option>';
+
+    if (clients && clients.length) {
+      html += '<optgroup label="🏢 Existing Clients">';
+      clients.forEach(c => {
+        const name = c.client_name || c.name || 'Client';
+        const contact = c.email || c.phone || '';
+        html += `<option value="client_${c.id}">${esc(name)}${contact ? ' (' + esc(contact) + ')' : ''}</option>`;
+      });
+      html += '</optgroup>';
+    }
+
+    if (leads && leads.length) {
+      html += '<optgroup label="🎯 Pipeline Leads">';
+      leads.forEach(l => {
+        const name = l.lead_name || l.company || 'Lead';
+        const companyStr = l.company && l.company !== l.lead_name ? ' · ' + l.company : '';
+        html += `<option value="lead_${l.id}">${esc(name)}${companyStr}</option>`;
+      });
+      html += '</optgroup>';
+    }
+
+    select.innerHTML = html;
+    if (selectedVal) {
+      select.value = selectedVal;
+    }
+  };
+
+  // Handler when user selects a Client or Lead from dropdown in quote modal
+  window.onSelectQuoteClientOrLead = function (val) {
+    const leadIdInput = document.getElementById('quoteLeadId');
+    const clientIdInput = document.getElementById('quoteClientId');
+    const recipientInput = document.getElementById('quoteRecipient');
+    const titleInput = document.getElementById('quoteTitle');
+    const emailInput = document.getElementById('quoteEmail');
+    const phoneInput = document.getElementById('quotePhone');
+
+    if (!val) {
+      if (leadIdInput) leadIdInput.value = '';
+      if (clientIdInput) clientIdInput.value = '';
+      return;
+    }
+
+    if (val.startsWith('client_')) {
+      const cid = val.replace('client_', '');
+      const clients = (typeof JMOS_STATE !== 'undefined' && JMOS_STATE.clients) ? JMOS_STATE.clients : [];
+      const client = clients.find(c => String(c.id) === String(cid));
       if (client) {
-        document.getElementById('quoteRecipient').value = client.name || client.client_name;
-        document.getElementById('quoteTitle').value = `${client.name || client.client_name} · Commercial Video Proposal`;
-        document.getElementById('quoteEmail').value = client.email || '';
-        document.getElementById('quotePhone').value = client.phone || '';
+        if (clientIdInput) clientIdInput.value = client.id;
+        if (leadIdInput) leadIdInput.value = '';
+        if (recipientInput) recipientInput.value = client.client_name || client.name || '';
+        if (titleInput && (!titleInput.value || titleInput.value.includes('Proposal'))) {
+          titleInput.value = `${client.client_name || client.name} · Commercial Proposal`;
+        }
+        if (emailInput) emailInput.value = client.email || client.primary_contact_email || '';
+        if (phoneInput) phoneInput.value = client.phone || client.primary_contact_phone || '';
+      }
+    } else if (val.startsWith('lead_')) {
+      const lid = val.replace('lead_', '');
+      const leads = (typeof CRM_STATE !== 'undefined' && CRM_STATE.leads) ? CRM_STATE.leads : [];
+      const lead = leads.find(l => String(l.id) === String(lid));
+      if (lead) {
+        if (leadIdInput) leadIdInput.value = lead.id;
+        if (clientIdInput) clientIdInput.value = '';
+        if (recipientInput) recipientInput.value = lead.lead_name || lead.company || '';
+        if (titleInput && (!titleInput.value || titleInput.value.includes('Proposal'))) {
+          titleInput.value = `${lead.company || lead.lead_name} · Production Proposal`;
+        }
+        if (emailInput) emailInput.value = lead.email || '';
+        if (phoneInput) phoneInput.value = lead.phone || '';
       }
     }
+  };
 
-    const tbody = document.getElementById('quoteItemsTableBody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      window.addQuoteItemRow({ description: 'Production & Creative Services', quantity: 1, rate: 150000 });
+  // Filter handler for dedicated quotes page status tabs
+  window.filterQuotesPageStatus = function (status) {
+    if (window.JMOS_QUOTES) {
+      window.JMOS_QUOTES.activeFilter = status;
+      window.JMOS_QUOTES.renderQuotesMainPageTable();
     }
 
-    window.openModal('quoteModal');
+    // Update tab active classes
+    const tabs = {
+      'all': 'qTabAll',
+      'draft': 'qTabDraft',
+      'sent': 'qTabSent',
+      'accepted': 'qTabApproved',
+      'invoiced': 'qTabInvoiced'
+    };
+
+    Object.keys(tabs).forEach(k => {
+      const el = document.getElementById(tabs[k]);
+      if (el) el.classList.toggle('active', k === status);
+    });
+  };
+
+  // Search input handler for dedicated quotes page
+  window.onQuotesPageSearchChange = function (query) {
+    if (window.JMOS_QUOTES) {
+      window.JMOS_QUOTES.searchQuery = query || '';
+      window.JMOS_QUOTES.renderQuotesMainPageTable();
+    }
+  };
+
+  // Open Create Quote — redirects directly to the Production Budget calculator
+  window.openCreateQuoteModal = function (leadId, clientId) {
+    if (window.JMOS_QUOTES) {
+      window.JMOS_QUOTES.openCreateModal(leadId, clientId);
+    } else if (typeof window.showView === 'function') {
+      window.showView('budget');
+    }
   };
 
   // Open Edit Quote Modal
@@ -288,6 +530,12 @@
     document.getElementById('quoteValidity').value = q.validity_days || 14;
     document.getElementById('quoteDiscount').value = q.discount || 0;
     document.getElementById('quoteNotes').value = q.notes || '';
+
+    let selVal = '';
+    if (q.client_id) selVal = 'client_' + q.client_id;
+    else if (q.lead_id) selVal = 'lead_' + q.lead_id;
+
+    window.populateQuoteClientLeadDropdown(selVal);
 
     const tbody = document.getElementById('quoteItemsTableBody');
     if (tbody) {

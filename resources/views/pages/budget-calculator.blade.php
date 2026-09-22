@@ -321,11 +321,66 @@
     <div class="grp">
       <button class="btn" onclick="closeQuote()">Back</button>
       <button class="btn" onclick="resetQuoteFromBudget()" title="Replace items with one line at the budget total">Reset from budget</button>
-      <button class="btn" onclick="sendQuoteEmail()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send to mail</button>
-      <button class="btn btn-primary" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF</button>
+      <button class="btn btn-primary" onclick="openDispatchModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send to Client / Mail</button>
+      <button class="btn" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF</button>
     </div>
   </div>
   <div class="quote-doc" id="quote-doc"></div>
+</div>
+
+<!-- Modal: Select Client or Lead in System to Send Quote -->
+<div id="dispatch-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:90;place-items:center;padding:16px">
+  <div style="background:#fff;border-radius:12px;max-width:540px;width:100%;padding:26px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.25);position:relative">
+    <button onclick="closeDispatchModal()" style="position:absolute;top:14px;right:14px;border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted)">&times;</button>
+    <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">JMOS · PROPOSAL DISPATCH</div>
+    <h3 style="margin:0 0 4px;font-size:19px;color:var(--ink);font-family:var(--display)">Send Quotation to Client</h3>
+    <p style="margin:0 0 16px;font-size:12.5px;color:var(--muted)">Select an existing client or lead in the system to auto-fill contact info and send with an instant online approval button.</p>
+
+    <!-- Client / Lead Selector Dropdown -->
+    <div style="margin-bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px">
+      <label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:6px;color:var(--ink)">
+        Select Existing Client or Lead in System:
+      </label>
+      <select id="modalClientLeadSelect" onchange="onSelectModalClientOrLead(this.value)" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff">
+        <option value="">— Choose Client or Lead in JMOS (or enter manually) —</option>
+      </select>
+    </div>
+
+    <input type="hidden" id="modalLeadId">
+    <input type="hidden" id="modalClientId">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink)">Recipient Name *</label>
+        <input type="text" id="modalRecipientName" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px" placeholder="e.g. Moyo Honey Ltd">
+      </div>
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink)">Proposal Scope / Title *</label>
+        <input type="text" id="modalProjectTitle" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px" placeholder="e.g. Brand Commercial Video">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink)">Recipient Email</label>
+        <input type="email" id="modalRecipientEmail" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px" placeholder="client@company.co.ke">
+      </div>
+      <div>
+        <label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px;color:var(--ink)">Recipient WhatsApp</label>
+        <input type="tel" id="modalRecipientPhone" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px" placeholder="+254 712 345 678">
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="closeDispatchModal()">Cancel</button>
+      <button class="btn" onclick="submitBudgetQuoteDispatch('whatsapp')" style="background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600">
+        Send WhatsApp
+      </button>
+      <button class="btn btn-primary" id="btnBudgetSendEmail" onclick="submitBudgetQuoteDispatch('email')" style="font-weight:700">
+        Send Email with Approval Button ➔
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -645,53 +700,252 @@ function qCt(k,el){S.contact[k]=el.textContent.trim();}
 function qPay(k,el){S.quote[k]=el.textContent.trim();}
 function qNote(i,el){S.quote.notes[i]=el.textContent.trim();}
 
-function sendQuoteEmail() {
-  const t = calc();
-  const clientName = S.meta.client || 'Client';
-  const projectName = S.meta.project || 'Production Scope';
-  const quoteNo = S.meta.quoteNo || 'JM-Q-0001';
-  const totalStr = fmt(t.net);
-  const depStr = fmt(t.dep);
-  const balStr = fmt(t.bal);
+let JMOS_CLIENTS_CACHE = [];
+let JMOS_LEADS_CACHE = [];
 
-  let itemsText = '';
-  (S.quote.items || defaultQuoteItems()).forEach(it => {
-    itemsText += `• ${it.name}: ${fmt(it.amount)}\n`;
-    if (it.deliverables && it.deliverables.length) {
-      itemsText += `  Deliverables: ${it.deliverables.join(', ')}\n`;
+async function loadSystemClientsAndLeads() {
+  const select = document.getElementById('modalClientLeadSelect');
+  if (!select) return;
+
+  try {
+    const token = localStorage.getItem('jmos_api_token');
+    const headers = { 'Accept': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' };
+    
+    const [clientsRes, leadsRes] = await Promise.all([
+      fetch('/api/clients', { headers }).then(r => r.json()).catch(() => null),
+      fetch('/api/leads', { headers }).then(r => r.json()).catch(() => null)
+    ]);
+
+    JMOS_CLIENTS_CACHE = (clientsRes && clientsRes.data) ? clientsRes.data : (Array.isArray(clientsRes) ? clientsRes : []);
+    JMOS_LEADS_CACHE = (leadsRes && leadsRes.data) ? leadsRes.data : (Array.isArray(leadsRes) ? leadsRes : []);
+
+    let html = '<option value="">— Choose Client or Lead in JMOS (or enter manually) —</option>';
+
+    if (JMOS_CLIENTS_CACHE.length) {
+      html += '<optgroup label="Clients in System">';
+      JMOS_CLIENTS_CACHE.forEach(c => {
+        const name = c.client_name || c.name || 'Client';
+        html += `<option value="client_${c.id}">${esc(name)} (${esc(c.email || c.phone || 'Client')})</option>`;
+      });
+      html += '</optgroup>';
     }
-  });
 
-  const body = `Dear ${clientName},\n\n` +
-    `Please find the commercial quotation for ${projectName} (Ref: ${quoteNo}) detailed below:\n\n` +
-    `----------------------------------------\n` +
-    `SCOPE & DELIVERABLES:\n` +
-    `${itemsText}\n` +
-    `TOTAL PAYABLE: ${totalStr}\n` +
-    `PAYMENT TERMS:\n` +
-    `• ${S.pricing.deposit}% Deposit: ${depStr}\n` +
-    `• ${100 - S.pricing.deposit}% On Final Delivery: ${balStr}\n\n` +
-    `PAYMENT METHODS:\n` +
-    `• M-Pesa: ${S.quote.mpesa || 'Paybill 880100 · Acc: 352655'}\n` +
-    `• Bank: ${S.quote.bank || 'NCBA — Junction Branch · A/C: Jeota Media Limited'}\n\n` +
-    `Thank you for choosing Jeota Media.\n\n` +
-    `Best regards,\n` +
-    `Jeota Media Ltd\n` +
-    `${S.contact.phone || '+254 791 388 683'} · ${S.contact.email || 'info@jeotamedia.co.ke'}\n` +
-    `https://${S.contact.web || 'www.jeotamedia.co.ke'}`;
+    if (JMOS_LEADS_CACHE.length) {
+      html += '<optgroup label="Leads in Pipeline">';
+      JMOS_LEADS_CACHE.forEach(l => {
+        const name = l.lead_name || l.company || 'Lead';
+        html += `<option value="lead_${l.id}">${esc(name)} (${esc(l.email || l.phone || 'Lead')})</option>`;
+      });
+      html += '</optgroup>';
+    }
 
-  const defaultEmail = (S.contact && S.contact.clientEmail) || '';
-  const recipient = prompt(`Enter recipient email address:`, defaultEmail);
-  if (recipient === null) return;
+    select.innerHTML = html;
+  } catch (err) {
+    console.warn('Could not load clients/leads for modal', err);
+  }
+}
 
-  const mailtoUrl = `mailto:${encodeURIComponent(recipient.trim())}?subject=${encodeURIComponent(`Quotation: ${projectName} (${quoteNo}) — Jeota Media`)}&body=${encodeURIComponent(body)}`;
-  window.location.href = mailtoUrl;
-  toast('Opening email client…');
+function onSelectModalClientOrLead(val) {
+  const leadIdInput = document.getElementById('modalLeadId');
+  const clientIdInput = document.getElementById('modalClientId');
+  const nameInput = document.getElementById('modalRecipientName');
+  const emailInput = document.getElementById('modalRecipientEmail');
+  const phoneInput = document.getElementById('modalRecipientPhone');
+  const titleInput = document.getElementById('modalProjectTitle');
+
+  if (!val) {
+    if (leadIdInput) leadIdInput.value = '';
+    if (clientIdInput) clientIdInput.value = '';
+    return;
+  }
+
+  if (val.startsWith('client_')) {
+    const cid = val.replace('client_', '');
+    const client = JMOS_CLIENTS_CACHE.find(c => String(c.id) === String(cid));
+    if (client) {
+      if (clientIdInput) clientIdInput.value = client.id;
+      if (leadIdInput) leadIdInput.value = '';
+      if (nameInput) nameInput.value = client.client_name || client.name || '';
+      if (emailInput) emailInput.value = client.email || '';
+      if (phoneInput) phoneInput.value = client.phone || '';
+      if (titleInput && !titleInput.value) titleInput.value = `${client.client_name || client.name} · Production Proposal`;
+    }
+  } else if (val.startsWith('lead_')) {
+    const lid = val.replace('lead_', '');
+    const lead = JMOS_LEADS_CACHE.find(l => String(l.id) === String(lid));
+    if (lead) {
+      if (leadIdInput) leadIdInput.value = lead.id;
+      if (clientIdInput) clientIdInput.value = '';
+      if (nameInput) nameInput.value = lead.lead_name || lead.company || '';
+      if (emailInput) emailInput.value = lead.email || '';
+      if (phoneInput) phoneInput.value = lead.phone || '';
+      if (titleInput && !titleInput.value) titleInput.value = `${lead.company || lead.lead_name} · Production Scope`;
+    }
+  }
+}
+
+function openDispatchModal() {
+  const overlay = document.getElementById('dispatch-modal-overlay');
+  if (overlay) overlay.style.display = 'grid';
+
+  const nameInput = document.getElementById('modalRecipientName');
+  const titleInput = document.getElementById('modalProjectTitle');
+  if (nameInput) nameInput.value = S.meta.client || '';
+  if (titleInput) titleInput.value = S.meta.project || 'Production Scope';
+
+  loadSystemClientsAndLeads();
+}
+
+function closeDispatchModal() {
+  const overlay = document.getElementById('dispatch-modal-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+async function submitBudgetQuoteDispatch(mode = 'email') {
+  const name = document.getElementById('modalRecipientName')?.value.trim();
+  const title = document.getElementById('modalProjectTitle')?.value.trim() || S.meta.project || 'Production Proposal';
+  const email = document.getElementById('modalRecipientEmail')?.value.trim();
+  const phone = document.getElementById('modalRecipientPhone')?.value.trim();
+  const leadId = document.getElementById('modalLeadId')?.value || null;
+  const clientId = document.getElementById('modalClientId')?.value || null;
+
+  if (!name) {
+    alert('Please enter or select a recipient name.');
+    return;
+  }
+
+  if (mode === 'email' && (!email || !email.includes('@'))) {
+    alert('A valid recipient email address is required to dispatch via email.');
+    return;
+  }
+
+  const t = calc();
+  const items = (S.quote.items || defaultQuoteItems()).map(it => ({
+    description: it.name + (it.deliverables && it.deliverables.length ? ` (${it.deliverables.join(', ')})` : ''),
+    quantity: it.qty || 1,
+    rate: it.amount || 0,
+    amount: it.amount || 0
+  }));
+
+  const payload = {
+    title: title,
+    recipient_name: name,
+    recipient_email: email || null,
+    recipient_phone: phone || null,
+    lead_id: leadId,
+    client_id: clientId,
+    subtotal: t.cost + t.profit,
+    discount: 0,
+    tax: 0,
+    total_amount: t.net || (t.cost + t.profit),
+    validity_days: 14,
+    notes: (S.quote.notes || []).join('\n'),
+    items: items.length ? items : [{ description: title, quantity: 1, rate: t.fee, amount: t.fee }]
+  };
+
+  const sendBtn = document.getElementById('btnBudgetSendEmail');
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Saving & Dispatching…';
+  }
+
+  try {
+    const token = localStorage.getItem('jmos_api_token');
+    const res = await fetch('/api/quotes', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to save quote');
+
+    const createdQuote = data.data || data.quote;
+
+    if (mode === 'email' && email && createdQuote && createdQuote.id) {
+      await fetch(`/api/quotes/${createdQuote.id}/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ email: email })
+      });
+      toast(`Quotation saved & emailed to ${email} with online approval link! 📧`);
+    } else if (mode === 'whatsapp' && createdQuote && createdQuote.id) {
+      const waRes = await fetch(`/api/quotes/${createdQuote.id}/whatsapp`, {
+        headers: { 'Accept': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }
+      });
+      const waData = await waRes.json();
+      if (waData.whatsapp_url) {
+        window.open(waData.whatsapp_url, '_blank');
+      }
+      toast('Quotation saved & WhatsApp opened with approval link! 💬');
+    } else {
+      toast('Quotation saved to JMOS successfully!');
+    }
+
+    closeDispatchModal();
+    closeQuote();
+
+    // If parent JMOS window exists, sync quotes, invoices, and finance views
+    if (window.parent) {
+      if (window.parent.JMOS_QUOTES && typeof window.parent.JMOS_QUOTES.loadQuotes === 'function') {
+        window.parent.JMOS_QUOTES.loadQuotes();
+      }
+      if (typeof window.parent.refreshFinanceData === 'function') {
+        window.parent.refreshFinanceData();
+      }
+      if (typeof window.parent.renderInvoices === 'function') {
+        window.parent.renderInvoices();
+      }
+      if (typeof window.parent.refreshCrmData === 'function') {
+        window.parent.refreshCrmData();
+      }
+    }
+  } catch (err) {
+    alert('Dispatch Error: ' + err.message);
+  } finally {
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send Email with Approval Button ➔';
+    }
+  }
 }
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200);}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeQuote();});
+let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),3000);}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDispatchModal(); closeQuote();}});
+
+window.addEventListener('message', function(e) {
+  if (!e.data || typeof e.data !== 'object') return;
+  if (e.data.action === 'setClient') {
+    if (e.data.client) {
+      S.meta.client = e.data.client;
+      const clientInp = document.getElementById('meta-client');
+      if (clientInp) clientInp.value = e.data.client;
+    }
+    if (e.data.project) {
+      S.meta.project = e.data.project;
+      const projInp = document.getElementById('meta-project');
+      if (projInp) projInp.value = e.data.project;
+    }
+    if (e.data.leadId) {
+      const leadInp = document.getElementById('modalLeadId');
+      if (leadInp) leadInp.value = e.data.leadId;
+    }
+    if (e.data.clientId) {
+      const clientInp = document.getElementById('modalClientId');
+      if (clientInp) clientInp.value = e.data.clientId;
+    }
+    renderAll();
+  }
+});
 
 syncInputs();setMarkup(40);renderAll();
 </script>

@@ -21,9 +21,8 @@ class FinanceController extends Controller
         $overdueCount = Invoice::where('status', 'Overdue')->count();
 
         $balance = $broughtForward + $moneyIn - $moneyOut;
-        $whtRate = 0.05; // 5% exclusive Withholding Tax on professional services
-        $whtAmount = round($moneyIn * $whtRate, 2);
-        $profit = ($moneyIn - $moneyOut) + $whtAmount;
+        $whtAmount = 0.00; // Taxes deactivated for now
+        $profit = $moneyIn - $moneyOut;
 
         // Build unified ledger
         $paidInvoices = Invoice::where('status', 'Paid')->latest('created_at')->get();

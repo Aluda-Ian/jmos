@@ -27,6 +27,7 @@
   align-items: center;
   gap: 11px;
   padding: 6px 8px 18px;
+  position: relative;
 }
 
 .brand img {
@@ -61,6 +62,119 @@
   color: var(--faint);
   padding: 14px 10px 5px;
   font-weight: 600;
+}
+
+/* ==========================================================================
+   Collapsible Sidebar (Icon Rail Mode)
+   ========================================================================== */
+.app.collapsed-nav {
+  grid-template-columns: 68px 1fr !important;
+  transition: grid-template-columns .22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app.collapsed-nav .nav,
+.nav.collapsed {
+  width: 68px !important;
+  padding: 16px 8px !important;
+  transition: width .22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.app.collapsed-nav .brand,
+.nav.collapsed .brand {
+  padding: 6px 0 16px !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+.app.collapsed-nav .brand .brand-text,
+.nav.collapsed .brand .brand-text {
+  display: none !important;
+}
+
+.app.collapsed-nav .brand .sidebar-collapse-btn,
+.nav.collapsed .brand .sidebar-collapse-btn {
+  display: none !important;
+}
+
+.app.collapsed-nav .grp,
+.nav.collapsed .grp {
+  height: 1px !important;
+  width: 32px !important;
+  margin: 10px auto !important;
+  background: var(--line) !important;
+  font-size: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  opacity: .7 !important;
+}
+
+.app.collapsed-nav .nav a.item,
+.nav.collapsed a.item {
+  width: 44px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  margin: 3px auto !important;
+  gap: 0 !important;
+}
+
+.app.collapsed-nav .nav a.item .nav-text,
+.nav.collapsed a.item .nav-text {
+  display: none !important;
+}
+
+.app.collapsed-nav .nav a.item .badge,
+.nav.collapsed a.item .badge {
+  display: none !important;
+}
+
+.app.collapsed-nav .nav a.item svg,
+.nav.collapsed a.item svg {
+  width: 19px !important;
+  height: 19px !important;
+  margin: 0 !important;
+}
+
+.app.collapsed-nav .nav a.item.active::before,
+.nav.collapsed a.item.active::before {
+  left: -8px !important;
+}
+
+.app.collapsed-nav .nav a.item .chat-nav-badge,
+.nav.collapsed a.item .chat-nav-badge {
+  position: absolute !important;
+  top: 3px !important;
+  right: 3px !important;
+}
+
+.app.collapsed-nav .userchip,
+.nav.collapsed .userchip {
+  width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+.app.collapsed-nav .userchip div:not(.av),
+.app.collapsed-nav .userchip svg,
+.nav.collapsed .userchip div:not(.av),
+.nav.collapsed .userchip svg {
+  display: none !important;
+}
+
+.app.collapsed-nav .userchip .av,
+.nav.collapsed .userchip .av {
+  width: 34px !important;
+  height: 34px !important;
+  font-size: 13px !important;
+  margin: 0 !important;
+}
+
+.app.collapsed-nav .nav-footer-version,
+.nav.collapsed .nav-footer-version {
+  display: none !important;
 }
 
 .nav a.item {
@@ -185,22 +299,54 @@
 }
 
 .menu-btn {
-  display: none;
+  display: flex;
   width: 36px;
   height: 36px;
   border-radius: 9px;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   background: var(--surface);
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all .15s ease;
+  flex: none;
+}
+
+.menu-btn:hover {
+  background: var(--paper);
+  border-color: var(--line-strong);
+  color: var(--red);
 }
 
 .menu-btn svg {
-  width: 18px;
-  height: 18px;
-  stroke: var(--ink);
-  stroke-width: 1.8;
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  stroke-width: 2;
   fill: none;
+}
+
+/* Desktop default (expanded): show << to collapse */
+.menu-btn .menu-icon-collapse {
+  display: block;
+}
+.menu-btn .menu-icon-expand {
+  display: none;
+}
+.menu-btn .menu-icon-mobile {
+  display: none;
+}
+
+/* Desktop collapsed mode: show >> to return/expand */
+.app.collapsed-nav .menu-btn .menu-icon-collapse {
+  display: none !important;
+}
+.app.collapsed-nav .menu-btn .menu-icon-expand {
+  display: block !important;
+}
+.app.collapsed-nav .menu-btn .menu-icon-mobile {
+  display: none !important;
 }
 
 .search {
@@ -405,6 +551,15 @@ h1.pt {
   }
   .menu-btn {
     display: flex;
+  }
+  .menu-btn .menu-icon-collapse {
+    display: none !important;
+  }
+  .menu-btn .menu-icon-expand {
+    display: none !important;
+  }
+  .menu-btn .menu-icon-mobile {
+    display: block !important;
   }
   .search {
     max-width: none;

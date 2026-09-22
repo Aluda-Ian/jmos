@@ -7,7 +7,11 @@ function showView(view) {
 
   // Toggle active view container
   document.querySelectorAll('.view').forEach(v => {
-    v.hidden = v.getAttribute('data-view') !== view;
+    const isTarget = v.getAttribute('data-view') === view;
+    v.hidden = !isTarget;
+    if (isTarget) {
+      v.style.display = '';
+    }
   });
 
   // Toggle active sidebar tab
@@ -24,6 +28,12 @@ function showView(view) {
   if (nav) nav.classList.remove('on');
 
   // Trigger on-demand API fetches / iframe loaders
+  if (view === 'budget') {
+    const frame = document.getElementById('budgetFrame');
+    if (frame && (!frame.src || frame.src === 'about:blank' || frame.src === '')) {
+      frame.src = '/budget-calculator';
+    }
+  }
   if (view === 'clients') ensureClients();
   if (view === 'projects') ensureProjects();
   if (view === 'tasks') {
@@ -56,6 +66,9 @@ function showView(view) {
   }
   if (view === 'invoices' && typeof window.renderInvoices === 'function') {
     window.renderInvoices();
+  }
+  if (view === 'quotes' && window.JMOS_QUOTES && typeof window.JMOS_QUOTES.loadQuotes === 'function') {
+    window.JMOS_QUOTES.loadQuotes();
   }
   if (view === 'people') {
     if (typeof ensurePeople === 'function') {
@@ -151,10 +164,52 @@ function initNavigation() {
     }
   });
 
-  // Mobile drawer hamburger toggle
-  if (menuBtn && nav) {
-    menuBtn.onclick = () => nav.classList.toggle('on');
+  // Sidebar Toggle & Collapse
+  const appRoot = document.getElementById('appRoot');
+
+  window.toggleSidebar = function () {
+    if (window.innerWidth <= 760) {
+      if (nav) nav.classList.toggle('on');
+    } else {
+      if (appRoot) {
+        appRoot.classList.toggle('collapsed-nav');
+        const isCollapsed = appRoot.classList.contains('collapsed-nav');
+        if (nav) nav.classList.toggle('collapsed', isCollapsed);
+        if (menuBtn) {
+          menuBtn.setAttribute('title', isCollapsed ? 'Expand sidebar' : 'Collapse sidebar (icons only)');
+        }
+        try {
+          localStorage.setItem('jmos_sidebar_collapsed', isCollapsed ? '1' : '0');
+        } catch (_) {}
+      }
+    }
+  };
+
+  if (menuBtn) {
+    menuBtn.onclick = window.toggleSidebar;
   }
+
+  // Restore saved sidebar collapsed state on desktop
+  if (window.innerWidth > 760) {
+    try {
+      const savedCollapsed = localStorage.getItem('jmos_sidebar_collapsed');
+      if (savedCollapsed === '1' && appRoot) {
+        appRoot.classList.add('collapsed-nav');
+        if (nav) nav.classList.add('collapsed');
+        if (menuBtn) {
+          menuBtn.setAttribute('title', 'Expand sidebar');
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Keyboard shortcut: Ctrl + \ or Cmd + \ to toggle sidebar
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === '\\') {
+      e.preventDefault();
+      window.toggleSidebar();
+    }
+  });
 
   // Sync theme toggle icon state on load
   syncThemeIcons();

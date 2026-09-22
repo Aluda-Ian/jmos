@@ -176,6 +176,8 @@ class QuoteController extends Controller
             $validUntil = now()->addDays($quote->validity_days)->format('M d, Y');
             $notesFormatted = ! empty($quote->notes) ? "<p style='margin-top:15px;color:#555;font-size:13px;'><b>Scope & Deliverables:</b><br>".nl2br(htmlspecialchars($quote->notes)).'</p>' : '';
 
+            $approvalUrl = url('/quotes/view/'.$quote->quote_number);
+
             $htmlContent = "
             <div style='font-family:Inter,Arial,sans-serif;max-width:620px;margin:0 auto;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;'>
                 <div style='background:#C52523;color:#ffffff;padding:24px 28px;'>
@@ -212,6 +214,15 @@ class QuoteController extends Controller
                     </table>
 
                     {$notesFormatted}
+
+                    <!-- Client Direct Approval CTA -->
+                    <div style='text-align:center;margin:24px 0 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px;'>
+                        <div style='font-size:14px;font-weight:700;color:#166534;margin-bottom:8px;'>Approve Proposal &amp; Request Invoice</div>
+                        <a href='{$approvalUrl}' style='display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:700;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,0.1);'>
+                            ✓ Click Here to Review &amp; Approve Quote
+                        </a>
+                        <div style='font-size:11.5px;color:#15803d;margin-top:8px;'>Upon clicking approve, your official invoice will be generated and dispatched.</div>
+                    </div>
 
                     <div style='margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;'>
                         <p style='margin:0 0 6px;'><b>Payment Terms:</b> 60% production commencement deposit upon contract signing, balance upon final delivery approval.</p>
@@ -267,6 +278,7 @@ class QuoteController extends Controller
 
         $totalFormatted = number_format((float) $quote->total_amount, 2);
         $validUntil = now()->addDays($quote->validity_days)->format('M d, Y');
+        $approvalUrl = url('/quotes/view/'.$quote->quote_number);
 
         $message = "Hello *{$quote->recipient_name}*,\n\n"
             ."Here is your official commercial proposal from *Jeota Media*:\n\n"
@@ -277,6 +289,8 @@ class QuoteController extends Controller
             .$itemsSummary."\n"
             ."💰 *Total Quotation Value:* KES {$totalFormatted}\n"
             ."💳 *Payment Terms:* 60% Deposit on Kickoff, 40% on Final Delivery Master.\n\n"
+            ."👉 *Review & Approve Proposal Online:*\n"
+            ."{$approvalUrl}\n\n"
             ."Let us know if you would like to proceed or schedule a discovery alignment call!\n\n"
             ."Best regards,\n"
             ."*Jeota Media Production Team*\n"
@@ -373,5 +387,65 @@ class QuoteController extends Controller
             'quote' => $quote->fresh(['lead', 'client', 'deal', 'convertedInvoice']),
             'data' => $quote->fresh(['lead', 'client', 'deal', 'convertedInvoice']),
         ]);
+    }
+
+    /**
+     * Public Client Quotation Review Web Page
+     */
+    public function publicView(string $quoteNumber)
+    {
+        $quote = Quote::where('quote_number', $quoteNumber)
+            ->orWhere('id', $quoteNumber)
+            ->with(['client', 'lead', 'convertedInvoice'])
+            ->firstOrFail();
+
+        return view('pages.public-quote', compact('quote'));
+    }
+
+    /**
+     * Public Client Instant Quotation Approval Web Action
+     */
+    public function publicApprove(Request $request, string $quoteNumber)
+    {
+        $quote = Quote::where('quote_number', $quoteNumber)
+            ->orWhere('id', $quoteNumber)
+            ->with(['client', 'lead'])
+            ->firstOrFail();
+
+        if (empty($quote->converted_invoice_id)) {
+            $nextNo = Invoice::nextInvoiceNo();
+            $clientName = $quote->client ? $quote->client->client_name : $quote->recipient_name;
+            $depositAmount = round((float) $quote->total_amount * 0.6, 2);
+
+            $invoice = Invoice::create([
+                'invoice_no' => $nextNo,
+                'client' => $clientName,
+                'type' => 'Deposit 60%',
+                'amount' => $depositAmount,
+                'method' => null,
+                'etims' => false,
+                'status' => 'Sent',
+                'due_date' => now()->addDays(7)->format('M d'),
+            ]);
+
+            $quote->update([
+                'status' => 'Accepted',
+                'converted_invoice_id' => $invoice->id,
+            ]);
+
+            AuditLog::record(
+                'CLIENT_APPROVE',
+                "Client approved quotation {$quote->quote_number}, automatically generated invoice {$invoice->invoice_no} (KES ".number_format($depositAmount, 2).')',
+                'Quote',
+                $quote->id,
+                [],
+                $request
+            );
+        } else {
+            $quote->update(['status' => 'Accepted']);
+        }
+
+        return redirect()->route('quotes.public.view', $quote->quote_number)
+            ->with('success', "Thank you! Quotation {$quote->quote_number} has been approved. Your 60% deposit kickoff invoice has been generated.");
     }
 }

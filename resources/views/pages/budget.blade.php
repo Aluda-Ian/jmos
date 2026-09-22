@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: Production Budget Calculator Frame
      ========================================================================== -->
-<section class="view" data-view="budget" hidden data-perm="owner finance">
+<section class="view" data-view="budget" hidden data-perm="owner finance sales manager">
   <div class="page-head">
     <div>
       <h1 class="pt">Production Budget</h1>

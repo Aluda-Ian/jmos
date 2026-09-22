@@ -2784,6 +2784,17 @@
     <input type="hidden" id="quoteLeadId">
     <input type="hidden" id="quoteClientId">
 
+    <!-- Client / Lead System Selector -->
+    <div class="field" style="margin-bottom:14px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px">
+      <label for="quoteSelectClientOrLead" style="font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:6px">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Select Client or Lead in JMOS (Auto-fills details)
+      </label>
+      <select id="quoteSelectClientOrLead" onchange="window.onSelectQuoteClientOrLead(this.value)">
+        <option value="">— Choose Client or Lead from System (or enter new below) —</option>
+      </select>
+    </div>
+
     <div class="grid2">
       <div class="field">
         <label for="quoteRecipient">Recipient / Client Name *</label>
