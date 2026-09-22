@@ -67,7 +67,7 @@
         <h1>Run all of Jeota from one place.</h1>
         <p>Clients, projects, tasks and finances — your whole operation, signed in and ready.</p>
       </div>
-      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.5.0') }}</span></div>
+      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.5.1') }}</span></div>
       <div class="bdrip" style="left:46px;height:60px"></div>
       <div class="bdrip" style="left:62px;height:96px"></div>
       <div class="bdrip" style="left:77px;height:44px"></div>
@@ -266,7 +266,7 @@
       </div>
       <div class="nav-footer-version" style="padding:4px 16px 14px;font-size:10.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;opacity:0.7;display:flex;align-items:center;gap:6px">
         <span>JMOS</span>
-        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.5.0') }}</span>
+        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.5.1') }}</span>
       </div>
     </aside>
 

@@ -3,7 +3,7 @@
 $baseDir = realpath(__DIR__.'/..');
 
 // 1. Resolve Application Version
-$version = 'v2.5.0';
+$version = 'v2.5.1';
 $appConfig = @file_get_contents($baseDir.'/config/app.php');
 if ($appConfig && preg_match("/'version'\s*=>\s*env\(['\"]APP_VERSION['\"],\s*['\"]([^'\"]+)['\"]\)/", $appConfig, $matches)) {
     $version = trim($matches[1]);
