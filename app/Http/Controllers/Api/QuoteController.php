@@ -347,4 +347,31 @@ class QuoteController extends Controller
             'invoice' => $invoice,
         ]);
     }
+
+    /**
+     * Approve / Accept Quotation:
+     * Marks quotation as Accepted / Approved, ready for invoice generation.
+     */
+    public function approve(Request $request, Quote $quote): JsonResponse
+    {
+        $quote->update([
+            'status' => 'Accepted',
+        ]);
+
+        AuditLog::record(
+            'APPROVE',
+            "Approved Quotation {$quote->quote_number} for {$quote->recipient_name} (KES ".number_format((float) $quote->total_amount, 2).')',
+            'Quote',
+            $quote->id,
+            [],
+            $request
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Quotation {$quote->quote_number} approved successfully.",
+            'quote' => $quote->fresh(['lead', 'client', 'deal', 'convertedInvoice']),
+            'data' => $quote->fresh(['lead', 'client', 'deal', 'convertedInvoice']),
+        ]);
+    }
 }

@@ -100,118 +100,145 @@
     </button>
   </div>
 
-  <!-- TAB PANE 1: LEADS (ZOHO CRM WORKFLOW & FILTER SIDEBAR) -->
+  <!-- TAB PANE 1: LEADS (HORIZONTAL FILTERS & FULL-WIDTH TABLE) -->
   <div class="crm-tab-pane" id="crmPaneLeads">
-    <div class="zoho-crm-container" style="display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start">
-      
-      <!-- Zoho-style Left Filter Sidebar -->
-      <aside class="zoho-filter-sidebar" style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow-sm)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <h4 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink);margin:0;display:flex;align-items:center;gap:6px">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            Filter Leads
-          </h4>
-          <button type="button" class="linkbtn" onclick="window.resetLeadFilters()" style="font-size:11px">Reset</button>
+    <!-- Horizontal Filter Bar Card -->
+    <div class="card" style="padding:16px 20px;margin-bottom:16px;box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px">
+      <!-- Row 1: Search & System View Status Pills -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+        <!-- Search Input -->
+        <div style="position:relative;flex:1;min-width:240px;max-width:360px">
+          <input type="text" id="leadSearchInput" placeholder="Search leads by name, company, email..." style="width:100%;font-size:12.5px;padding:7px 10px 7px 30px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)" oninput="window.onLeadSearchChange(this.value)">
+          <svg viewBox="0 0 24 24" width="14" height="14" style="position:absolute;left:10px;top:9px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
         </div>
 
-        <!-- Search in filters -->
-        <div style="position:relative;margin-bottom:16px">
-          <input type="text" id="leadSearchInput" placeholder="Search leads by name, company..." style="width:100%;font-size:12px;padding:7px 10px 7px 28px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)" oninput="window.onLeadSearchChange(this.value)">
-          <svg viewBox="0 0 24 24" width="13" height="13" style="position:absolute;left:9px;top:9px;color:var(--muted)" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        <!-- System Views Horizontal Segmented Filter -->
+        <div class="cal-filter-bar" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0">
+          <label class="cal-pill active" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0">
+            <input type="radio" name="leadStatusFilter" value="all" checked onchange="window.applyLeadFilter()" style="display:none">
+            <span>All Leads</span>
+          </label>
+          <label class="cal-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0">
+            <input type="radio" name="leadStatusFilter" value="active" onchange="window.applyLeadFilter()" style="display:none">
+            <span>Active Prospects</span>
+          </label>
+          <label class="cal-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0">
+            <input type="radio" name="leadStatusFilter" value="Qualified" onchange="window.applyLeadFilter()" style="display:none">
+            <span>Qualified Leads</span>
+          </label>
+          <label class="cal-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0">
+            <input type="radio" name="leadStatusFilter" value="converted" onchange="window.applyLeadFilter()" style="display:none">
+            <span>Converted Clients</span>
+          </label>
+          <label class="cal-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin:0">
+            <input type="radio" name="leadStatusFilter" value="New" onchange="window.applyLeadFilter()" style="display:none">
+            <span>New / Untouched</span>
+          </label>
         </div>
 
-        <!-- System Views -->
-        <div class="zoho-filter-group" style="margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">System Defined Views</div>
-          <label class="zoho-filter-radio"><input type="radio" name="leadStatusFilter" value="all" checked onchange="window.applyLeadFilter()"> <span>All Leads</span></label>
-          <label class="zoho-filter-radio"><input type="radio" name="leadStatusFilter" value="active" onchange="window.applyLeadFilter()"> <span>Active Prospects</span></label>
-          <label class="zoho-filter-radio"><input type="radio" name="leadStatusFilter" value="Qualified" onchange="window.applyLeadFilter()"> <span>Qualified Leads</span></label>
-          <label class="zoho-filter-radio"><input type="radio" name="leadStatusFilter" value="converted" onchange="window.applyLeadFilter()"> <span>Converted Clients</span></label>
-          <label class="zoho-filter-radio"><input type="radio" name="leadStatusFilter" value="New" onchange="window.applyLeadFilter()"> <span>New / Untouched</span></label>
-        </div>
+        <button type="button" class="btn" onclick="window.resetLeadFilters()" style="font-size:11.5px;padding:6px 12px" title="Reset all filters">
+          <svg viewBox="0 0 24 24" width="13" height="13"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
 
-        <!-- Rating Filter -->
-        <div class="zoho-filter-group" style="margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Lead Rating</div>
-          <label class="zoho-filter-check"><input type="checkbox" class="lead-rating-chk" value="Hot" onchange="window.applyLeadFilter()"> <span class="badge" style="background:rgba(197,37,35,0.12);color:var(--red);font-size:10px">Hot 🔥</span></label>
-          <label class="zoho-filter-check"><input type="checkbox" class="lead-rating-chk" value="Warm" onchange="window.applyLeadFilter()"> <span class="badge" style="background:rgba(217,119,6,0.12);color:#D97706;font-size:10px">Warm ⚡</span></label>
-          <label class="zoho-filter-check"><input type="checkbox" class="lead-rating-chk" value="Cold" onchange="window.applyLeadFilter()"> <span class="badge" style="background:rgba(100,116,139,0.12);color:#64748B;font-size:10px">Cold ❄️</span></label>
-        </div>
-
-        <!-- Lead Source Filter -->
-        <div class="zoho-filter-group" style="margin-bottom:16px">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Lead Source</div>
-          <select id="leadSourceFilter" style="width:100%;font-size:12px;padding:6px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)" onchange="window.applyLeadFilter()">
-            <option value="">-- All Sources --</option>
-            <option value="Web Research">Web Research</option>
-            <option value="LinkedIn">LinkedIn</option>
-            <option value="Referral">Referral</option>
-            <option value="Cold Outreach">Cold Outreach</option>
-            <option value="Website">Website</option>
-            <option value="Campaign">Campaign</option>
-            <option value="Partner">Partner</option>
-          </select>
-        </div>
-
-        <!-- Lead Owner Filter -->
-        <div class="zoho-filter-group">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Lead Owner</div>
-          <select id="leadOwnerFilter" style="width:100%;font-size:12px;padding:6px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)" onchange="window.applyLeadFilter()">
-            <option value="">-- All Owners --</option>
-            <option value="Jeota Media">Jeota Media</option>
-            <option value="Barny Kiome">Barny Kiome</option>
-            <option value="Patrick Mwendwa">Patrick Mwendwa</option>
-            <option value="Lesley Chacha">Lesley Chacha</option>
-            <option value="Amos Muthama">Amos Muthama</option>
-          </select>
-        </div>
-      </aside>
-
-      <!-- Main Leads Table & Action Controls -->
-      <div class="zoho-main-content">
-        <div class="tablecard" style="box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px;overflow:hidden">
-          
-          <!-- Table Toolbar -->
-          <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-size:13px;font-weight:700;color:var(--ink)">Lead Records</span>
-              <span class="badge" id="crmLeadsCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted)">0 Records</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button type="button" class="btn" onclick="window.exportLeadsCsv()" style="font-size:11.5px;padding:4px 10px">
-                <svg viewBox="0 0 24 24" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV
-              </button>
-              <button type="button" class="btn primary" onclick="window.openCreateLeadModal()" style="font-size:11.5px;padding:4px 12px">
-                <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Create Lead
-              </button>
-            </div>
+      <!-- Row 2: Ratings, Source Dropdown, Owner Dropdown, and Actions -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <!-- Rating Filter Chips -->
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Rating:</span>
+            <label class="zoho-filter-check" style="margin:0;padding:2px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)">
+              <input type="checkbox" class="lead-rating-chk" value="Hot" onchange="window.applyLeadFilter()">
+              <span class="badge" style="background:rgba(197,37,35,0.12);color:var(--red);font-size:10.5px">Hot 🔥</span>
+            </label>
+            <label class="zoho-filter-check" style="margin:0;padding:2px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)">
+              <input type="checkbox" class="lead-rating-chk" value="Warm" onchange="window.applyLeadFilter()">
+              <span class="badge" style="background:rgba(217,119,6,0.12);color:#D97706;font-size:10.5px">Warm ⚡</span>
+            </label>
+            <label class="zoho-filter-check" style="margin:0;padding:2px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)">
+              <input type="checkbox" class="lead-rating-chk" value="Cold" onchange="window.applyLeadFilter()">
+              <span class="badge" style="background:rgba(100,116,139,0.12);color:#64748B;font-size:10.5px">Cold ❄️</span>
+            </label>
           </div>
 
-          <!-- Table Wrapper -->
-          <div class="tablewrap" style="max-height:680px;overflow-y:auto">
-            <table class="crm-table">
-              <thead>
-                <tr>
-                  <th style="width:36px;text-align:center"><input type="checkbox" id="selectAllLeadsChk" title="Select all" onchange="window.toggleSelectAllLeads(this.checked)"></th>
-                  <th>Lead Name</th>
-                  <th>Company / Brand</th>
-                  <th>Email Address</th>
-                  <th>Phone Number</th>
-                  <th>Lead Source</th>
-                  <th>Owner</th>
-                  <th>Est. Value</th>
-                  <th>Status</th>
-                  <th style="text-align:right">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="crmLeadsTableBody">
-                <tr>
-                  <td colspan="10" style="padding:40px;text-align:center;color:var(--muted)">Loading leads from database…</td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Source Filter Dropdown -->
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Source:</span>
+            <select id="leadSourceFilter" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)" onchange="window.applyLeadFilter()">
+              <option value="">All Sources</option>
+              <option value="Web Research">Web Research</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Referral">Referral</option>
+              <option value="Cold Outreach">Cold Outreach</option>
+              <option value="Website">Website</option>
+              <option value="Campaign">Campaign</option>
+              <option value="Partner">Partner</option>
+            </select>
+          </div>
+
+          <!-- Owner Filter Dropdown -->
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:11.5px;font-weight:600;color:var(--muted)">Owner:</span>
+            <select id="leadOwnerFilter" style="font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)" onchange="window.applyLeadFilter()">
+              <option value="">All Owners</option>
+              <option value="Jeota Media">Jeota Media</option>
+              <option value="Barny Kiome">Barny Kiome</option>
+              <option value="Patrick Mwendwa">Patrick Mwendwa</option>
+              <option value="Lesley Chacha">Lesley Chacha</option>
+              <option value="Amos Muthama">Amos Muthama</option>
+            </select>
           </div>
         </div>
+
+        <!-- Quick Table Actions -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" class="btn" onclick="window.exportLeadsCsv()" style="font-size:11.5px;padding:5px 12px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV
+          </button>
+          <button type="button" class="btn primary" onclick="window.openCreateLeadModal()" style="font-size:11.5px;padding:5px 14px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 5v14M5 12h14"/></svg>Create Lead
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Leads Table Card (100% Full Width) -->
+    <div class="tablecard" style="box-shadow:var(--shadow-sm);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+      <!-- Table Header Status Bar -->
+      <div style="padding:12px 18px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13.5px;font-weight:700;color:var(--ink)">Lead Records</span>
+          <span class="badge" id="crmLeadsCountPill" style="font-size:11px;background:var(--panel-2);color:var(--muted)">0 Records</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">
+          Click any lead row to view complete CRM journey, touchpoints &amp; conversion milestones.
+        </div>
+      </div>
+
+      <!-- Table Wrapper (Full Width) -->
+      <div class="tablewrap" style="max-height:680px;overflow-y:auto;overflow-x:auto;width:100%">
+        <table class="crm-table" style="width:100%">
+          <thead>
+            <tr>
+              <th style="width:36px;text-align:center"><input type="checkbox" id="selectAllLeadsChk" title="Select all" onchange="window.toggleSelectAllLeads(this.checked)"></th>
+              <th style="min-width:180px">Lead Name</th>
+              <th style="min-width:140px">Company / Brand</th>
+              <th style="min-width:180px">Email Address</th>
+              <th style="min-width:130px">Phone Number</th>
+              <th style="min-width:110px">Lead Source</th>
+              <th style="min-width:110px">Owner</th>
+              <th style="min-width:110px">Est. Value</th>
+              <th style="min-width:100px">Status</th>
+              <th style="min-width:120px;text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="crmLeadsTableBody">
+            <tr>
+              <td colspan="10" style="padding:40px;text-align:center;color:var(--muted)">Loading leads from database…</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

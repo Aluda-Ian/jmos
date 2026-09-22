@@ -49,8 +49,8 @@ async function loadSettings() {
 
       // 4. KRA Gava Settings
       if (data.kra) {
-        if (data.kra.kra_pin && document.getElementById('cfg_kra_pin')) document.getElementById('cfg_kra_pin').value = data.kra.kra_pin.value || 'P051782390X';
-        if (data.kra.kra_taxpayer_name && document.getElementById('cfg_kra_taxpayer_name')) document.getElementById('cfg_kra_taxpayer_name').value = data.kra.kra_taxpayer_name.value || 'Jeota Media Ltd';
+        if (data.kra.kra_pin && document.getElementById('cfg_kra_pin')) document.getElementById('cfg_kra_pin').value = data.kra.kra_pin.value || 'P052209707D';
+        if (data.kra.kra_taxpayer_name && document.getElementById('cfg_kra_taxpayer_name')) document.getElementById('cfg_kra_taxpayer_name').value = data.kra.kra_taxpayer_name.value || 'Jeota Media Limited';
         if (data.kra.kra_etims_branch_id && document.getElementById('cfg_kra_etims_branch')) document.getElementById('cfg_kra_etims_branch').value = data.kra.kra_etims_branch_id.value || '00';
         if (data.kra.kra_vat_rate && document.getElementById('cfg_kra_vat_rate')) document.getElementById('cfg_kra_vat_rate').value = (data.kra.kra_vat_rate.value !== undefined && data.kra.kra_vat_rate.value !== null) ? data.kra.kra_vat_rate.value : '0';
         if (data.kra.kra_wht_rate && document.getElementById('cfg_kra_wht_rate')) document.getElementById('cfg_kra_wht_rate').value = data.kra.kra_wht_rate.value || '5';

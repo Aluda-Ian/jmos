@@ -2853,13 +2853,20 @@
 
     <div class="mfoot" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn" data-close="quoteModal">Cancel</button>
+      <button type="button" class="btn" onclick="window.submitQuoteForm('save')" style="font-weight:600" id="saveOnlyQuoteBtn">
+        Save Quotation
+      </button>
       <button type="button" class="btn" onclick="window.submitQuoteForm('whatsapp')" style="background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>
         Save &amp; WhatsApp
       </button>
-      <button type="button" class="btn primary" id="saveQuoteBtn" onclick="window.submitQuoteForm('email')" style="font-weight:600">
+      <button type="button" class="btn" id="saveQuoteBtn" onclick="window.submitQuoteForm('email')" style="font-weight:600">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Save &amp; Send to Email
+        Save &amp; Email
+      </button>
+      <button type="button" class="btn primary" id="saveAndUpgradeQuoteBtn" onclick="window.submitQuoteForm('upgrade')" style="background:var(--red);border-color:var(--red);font-weight:700">
+        <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>
+        Save &amp; Generate Invoice ➔
       </button>
     </div>
   </div>
@@ -2868,10 +2875,10 @@
 <!-- H. Quotation Detailed Preview & Dispatch Modal -->
 <div class="modal" id="quoteDetailModal" role="dialog" aria-modal="true" aria-labelledby="qdmTitle">
   <div class="mbg" data-close="quoteDetailModal"></div>
-  <div class="mbox workspace-modal">
+  <div class="mbox workspace-modal" style="max-width:820px">
     <div class="workspace-cover-banner" style="background:linear-gradient(135deg, #050507 0%, #121316 28%, #5a0c0b 68%, #C52523 100%);padding:24px 32px;color:#fff;display:flex;flex-direction:column;justify-content:center">
       <button class="mclose" data-close="quoteDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
-      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.85;font-weight:700">JEOTA MEDIA · COMMERCIAL QUOTATION</div>
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.85;font-weight:700">JEOTA MEDIA · COMMERCIAL PROPOSAL &amp; QUOTATION</div>
       <h3 id="qdmTitle" style="margin:4px 0 0;font-size:24px;color:#fff;font-family:'Poppins',sans-serif">Quotation Preview</h3>
       <div style="font-size:12.5px;opacity:0.9;margin-top:4px" id="qdmSubtitle">Quote #QT-2026-001 · Prepared for Client</div>
     </div>
@@ -2881,34 +2888,113 @@
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:6px">
           <span class="badge" id="qdmStatusBadge" style="background:var(--panel-2);color:var(--muted);font-weight:700">Draft</span>
-          <span class="mono" id="qdmTotalBadge" style="font-size:15px;font-weight:700;color:var(--ink)">KES 0</span>
+          <span class="mono" id="qdmTotalBadge" style="font-size:16px;font-weight:700;color:var(--ink)">KES 0</span>
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn primary" id="qdmSendEmailBtn" onclick="window.dispatchQuoteEmail()" style="font-size:11.5px;padding:6px 13px;font-weight:600">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send to Email
+          <button type="button" class="btn" id="qdmEditBtn" onclick="window.openEditQuoteModalFromDetail()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Edit quotation line items and rates">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit Quote
           </button>
-          <button type="button" class="btn" id="qdmSendWhatsAppBtn" onclick="window.dispatchQuoteWhatsApp()" style="font-size:11.5px;padding:6px 13px;background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600">
+          <button type="button" class="btn" id="qdmApproveBtn" onclick="window.approveActiveQuote()" style="font-size:11.5px;padding:6px 12px;background:var(--green-soft);color:var(--green);border-color:rgba(19,115,51,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Approve quotation and mark ready for invoicing">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve Quote
+          </button>
+          <button type="button" class="btn primary" onclick="window.printQuotePdf()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF
+          </button>
+          <button type="button" class="btn" id="qdmSendEmailBtn" onclick="window.dispatchQuoteEmail()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Send Email
+          </button>
+          <button type="button" class="btn" id="qdmSendWhatsAppBtn" onclick="window.dispatchQuoteWhatsApp()" style="font-size:11.5px;padding:6px 12px;background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600;display:inline-flex;align-items:center;gap:5px">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>Send WhatsApp
           </button>
-          <button type="button" class="btn" onclick="window.print()" style="font-size:11.5px;padding:6px 10px">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print PDF
-          </button>
-          <button type="button" class="btn" id="qdmUpgradeInvoiceBtn" onclick="window.openUpgradeQuoteModal()" style="font-size:11.5px;padding:6px 12px;background:var(--paper);border-color:var(--line-strong);font-weight:600">
-            <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>Upgrade to Invoice ➔
+          <button type="button" class="btn primary" id="qdmUpgradeInvoiceBtn" onclick="window.openUpgradeQuoteModal()" style="font-size:11.5px;padding:6px 14px;background:var(--red);border-color:var(--red);font-weight:700;display:inline-flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 24 24" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>Generate Invoice ➔
           </button>
         </div>
       </div>
 
       <input type="hidden" id="qdmQuoteId">
 
-      <!-- Quote Details Preview Table -->
-      <div id="qdmItemsContainer" style="margin-bottom:16px">
-        <!-- Rendered dynamically -->
-      </div>
+      <!-- Printable Commercial Quotation Document Preview -->
+      <div id="printableQuoteDoc" class="printable-invoice-container" style="background:#fff;color:#1a1a1a;border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:16px">
+        <!-- Document Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2px solid #1a1a1a;margin-bottom:18px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:900;font-size:22px;letter-spacing:-0.5px;color:#C52523;font-family:'Poppins',sans-serif">JEOTA MEDIA</span>
+            </div>
+            <div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.4">
+              Jeota Media Limited · Creative Agency &amp; Production House<br>
+              Nairobi, Kenya · info@jeotamedia.co.ke · +254 712 345 678<br>
+              <b>KRA PIN:</b> P052209707D · Tax Exempt (0% Professional Creative Services)
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:20px;font-weight:900;color:#1a1a1a;letter-spacing:1px;font-family:'Poppins',sans-serif">COMMERCIAL QUOTE</div>
+            <div style="font-size:13px;font-weight:700;color:#C52523;font-family:'IBM Plex Mono',monospace;margin-top:2px" id="qdmDocQuoteNo">QT-2026-001</div>
+            <div style="font-size:11.5px;color:#666;margin-top:4px">
+              <b>Date:</b> <span id="qdmDocDate">—</span><br>
+              <b>Validity:</b> <span id="qdmDocValidity">14 Days</span>
+            </div>
+          </div>
+        </div>
 
-      <div id="qdmNotesBox" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:12px;color:var(--ink);margin-bottom:16px">
-        <!-- Notes text -->
+        <!-- Bill To / Scope Summary -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid #eee;font-size:12px">
+          <div>
+            <div style="font-size:10.5px;text-transform:uppercase;color:#888;font-weight:700;letter-spacing:0.5px;margin-bottom:3px">PREPARED FOR</div>
+            <div style="font-weight:700;font-size:14px;color:#1a1a1a" id="qdmDocRecipientName">Client Name</div>
+            <div style="color:#555;margin-top:2px" id="qdmDocRecipientContact">info@client.co.ke</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10.5px;text-transform:uppercase;color:#888;font-weight:700;letter-spacing:0.5px;margin-bottom:3px">PROPOSAL TITLE / SCOPE</div>
+            <div style="font-weight:700;font-size:13px;color:#1a1a1a" id="qdmDocScopeTitle">Video Production Proposal</div>
+            <div style="color:#666;margin-top:2px;font-size:11px">Production, Editing, Color Grading &amp; Deliverables</div>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div id="qdmItemsContainer" style="margin-bottom:16px">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Summary & Scope Notes -->
+        <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:20px;padding-top:12px;border-top:1px solid #eee;align-items:start">
+          <div>
+            <div style="font-size:10.5px;text-transform:uppercase;color:#888;font-weight:700;letter-spacing:0.5px;margin-bottom:4px">SCOPE BREAKDOWN &amp; PRODUCTION NOTES</div>
+            <div id="qdmNotesBox" style="font-size:11.5px;color:#444;line-height:1.5;background:#f9f9fa;border:1px solid #eee;border-radius:6px;padding:10px">
+              Scope notes: Full production includes filming gear, lighting kit, sound recording, editing &amp; color grading.
+            </div>
+          </div>
+          <div style="text-align:right;font-size:12.5px;line-height:1.8">
+            <div style="display:flex;justify-content:space-between;color:#666">
+              <span>Subtotal:</span>
+              <span class="mono" id="qdmDocSubtotal">KES 0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:#666" id="qdmDocDiscountRow">
+              <span>Discount:</span>
+              <span class="mono" id="qdmDocDiscount" style="color:#C52523">- KES 0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;color:#666">
+              <span>VAT (0% Exempt):</span>
+              <span class="mono">KES 0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#1a1a1a;border-top:2px solid #1a1a1a;padding-top:6px;margin-top:4px">
+              <span>Total Quotation:</span>
+              <span class="mono" id="qdmDocTotal" style="color:#C52523">KES 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms Footer -->
+        <div style="margin-top:20px;padding-top:12px;border-top:1px dashed #ddd;font-size:10.5px;color:#777;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div>
+            <b>Payment Milestone:</b> 60% Deposit on Project Kickoff · 40% upon Final Master Delivery.
+          </div>
+          <div style="font-style:italic">
+            Authorized by Jeota Media Production Department
+          </div>
+        </div>
       </div>
 
       <div style="font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;justify-content:space-between">
@@ -2922,39 +3008,203 @@
 <!-- I. Upgrade Quote to Official Invoice Dialog -->
 <div class="modal" id="upgradeQuoteModal" role="dialog" aria-modal="true" aria-labelledby="upgQuoteTitle">
   <div class="mbg" data-close="upgradeQuoteModal"></div>
-  <div class="mbox" style="max-width:480px">
+  <div class="mbox" style="max-width:500px">
     <button class="mclose" data-close="upgradeQuoteModal" title="Close" aria-label="Close modal">&times;</button>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <span class="badge" style="background:rgba(197,37,35,0.12);color:var(--red);font-weight:700">NEGOTIATION WON</span>
+      <span class="badge" style="background:rgba(197,37,35,0.12);color:var(--red);font-weight:700">INVOICE GENERATION</span>
     </div>
-    <h3 id="upgQuoteTitle">Upgrade Quote to Invoice</h3>
-    <p class="msub">Convert this accepted quotation into an official invoice in JMOS.</p>
+    <h3 id="upgQuoteTitle">Generate Invoice from Quotation</h3>
+    <p class="msub">Convert this approved quote into an official invoice. You can preview the invoice PDF before dispatching it to the client.</p>
 
     <input type="hidden" id="upgQuoteId">
     
     <div class="field">
-      <label for="upgInvoiceType">Invoice Milestone / Type</label>
+      <label for="upgInvoiceType">Invoice Milestone / Billing Type</label>
       <select id="upgInvoiceType" onchange="window.onUpgTypeChange(this.value)">
-        <option value="Deposit 60%">Deposit 60% (Recommended kickoff)</option>
-        <option value="Full Payment 100%">Full Payment 100%</option>
-        <option value="Milestone 50%">Milestone 50%</option>
+        <option value="Deposit 60%">Deposit 60% (Standard Project Kickoff)</option>
+        <option value="Full Payment 100%">Full Payment 100% (Complete Settlement)</option>
+        <option value="Milestone 50%">Milestone 50% (Midway Progress)</option>
+        <option value="Final Balance 40%">Final Balance 40% (Project Completion)</option>
         <option value="Custom">Custom Negotiated Amount</option>
       </select>
     </div>
 
     <div class="field">
       <label for="upgAmount">Invoice Amount (KES) *</label>
-      <input id="upgAmount" type="number" required>
+      <input id="upgAmount" type="number" required placeholder="KES amount">
     </div>
 
     <div class="field">
-      <label for="upgDueDate">Due Date *</label>
+      <label for="upgDueDate">Payment Due Date *</label>
       <input id="upgDueDate" type="date" required autocomplete="off" style="cursor:pointer" onclick="this.showPicker && this.showPicker()">
     </div>
 
     <div class="mfoot">
       <button type="button" class="btn" data-close="upgradeQuoteModal">Cancel</button>
-      <button type="button" class="btn primary" id="upgSubmitBtn" onclick="window.submitUpgradeQuoteToInvoice()" style="background:var(--red);border-color:var(--red);font-weight:700">Convert to Invoice Now</button>
+      <button type="button" class="btn primary" id="upgSubmitBtn" onclick="window.submitUpgradeQuoteToInvoice()" style="background:var(--red);border-color:var(--red);font-weight:700">
+        Generate Invoice &amp; Preview PDF ➔
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- I2. Commercial & Tax Invoice Detailed Preview & PDF Generation Modal -->
+<div class="modal" id="invoiceDetailModal" role="dialog" aria-modal="true" aria-labelledby="idmTitle">
+  <div class="mbg" data-close="invoiceDetailModal"></div>
+  <div class="mbox workspace-modal" style="max-width:820px">
+    <div class="workspace-cover-banner" style="background:linear-gradient(135deg, #050507 0%, #121316 28%, #5a0c0b 68%, #C52523 100%);padding:24px 32px;color:#fff;display:flex;flex-direction:column;justify-content:center">
+      <button class="mclose" data-close="invoiceDetailModal" title="Close" aria-label="Close modal" style="top:12px;right:14px;background:rgba(0,0,0,0.45);color:#fff;border:none">&times;</button>
+      <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;opacity:0.85;font-weight:700">JEOTA MEDIA · COMMERCIAL &amp; TAX INVOICE</div>
+      <h3 id="idmTitle" style="margin:4px 0 0;font-size:24px;color:#fff;font-family:'Poppins',sans-serif">Invoice JM-0146</h3>
+      <div style="font-size:12.5px;opacity:0.9;margin-top:4px" id="idmSubtitle">Billed to Aquila · Deposit 60%</div>
+    </div>
+
+    <div class="workspace-modal-body" style="padding:28px 36px">
+      <!-- Quick Dispatch & Action Bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="badge" id="idmStatusBadge" style="background:var(--panel-2);color:var(--muted);font-weight:700">Sent</span>
+          <span class="badge" id="idmEtimsBadge" style="display:none;background:var(--green-soft);color:var(--green);font-weight:700">✓ eTIMS Compliant</span>
+          <span class="mono" id="idmTotalBadge" style="font-size:16px;font-weight:700;color:var(--ink)">KES 0</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn primary" onclick="window.printInvoicePdf()" style="font-size:11.5px;padding:6px 13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+            Print / Save PDF
+          </button>
+          <button type="button" class="btn" id="idmSendEmailBtn" onclick="window.dispatchInvoiceEmail()" style="font-size:11.5px;padding:6px 13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Send Email
+          </button>
+          <button type="button" class="btn" id="idmSendWhatsAppBtn" onclick="window.dispatchInvoiceWhatsApp()" style="font-size:11.5px;padding:6px 13px;background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600;display:inline-flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>
+            Send WhatsApp
+          </button>
+          <button type="button" class="btn" id="idmPayBtn" onclick="window.recordInvoicePaymentFromModal()" style="font-size:11.5px;padding:6px 12px;background:var(--green-soft);color:var(--green);border-color:rgba(19,115,51,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Record Payment
+          </button>
+          <button type="button" class="btn" onclick="window.openEditInvoiceModalFromDetail()" style="font-size:11.5px;padding:6px 10px" title="Edit invoice details">
+            <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Edit
+          </button>
+        </div>
+      </div>
+
+      <input type="hidden" id="idmInvoiceId">
+
+      <!-- Printable Invoice Document Container -->
+      <div id="printableInvoiceDoc" class="printable-invoice-container" style="background:#fff;color:#1a1a1a;border:1px solid var(--line);border-radius:10px;padding:24px;margin-bottom:16px">
+        <!-- Document Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2px solid #1a1a1a;margin-bottom:18px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:900;font-size:22px;letter-spacing:-0.5px;color:#C52523;font-family:'Poppins',sans-serif">JEOTA MEDIA</span>
+            </div>
+            <div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.4">
+              Jeota Media Limited · Creative Agency &amp; Production House<br>
+              Nairobi, Kenya · info@jeotamedia.co.ke · +254 712 345 678<br>
+              <b>KRA PIN:</b> P052209707D · eTIMS Registered
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:20px;font-weight:800;color:#1a1a1a;letter-spacing:1px">INVOICE</div>
+            <div class="mono" style="font-size:14px;font-weight:700;color:#C52523;margin-top:2px" id="idmDocInvoiceNo">JM-0146</div>
+            <div style="font-size:11.5px;color:#555;margin-top:4px">
+              <b>Date:</b> <span id="idmDocIssueDate">22 Sep 2026</span><br>
+              <b>Due Date:</b> <span id="idmDocDueDate">15 Sep 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Billed To & Remit Summary Box -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;background:#f8fafc;padding:14px 18px;border-radius:8px;border:1px solid #e2e8f0">
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;font-weight:700;color:#64748b;letter-spacing:0.5px;margin-bottom:4px">Billed To:</div>
+            <div style="font-size:14px;font-weight:700;color:#0f172a" id="idmDocClientName">Aquila</div>
+            <div style="font-size:12px;color:#475569" id="idmDocClientContact">Client Account · Commercial Deliverables</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;text-transform:uppercase;font-weight:700;color:#64748b;letter-spacing:0.5px;margin-bottom:4px">Payment Status:</div>
+            <div style="font-size:13px;font-weight:700" id="idmDocPaymentStatus">Sent (Unpaid)</div>
+            <div style="font-size:12px;color:#475569" id="idmDocPaymentMethod">Method: Bank Transfer / M-Pesa</div>
+          </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div style="margin-bottom:18px;overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px">
+            <thead>
+              <tr style="background:#0f172a;color:#fff;text-align:left">
+                <th style="padding:9px 12px;border-top-left-radius:6px">Item / Description</th>
+                <th style="padding:9px 12px;text-align:center">Milestone / Scope</th>
+                <th style="padding:9px 12px;text-align:right">Qty</th>
+                <th style="padding:9px 12px;text-align:right;border-top-right-radius:6px">Amount (KES)</th>
+              </tr>
+            </thead>
+            <tbody id="idmLineItemsTableBody">
+              <tr style="border-bottom:1px solid #e2e8f0">
+                <td style="padding:10px 12px;font-weight:600;color:#0f172a" id="idmItemDesc">Production Deposit 60% — Aquila</td>
+                <td style="padding:10px 12px;text-align:center;color:#475569" id="idmItemMilestone">Deposit 60%</td>
+                <td style="padding:10px 12px;text-align:right;color:#475569">1</td>
+                <td class="mono" style="padding:10px 12px;text-align:right;font-weight:700;color:#0f172a" id="idmItemAmount">KES 667,788</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="border-top:2px solid #0f172a">
+                <td colspan="3" style="padding:10px 12px;text-align:right;font-weight:600;font-size:13px;color:#475569">Subtotal:</td>
+                <td class="mono" style="padding:10px 12px;text-align:right;font-weight:700;font-size:13px;color:#0f172a" id="idmDocSubtotal">KES 667,788</td>
+              </tr>
+              <tr>
+                <td colspan="3" style="padding:6px 12px;text-align:right;font-size:12px;color:#64748b">eTIMS Tax / VAT:</td>
+                <td class="mono" style="padding:6px 12px;text-align:right;font-size:12px;color:#64748b" id="idmDocTax">KES 0.00 (Exempt/Direct)</td>
+              </tr>
+              <tr style="background:#fef2f2;color:#C52523">
+                <td colspan="3" style="padding:12px 12px;text-align:right;font-weight:800;font-size:15px">TOTAL DUE:</td>
+                <td class="mono" style="padding:12px 12px;text-align:right;font-weight:900;font-size:16px" id="idmDocGrandTotal">KES 667,788</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Official Remittance & Banking Box -->
+        <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:8px;padding:14px 18px;margin-bottom:16px">
+          <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#C52523" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            HOW TO PAY (Official Remittance Details)
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:12px;color:#334155">
+            <div>
+              <div style="font-weight:700;color:#0f172a;margin-bottom:2px">Option 1: Lipa na M-Pesa (Paybill)</div>
+              <div>• <b>Paybill Business Number:</b> <span class="mono" style="font-weight:700">880100</span></div>
+              <div>• <b>Account Number:</b> <span class="mono" style="font-weight:700;color:#C52523" id="idmDocMpesaAcc">JM-0146</span></div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:#0f172a;margin-bottom:2px">Option 2: Electronic Bank Transfer (EFT / RTGS)</div>
+              <div>• <b>Bank:</b> NCBA Bank Kenya · Branch: Upper Hill</div>
+              <div>• <b>Account Name:</b> Jeota Media Limited</div>
+              <div>• <b>Account No:</b> <span class="mono" style="font-weight:700">1002349871</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terms & Verification Sign-off -->
+        <div style="font-size:11px;color:#64748b;line-height:1.5;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <b>Payment Terms:</b> Payment is due strictly upon the specified due date.<br>
+            For billing inquiries or KRA eTIMS invoice certificates, contact <b>finance@jeotamedia.co.ke</b>.
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px;text-transform:uppercase;color:#94a3b8">Authorized Signatory</div>
+            <div style="font-weight:700;color:#0f172a">Jeota Media Finance Operations</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;justify-content:space-between">
+        <span id="idmFooterTimestamp">System generated commercial invoice</span>
+        <button type="button" class="linkbtn" style="color:var(--red)" onclick="window.deleteActiveInvoiceFromDetail()">Delete Invoice</button>
+      </div>
     </div>
   </div>
 </div>

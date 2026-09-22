@@ -59,7 +59,7 @@
         <div class="v" style="color:var(--red)" id="finExpenses"></div>
       </div>
       <div class="fstat">
-        <div class="l">Profit (received − spent)</div>
+        <div class="l">Profit (received − spent + 5% WHT)</div>
         <div class="v" id="finProfit"></div>
       </div>
       <div class="fstat">
@@ -79,9 +79,9 @@
         <div>
           <div style="display:flex;align-items:center;gap:8px">
             <h3 style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;margin:0">Connect Gava · KRA eTIMS &amp; Tax Compliance</h3>
-            <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:10.5px">PIN: P051782390X (Active)</span>
+            <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:10.5px">PIN: P052209707D (Active)</span>
           </div>
-          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Live KRA tracking: direct expenses ETR deductions, 0% VAT service exemption, &amp; 5% WHT compliance.</p>
+          <p style="font-size:12px;color:var(--muted);margin:2px 0 0 0">Live KRA tracking: direct expenses ETR deductions, 0% VAT service exemption, &amp; 5% exclusive WHT compliance.</p>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -110,9 +110,9 @@
         <div class="sub" id="kraInputVatClaim">Tax Deductible</div>
       </div>
       <div class="kpi" style="padding:14px">
-        <div class="lbl">Withholding Tax (5% WHT)</div>
-        <div class="val" id="kraNetTax" style="color:var(--blue);font-size:17px">KES 0</div>
-        <div class="sub">Tracked on service fees</div>
+        <div class="lbl">Exclusive WHT (5% Added)</div>
+        <div class="val" id="kraNetTax" style="color:var(--green);font-size:17px">+ KES 0</div>
+        <div class="sub">Added to total profit</div>
       </div>
     </div>
   </div>

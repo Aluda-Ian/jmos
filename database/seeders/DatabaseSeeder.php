@@ -92,8 +92,8 @@ class DatabaseSeeder extends Seeder
             ['group' => 'general', 'key' => 'timezone', 'value' => 'Africa/Nairobi', 'is_secret' => false],
 
             // Connect Gava (KRA / eTIMS & iTax) Integration
-            ['group' => 'kra', 'key' => 'kra_pin', 'value' => 'P051782390X', 'is_secret' => false],
-            ['group' => 'kra', 'key' => 'kra_taxpayer_name', 'value' => 'Jeota Media Ltd', 'is_secret' => false],
+            ['group' => 'kra', 'key' => 'kra_pin', 'value' => 'P052209707D', 'is_secret' => false],
+            ['group' => 'kra', 'key' => 'kra_taxpayer_name', 'value' => 'Jeota Media Limited', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_etims_branch_id', 'value' => '00', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_etims_device_id', 'value' => 'JMOS-ETIMS-01', 'is_secret' => false],
             ['group' => 'kra', 'key' => 'kra_vat_rate', 'value' => '0', 'is_secret' => false],

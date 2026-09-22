@@ -1,17 +1,37 @@
 <?php
 
-$zipFile = __DIR__.'/../jmos-latest.zip';
-if (file_exists($zipFile)) {
-    @unlink($zipFile);
+$baseDir = realpath(__DIR__.'/..');
+
+// 1. Resolve Application Version
+$version = 'v2.5.0';
+$appConfig = @file_get_contents($baseDir.'/config/app.php');
+if ($appConfig && preg_match("/'version'\s*=>\s*env\(['\"]APP_VERSION['\"],\s*['\"]([^'\"]+)['\"]\)/", $appConfig, $matches)) {
+    $version = trim($matches[1]);
+}
+
+if (isset($argv[1]) && ! empty($argv[1])) {
+    $version = trim($argv[1]);
+}
+
+if (! str_starts_with($version, 'v')) {
+    $version = 'v'.$version;
+}
+
+$versionedZipFile = $baseDir."/jmos-{$version}.zip";
+$latestZipFile = $baseDir.'/jmos-latest.zip';
+
+if (file_exists($versionedZipFile)) {
+    @unlink($versionedZipFile);
+}
+if (file_exists($latestZipFile)) {
+    @unlink($latestZipFile);
 }
 
 $zip = new ZipArchive;
-if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-    echo "Failed to create zip archive.\n";
+if ($zip->open($versionedZipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+    echo "Failed to create zip archive: {$versionedZipFile}\n";
     exit(1);
 }
-
-$baseDir = realpath(__DIR__.'/..');
 
 $folders = ['app', 'bootstrap', 'config', 'database', 'public', 'resources', 'routes', 'storage'];
 foreach ($folders as $folder) {
@@ -58,4 +78,10 @@ foreach ($standaloneFiles as $f) {
 }
 
 $zip->close();
-echo 'JMOS archive created successfully: '.filesize($zipFile)." bytes\n";
+
+// Also copy to jmos-latest.zip for compatibility
+@copy($versionedZipFile, $latestZipFile);
+
+echo "JMOS Versioned Archive Created:\n";
+echo "  - File: jmos-{$version}.zip (".filesize($versionedZipFile)." bytes)\n";
+echo '  - File: jmos-latest.zip ('.filesize($latestZipFile)." bytes)\n";

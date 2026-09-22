@@ -299,4 +299,56 @@ class BackendAuditAndUpgradeTest extends TestCase
             $response->assertViewIs('jmos');
         }
     }
+
+    public function test_quote_approve_edit_and_upgrade_to_invoice(): void
+    {
+        $user = User::where('role', 'owner')->first();
+        $token = $user->createToken('test')->plainTextToken;
+
+        // 1. Create a draft quote
+        $createRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/quotes', [
+                'recipient_name' => 'Acme Corporation',
+                'recipient_email' => 'finance@acme.com',
+                'title' => 'Commercial Video Campaign',
+                'total_amount' => 250000,
+                'items' => [
+                    ['description' => '4K Shoot Day 1', 'quantity' => 1, 'rate' => 150000, 'amount' => 150000],
+                    ['description' => 'Color Grading & Sound', 'quantity' => 1, 'rate' => 100000, 'amount' => 100000],
+                ],
+            ]);
+
+        $createRes->assertStatus(201);
+        $quoteId = $createRes->json('data.id');
+
+        // 2. Edit the quote
+        $editRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->putJson("/api/quotes/{$quoteId}", [
+                'title' => 'Commercial Video Campaign (Revised Scope)',
+                'total_amount' => 300000,
+            ]);
+
+        $editRes->assertStatus(200);
+        $this->assertEquals('Commercial Video Campaign (Revised Scope)', $editRes->json('data.title'));
+
+        // 3. Approve the quote
+        $approveRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/quotes/{$quoteId}/approve");
+
+        $approveRes->assertStatus(200);
+        $this->assertEquals('Accepted', $approveRes->json('data.status'));
+
+        // 4. Upgrade approved quote to invoice
+        $upgradeRes = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/quotes/{$quoteId}/upgrade-invoice", [
+                'invoice_type' => 'Deposit 60%',
+                'amount' => 180000,
+                'due_date' => '2026-10-01',
+            ]);
+
+        $upgradeRes->assertStatus(200);
+        $this->assertEquals('Invoiced', $upgradeRes->json('quote.status'));
+        $this->assertNotNull($upgradeRes->json('invoice.id'));
+        $this->assertEquals(180000, $upgradeRes->json('invoice.amount'));
+    }
 }

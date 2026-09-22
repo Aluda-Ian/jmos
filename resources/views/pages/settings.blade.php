@@ -773,7 +773,7 @@
         <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
             <b style="font-size:14px;color:var(--ink)">Kenya Revenue Authority (KRA) eTIMS &amp; iTax Setup Guide</b>
-            <span class="badge" style="background:var(--green-soft);color:var(--green)">PIN: P051782390X Verified</span>
+            <span class="badge" style="background:var(--green-soft);color:var(--green)">PIN: P052209707D Verified</span>
           </div>
           <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
             JMOS integrates with the Government of Kenya (GoK) eTIMS Tax Compliance Engine via the <b>Connect Gava</b> middleware. This provides automated electronic tax invoice signing, 0% VAT exemption handling for professional media production, direct project expenses ETR validation, and 5% Withholding Tax (WHT) ledger deductions.
@@ -782,7 +782,7 @@
           <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px">
             <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
               <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">1. Entity Registration &amp; PIN</div>
-              <div style="font-size:12px;color:var(--ink)">Corporate PIN: <code>P051782390X</code> (Jeota Media Ltd). Ensure PIN status is Active on KRA iTax portal.</div>
+              <div style="font-size:12px;color:var(--ink)">Corporate PIN: <code>P052209707D</code> (Jeota Media Limited). Ensure PIN status is Active on KRA iTax portal.</div>
             </div>
             <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
               <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">2. eTIMS OSCU / VSCU Device ID</div>
@@ -801,7 +801,7 @@
           <div style="background:#0f172a;color:#f8fafc;padding:12px 14px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:11.5px;overflow-x:auto;line-height:1.5">
             <div style="color:#94a3b8">// KRA eTIMS Transmission Payload Example (POST /api/invoices/{id})</div>
             <div>{</div>
-            <div style="padding-left:16px"><span style="color:#38bdf8">"taxpayer_pin"</span>: <span style="color:#a5f3fc">"P051782390X"</span>,</div>
+            <div style="padding-left:16px"><span style="color:#38bdf8">"taxpayer_pin"</span>: <span style="color:#a5f3fc">"P052209707D"</span>,</div>
             <div style="padding-left:16px"><span style="color:#38bdf8">"branch_id"</span>: <span style="color:#a5f3fc">"00"</span>,</div>
             <div style="padding-left:16px"><span style="color:#38bdf8">"invoice_number"</span>: <span style="color:#a5f3fc">"INV-2026-001"</span>,</div>
             <div style="padding-left:16px"><span style="color:#38bdf8">"vat_rate_pct"</span>: <span style="color:#f472b6">0.0</span>,</div>

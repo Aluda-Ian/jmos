@@ -59,6 +59,7 @@ Route::apiResource('quotes', QuoteController::class);
 Route::post('quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
 Route::get('quotes/{quote}/whatsapp', [QuoteController::class, 'getWhatsAppLink']);
 Route::post('quotes/{quote}/upgrade-invoice', [QuoteController::class, 'upgradeToInvoice']);
+Route::post('quotes/{quote}/approve', [QuoteController::class, 'approve']);
 
 // Documents Repository (Contracts, Proposals, Brand Guides, Grants)
 Route::apiResource('documents', DocumentController::class);
@@ -87,6 +88,7 @@ Route::get('invoices/next-number', [InvoiceController::class, 'nextNumber']);
 Route::apiResource('invoices', InvoiceController::class);
 Route::post('invoices/{invoice}/pay', [InvoiceController::class, 'pay']);
 Route::post('invoices/{invoice}/send-reminder', [InvoiceController::class, 'sendReminder']);
+Route::get('invoices/{invoice}/whatsapp', [InvoiceController::class, 'getWhatsAppLink']);
 
 Route::post('expenses/upload-receipt', [ExpenseController::class, 'uploadReceipt']);
 Route::apiResource('expenses', ExpenseController::class);

@@ -1508,11 +1508,14 @@ function initModals() {
           due_date: document.getElementById('niDue')?.value.trim() || 'Sep 30'
         };
 
+        let savedInv = null;
         if (isEdit) {
-          await JMOS_API.put(`/invoices/${editId}`, payload);
+          const res = await JMOS_API.put(`/invoices/${editId}`, payload);
+          savedInv = res.data || res;
           showToast('Invoice updated', `${no} for ${client} (${fmt(amt)})`);
         } else {
-          await JMOS_API.post('/invoices', payload);
+          const res = await JMOS_API.post('/invoices', payload);
+          savedInv = res.data || res;
           showToast('Invoice issued', `${no} for ${client} (${fmt(amt)})`);
         }
 
@@ -1521,6 +1524,10 @@ function initModals() {
         renderAllViews();
         if (typeof recomputeFinance === 'function') {
           await recomputeFinance();
+        }
+
+        if (savedInv && savedInv.id && typeof window.openInvoiceDetailModal === 'function') {
+          window.openInvoiceDetailModal(savedInv.id);
         }
       } catch (err) {
         showToast(isEdit ? 'Failed to update invoice' : 'Failed to issue invoice', err.message, true);
@@ -1930,10 +1937,238 @@ window.triggerCleanupClients = async function() {
   });
 };
 
-// 9. Invoice Edit & Delete Handlers
-window.openEditInvoiceModal = function(invoiceId) {
-  const list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
-  const inv = list.find(x => String(x.id) === String(invoiceId));
+// 9. Invoice Detail Preview, PDF Generation & Edit/Delete Handlers
+window.activeInvoiceData = null;
+
+window.openInvoiceDetailModal = async function(invoiceId) {
+  let list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
+  let inv = list.find(x => String(x.id) === String(invoiceId) || (x.invoice_no && String(x.invoice_no).toLowerCase() === String(invoiceId).toLowerCase()));
+
+  if (!inv) {
+    try {
+      const res = await JMOS_API.get(`/invoices/${invoiceId}`);
+      inv = res.data || res;
+    } catch (_) {}
+  }
+
+  if (!inv) {
+    showToast('Invoice not found', 'Unable to locate invoice in database', true);
+    return;
+  }
+
+  window.activeInvoiceData = inv;
+
+  const idmInvId = document.getElementById('idmInvoiceId');
+  if (idmInvId) idmInvId.value = inv.id;
+
+  const isPaid = (inv.status || '').toLowerCase() === 'paid';
+  const isOverdue = (inv.status || '').toLowerCase() === 'overdue';
+  const amountFormatted = Number(inv.amount || 0).toLocaleString();
+
+  // Find Client Contact info
+  const clients = (window.JMOS_STATE && JMOS_STATE.clients) ? JMOS_STATE.clients : [];
+  const clientObj = clients.find(c => (c.client_name || c.name || '').toLowerCase() === (inv.client || '').toLowerCase());
+  const clientContact = clientObj
+    ? `${clientObj.email || 'Email on file'} · ${clientObj.phone || 'Phone on file'}`
+    : 'Client Account · Commercial Deliverables';
+
+  const issueDateStr = inv.created_at
+    ? new Date(inv.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Update Modal Header & Badges
+  const titleEl = document.getElementById('idmTitle');
+  if (titleEl) titleEl.textContent = `Invoice ${inv.invoice_no}`;
+
+  const subEl = document.getElementById('idmSubtitle');
+  if (subEl) subEl.textContent = `Billed to ${inv.client} · ${inv.type || 'Commercial Invoice'}`;
+
+  const totalBadge = document.getElementById('idmTotalBadge');
+  if (totalBadge) totalBadge.textContent = `KES ${amountFormatted}`;
+
+  const statusBadge = document.getElementById('idmStatusBadge');
+  if (statusBadge) {
+    statusBadge.textContent = (inv.status || 'Sent').toUpperCase();
+    statusBadge.className = 'badge ' + (isPaid ? 'tint-green' : isOverdue ? 'tint-red' : 'tint-amber');
+    statusBadge.style.background = isPaid ? 'var(--green-soft)' : isOverdue ? 'var(--red-soft)' : 'var(--amber-soft)';
+    statusBadge.style.color = isPaid ? 'var(--green)' : isOverdue ? 'var(--red)' : 'var(--amber)';
+  }
+
+  const etimsBadge = document.getElementById('idmEtimsBadge');
+  if (etimsBadge) {
+    etimsBadge.style.display = inv.etims ? 'inline-flex' : 'none';
+  }
+
+  const payBtn = document.getElementById('idmPayBtn');
+  if (payBtn) {
+    payBtn.style.display = isPaid ? 'none' : 'inline-flex';
+  }
+
+  // Populate Printable Document
+  const docNo = document.getElementById('idmDocInvoiceNo');
+  if (docNo) docNo.textContent = inv.invoice_no;
+
+  const docIssue = document.getElementById('idmDocIssueDate');
+  if (docIssue) docIssue.textContent = issueDateStr;
+
+  const docDue = document.getElementById('idmDocDueDate');
+  if (docDue) docDue.textContent = inv.due_date || 'Upon Receipt';
+
+  const docClient = document.getElementById('idmDocClientName');
+  if (docClient) docClient.textContent = inv.client;
+
+  const docContact = document.getElementById('idmDocClientContact');
+  if (docContact) docContact.textContent = clientContact;
+
+  const docStatus = document.getElementById('idmDocPaymentStatus');
+  if (docStatus) {
+    docStatus.textContent = isPaid ? '✓ Paid & Settled' : isOverdue ? 'Overdue (Pending)' : 'Sent (Unpaid)';
+    docStatus.style.color = isPaid ? '#16a34a' : isOverdue ? '#dc2626' : '#d97706';
+  }
+
+  const docMethod = document.getElementById('idmDocPaymentMethod');
+  if (docMethod) docMethod.textContent = `Payment Mode: ${inv.method || 'Bank Transfer / M-Pesa'}`;
+
+  const docMpesaAcc = document.getElementById('idmDocMpesaAcc');
+  if (docMpesaAcc) docMpesaAcc.textContent = inv.invoice_no;
+
+  const itemDesc = document.getElementById('idmItemDesc');
+  if (itemDesc) itemDesc.textContent = `${inv.type || 'Commercial Services'} — ${inv.client}`;
+
+  const itemMilestone = document.getElementById('idmItemMilestone');
+  if (itemMilestone) itemMilestone.textContent = inv.type || 'Deliverable';
+
+  const itemAmt = document.getElementById('idmItemAmount');
+  if (itemAmt) itemAmt.textContent = `KES ${amountFormatted}`;
+
+  const docSub = document.getElementById('idmDocSubtotal');
+  if (docSub) docSub.textContent = `KES ${amountFormatted}`;
+
+  const docTax = document.getElementById('idmDocTax');
+  if (docTax) docTax.textContent = inv.etims ? 'KES 0.00 (eTIMS Direct Filing)' : 'KES 0.00 (Exempt/Direct)';
+
+  const docGrand = document.getElementById('idmDocGrandTotal');
+  if (docGrand) docGrand.textContent = `KES ${amountFormatted}`;
+
+  const footerTime = document.getElementById('idmFooterTimestamp');
+  if (footerTime) footerTime.textContent = `Generated on ${issueDateStr} · JMOS Financial Engine`;
+
+  openModal('invoiceDetailModal');
+};
+
+window.printInvoicePdf = function() {
+  window.print();
+};
+
+window.dispatchInvoiceEmail = async function() {
+  const inv = window.activeInvoiceData;
+  if (!inv) return;
+
+  const clients = (window.JMOS_STATE && JMOS_STATE.clients) ? JMOS_STATE.clients : [];
+  const clientObj = clients.find(c => (c.client_name || c.name || '').toLowerCase() === (inv.client || '').toLowerCase());
+  let targetEmail = clientObj?.email || '';
+
+  if (!targetEmail || !targetEmail.includes('@')) {
+    const promptEmail = prompt(`Enter email address for ${inv.client}:`, '');
+    if (promptEmail && promptEmail.includes('@')) {
+      targetEmail = promptEmail.trim();
+    } else {
+      showToast('Email Required', 'A valid email address is required to dispatch invoice', true);
+      return;
+    }
+  }
+
+  const confirmed = await window.showConfirmDialog({
+    title: 'Dispatch Invoice Email?',
+    subtitle: `Invoice #${inv.invoice_no}`,
+    type: 'info',
+    confirmText: 'Send Invoice Email',
+    message: `Send official commercial invoice <b>${escHtml(inv.invoice_no)}</b> (KES ${Number(inv.amount || 0).toLocaleString()}) directly to <b>${escHtml(targetEmail)}</b>?`,
+    bullets: [
+      `Client: ${inv.client}`,
+      `Invoice Amount: KES ${Number(inv.amount || 0).toLocaleString()}`,
+      `M-Pesa Paybill: 880100 · Account: ${inv.invoice_no}`,
+      'Official branded HTML invoice notification with payment remittance details will be delivered.'
+    ]
+  });
+  if (!confirmed) return;
+
+  try {
+    const res = await JMOS_API.post(`/invoices/${inv.id}/send-reminder`, { email: targetEmail });
+    showToast('Invoice Dispatched', res.message || `Invoice sent to ${targetEmail} 📧`);
+  } catch (err) {
+    showToast('Email Error', err.message, true);
+  }
+};
+
+window.dispatchInvoiceWhatsApp = async function() {
+  const inv = window.activeInvoiceData;
+  if (!inv) return;
+
+  try {
+    const res = await JMOS_API.get(`/invoices/${inv.id}/whatsapp`);
+    if (res && res.whatsapp_url) {
+      window.open(res.whatsapp_url, '_blank');
+      showToast('WhatsApp Opened', 'Invoice summary & payment instructions prepared! 💬');
+    } else {
+      showToast('WhatsApp Notice', 'Could not prepare WhatsApp message link', true);
+    }
+  } catch (err) {
+    showToast('WhatsApp Error', err.message, true);
+  }
+};
+
+window.recordInvoicePaymentFromModal = async function() {
+  const inv = window.activeInvoiceData;
+  if (!inv) return;
+
+  try {
+    const res = await JMOS_API.post(`/invoices/${inv.id}/pay`, { method: 'M-Pesa' });
+    showToast('Payment Recorded', res.message || `Invoice ${inv.invoice_no} marked as paid`);
+
+    inv.status = 'Paid';
+    window.activeInvoiceData = inv;
+
+    await JMOS_API.fetchAll();
+    renderAllViews();
+    if (typeof recomputeFinance === 'function') {
+      await recomputeFinance();
+    }
+
+    // Refresh active modal display
+    window.openInvoiceDetailModal(inv.id);
+  } catch (err) {
+    showToast('Payment Record Failed', err.message, true);
+  }
+};
+
+window.openEditInvoiceModalFromDetail = function() {
+  const inv = window.activeInvoiceData;
+  if (inv) {
+    closeModal('invoiceDetailModal');
+    window.openEditInvoiceModal(inv.id);
+  }
+};
+
+window.deleteActiveInvoiceFromDetail = function() {
+  const inv = window.activeInvoiceData;
+  if (inv) {
+    closeModal('invoiceDetailModal');
+    window.deleteInvoice(inv.id, inv.invoice_no);
+  }
+};
+
+window.openEditInvoiceModal = async function(invoiceId) {
+  let list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
+  let inv = list.find(x => String(x.id) === String(invoiceId) || (x.invoice_no && String(x.invoice_no).toLowerCase() === String(invoiceId).toLowerCase()));
+
+  if (!inv) {
+    try {
+      const res = await JMOS_API.get(`/invoices/${invoiceId}`);
+      inv = res.data || res;
+    } catch (_) {}
+  }
+
   if (!inv) {
     showToast('Invoice not found', 'Unable to locate invoice in database', true);
     return;
@@ -2002,8 +2237,16 @@ window.openEditInvoiceModal = function(invoiceId) {
 };
 
 window.deleteInvoice = async function(id, invoiceNo) {
-  const list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
-  const inv = list.find(x => String(x.id) === String(id));
+  let list = (window.JMOS_STATE && JMOS_STATE.invoices) ? JMOS_STATE.invoices : [];
+  let inv = list.find(x => String(x.id) === String(id) || (x.invoice_no && String(x.invoice_no).toLowerCase() === String(id).toLowerCase()));
+
+  if (!inv) {
+    try {
+      const res = await JMOS_API.get(`/invoices/${id}`);
+      inv = res.data || res;
+    } catch (_) {}
+  }
+
   const no = invoiceNo || (inv ? inv.invoice_no : 'this invoice');
   const details = inv ? ` (${inv.client} — ${fmt(inv.amount)})` : '';
 
@@ -2019,6 +2262,7 @@ window.deleteInvoice = async function(id, invoiceNo) {
   try {
     await JMOS_API.delete(`/invoices/${id}`);
     closeModal('invoiceModal');
+    closeModal('invoiceDetailModal');
     showToast('Invoice deleted', `Invoice ${no} removed from database`);
     await JMOS_API.fetchAll();
     renderAllViews();

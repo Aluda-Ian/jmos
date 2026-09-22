@@ -206,6 +206,18 @@
     const statusRadio = document.querySelector('input[name="leadStatusFilter"]:checked');
     CRM_STATE.filter.status = statusRadio ? statusRadio.value : 'all';
 
+    // Update active class on status pills
+    document.querySelectorAll('input[name="leadStatusFilter"]').forEach(radio => {
+      const pill = radio.closest('.cal-pill');
+      if (pill) {
+        if (radio.checked) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+      }
+    });
+
     const ratingChks = Array.from(document.querySelectorAll('.lead-rating-chk:checked')).map(c => c.value);
     CRM_STATE.filter.ratings = ratingChks;
 
@@ -232,6 +244,17 @@
 
     const allRadio = document.querySelector('input[name="leadStatusFilter"][value="all"]');
     if (allRadio) allRadio.checked = true;
+
+    document.querySelectorAll('input[name="leadStatusFilter"]').forEach(radio => {
+      const pill = radio.closest('.cal-pill');
+      if (pill) {
+        if (radio.checked) {
+          pill.classList.add('active');
+        } else {
+          pill.classList.remove('active');
+        }
+      }
+    });
 
     document.querySelectorAll('.lead-rating-chk').forEach(c => c.checked = false);
 

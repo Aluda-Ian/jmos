@@ -58,6 +58,12 @@
       return this.openCreateModal(leadId, clientId);
     },
 
+    openEditModal: function (id) {
+      if (typeof window.openEditQuoteModal === 'function') {
+        window.openEditQuoteModal(id);
+      }
+    },
+
     viewDetail: function (id) {
       if (typeof window.viewQuoteDetail === 'function') {
         window.viewQuoteDetail(id);
@@ -103,9 +109,13 @@
         const dateStr = q.created_at ? q.created_at.split('T')[0] : '—';
         const st = (q.status || 'draft').toLowerCase();
         let pillClass = 'tint-amber';
-        if (st === 'sent') pillClass = 'tint-blue';
-        if (st === 'accepted' || st === 'invoiced') pillClass = 'tint-green';
-        if (st === 'rejected' || st === 'expired') pillClass = 'tint-red';
+        let statusLabel = 'DRAFT';
+        if (st === 'sent') { pillClass = 'tint-blue'; statusLabel = 'SENT'; }
+        if (st === 'accepted') { pillClass = 'tint-green'; statusLabel = 'APPROVED'; }
+        if (st === 'invoiced') { pillClass = 'tint-green'; statusLabel = 'INVOICED'; }
+        if (st === 'rejected' || st === 'expired' || st === 'declined') { pillClass = 'tint-red'; statusLabel = 'REJECTED'; }
+
+        const canUpgrade = st !== 'invoiced';
 
         return `
           <tr style="cursor:pointer" onclick="window.viewQuoteDetail(${q.id})">
@@ -115,13 +125,18 @@
               <div style="font-size:11px;color:var(--muted)">${recipient}</div>
             </td>
             <td class="mono" style="font-weight:700;color:var(--ink)">KES ${total.toLocaleString()}</td>
-            <td><span class="pill ${pillClass}">${q.status ? q.status.toUpperCase() : 'DRAFT'}</span></td>
+            <td><span class="pill ${pillClass}">${statusLabel}</span></td>
             <td style="font-size:12px;color:var(--muted)">${q.validity_days ? q.validity_days + ' days' : '14 days'}</td>
             <td style="font-size:12px;color:var(--muted)">${dateStr}</td>
             <td style="text-align:right" onclick="event.stopPropagation()">
-              <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
-                <button type="button" class="btn small" onclick="window.viewQuoteDetail(${q.id})" style="font-size:11px;padding:3px 8px">View</button>
-                <button type="button" class="btn small primary" onclick="window.openUpgradeQuoteModalFromRow(${q.id})" style="font-size:11px;padding:3px 8px;background:var(--red);border-color:var(--red)">➔ Invoice</button>
+              <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap">
+                <button type="button" class="btn small" onclick="window.viewQuoteDetail(${q.id})" style="font-size:11px;padding:3px 7px" title="View & Print Quote PDF">PDF / View</button>
+                <button type="button" class="btn small" onclick="window.openEditQuoteModal(${q.id})" style="font-size:11px;padding:3px 7px" title="Edit quotation deliverables">Edit</button>
+                ${canUpgrade ? `
+                  <button type="button" class="btn small primary" onclick="window.openUpgradeQuoteModalFromRow(${q.id})" style="font-size:11px;padding:3px 8px;background:var(--red);border-color:var(--red)" title="Generate official invoice from quote">➔ Invoice</button>
+                ` : `
+                  <button type="button" class="btn small" onclick="if(window.openInvoiceDetailModal && ${q.converted_invoice_id || 'null'}){ window.openInvoiceDetailModal(${q.converted_invoice_id}); }" style="font-size:11px;padding:3px 7px;color:var(--green);border-color:rgba(19,115,51,0.3)" title="View converted invoice">✓ Invoiced</button>
+                `}
               </div>
             </td>
           </tr>
@@ -144,7 +159,7 @@
     tr.className = 'quote-line-row';
     tr.innerHTML = `
       <td style="padding:4px">
-        <input type="text" class="q-item-desc" placeholder="e.g. 4K Commercial Shoot & Drone Coverage" value="${desc}" required style="font-size:12px;padding:5px 8px;width:100%;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+        <input type="text" class="q-item-desc" placeholder="e.g. 4K Commercial Shoot & Drone Coverage" value="${desc.replace(/"/g, '&quot;')}" required style="font-size:12px;padding:5px 8px;width:100%;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
       </td>
       <td style="padding:4px;width:70px">
         <input type="number" class="q-item-qty" min="1" value="${qty}" required oninput="window.calcQuoteTotals()" style="font-size:12px;padding:5px;width:100%;text-align:center;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
@@ -232,7 +247,75 @@
     window.openModal('quoteModal');
   };
 
-  // Submit quote create / update
+  // Open Edit Quote Modal
+  window.openEditQuoteModal = async function (quoteId) {
+    let q = window.JMOS_QUOTES.quotes.find(x => String(x.id) === String(quoteId));
+    if (!q && window.JMOS_QUOTES.activeQuote && String(window.JMOS_QUOTES.activeQuote.id) === String(quoteId)) {
+      q = window.JMOS_QUOTES.activeQuote;
+    }
+
+    if (!q) {
+      try {
+        const token = localStorage.getItem('jmos_api_token');
+        const res = await fetch(`/api/quotes/${quoteId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          q = data.data;
+        }
+      } catch (_) {}
+    }
+
+    if (!q) {
+      if (window.showToast) window.showToast('Error', 'Unable to find quotation to edit', true);
+      return;
+    }
+
+    window.JMOS_QUOTES.activeQuote = q;
+
+    document.getElementById('quoteFormId').value = q.id;
+    document.getElementById('quoteModalTitle').textContent = `Edit Quotation · ${q.quote_number || ('QT-' + q.id)}`;
+    document.getElementById('quoteLeadId').value = q.lead_id || '';
+    document.getElementById('quoteClientId').value = q.client_id || '';
+    document.getElementById('quoteRecipient').value = q.recipient_name || '';
+    document.getElementById('quoteTitle').value = q.title || '';
+    document.getElementById('quoteEmail').value = q.recipient_email || '';
+    document.getElementById('quotePhone').value = q.recipient_phone || '';
+    document.getElementById('quoteValidity').value = q.validity_days || 14;
+    document.getElementById('quoteDiscount').value = q.discount || 0;
+    document.getElementById('quoteNotes').value = q.notes || '';
+
+    const tbody = document.getElementById('quoteItemsTableBody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      const items = Array.isArray(q.items) && q.items.length ? q.items : [
+        { description: q.title || 'Production & Creative Services', quantity: 1, rate: q.total_amount || 150000 }
+      ];
+      items.forEach(it => {
+        window.addQuoteItemRow({
+          description: it.description,
+          quantity: it.quantity,
+          rate: it.rate || it.unit_price
+        });
+      });
+    }
+
+    window.calcQuoteTotals();
+    window.openModal('quoteModal');
+  };
+
+  window.openEditQuoteModalFromDetail = function () {
+    const qid = document.getElementById('qdmQuoteId')?.value;
+    if (qid) {
+      window.closeModal('quoteDetailModal');
+      window.openEditQuoteModal(qid);
+    }
+  };
+
   // Submit quote create / update
   window.submitQuoteForm = async function (dispatchMode = null) {
     const quoteId = document.getElementById('quoteFormId')?.value;
@@ -310,10 +393,11 @@
     };
 
     const saveBtn = document.getElementById('saveQuoteBtn');
-    if (saveBtn) {
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving...';
-    }
+    const saveUpgradeBtn = document.getElementById('saveAndUpgradeQuoteBtn');
+    const saveOnlyBtn = document.getElementById('saveOnlyQuoteBtn');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+    if (saveUpgradeBtn) { saveUpgradeBtn.disabled = true; }
+    if (saveOnlyBtn) { saveOnlyBtn.disabled = true; }
 
     try {
       const token = localStorage.getItem('jmos_api_token');
@@ -335,10 +419,20 @@
       if (!res.ok) throw new Error(data.message || 'Failed to save quotation');
 
       const savedQuote = data.data || data.quote;
+      window.JMOS_QUOTES.activeQuote = savedQuote;
       window.closeModal('quoteModal');
 
-      // Dispatch directly if requested
-      if (dispatchMode === 'email' && email && savedQuote?.id) {
+      // Refresh cache & views
+      if (typeof window.refreshFinanceData === 'function') window.refreshFinanceData();
+      if (typeof window.refreshCrmData === 'function') window.refreshCrmData();
+      window.JMOS_QUOTES.loadQuotes();
+
+      if (dispatchMode === 'upgrade') {
+        if (window.showToast) {
+          window.showToast('Quotation Saved', 'Now configure invoice terms & preview invoice PDF ➔');
+        }
+        window.openUpgradeQuoteModal();
+      } else if (dispatchMode === 'email' && email && savedQuote?.id) {
         try {
           await fetch(`/api/quotes/${savedQuote.id}/send-email`, {
             method: 'POST',
@@ -370,18 +464,20 @@
           }
         } catch (_) {}
       } else if (window.showToast) {
-        window.showToast('Quotation generated successfully', 'success');
+        window.showToast('Quotation Saved', 'Quotation details updated successfully.');
       }
-
-      if (typeof window.refreshFinanceData === 'function') window.refreshFinanceData();
-      if (typeof window.refreshCrmData === 'function') window.refreshCrmData();
-      window.JMOS_QUOTES.loadQuotes();
     } catch (err) {
       if (window.showToast) window.showToast('Save Error', err.message, true);
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save & Send to Email';
+        saveBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Save &amp; Email';
+      }
+      if (saveUpgradeBtn) {
+        saveUpgradeBtn.disabled = false;
+      }
+      if (saveOnlyBtn) {
+        saveOnlyBtn.disabled = false;
       }
     }
   };
@@ -402,36 +498,101 @@
       const q = data.data || data.quote;
       window.JMOS_QUOTES.activeQuote = q;
 
-      document.getElementById('qdmQuoteId').value = q.id;
-      document.getElementById('qdmTitle').textContent = q.title || 'Quotation Preview';
-      document.getElementById('qdmSubtitle').textContent = `${q.quote_number || ('QT-' + q.id)} · Prepared for ${q.recipient_name || 'Client'}`;
-      document.getElementById('qdmTotalBadge').textContent = 'KES ' + (parseFloat(q.total_amount) || 0).toLocaleString();
-      document.getElementById('qdmStatusBadge').textContent = (q.status || 'Draft').toUpperCase();
-      document.getElementById('qdmValidityText').textContent = `Valid for ${q.validity_days || 14} days`;
+      const items = Array.isArray(q.items) ? q.items : [];
+      const subtotal = items.reduce((acc, it) => acc + (parseFloat(it.amount || (it.quantity * (it.rate || it.unit_price))) || 0), 0) || parseFloat(q.subtotal || q.total_amount) || 0;
+      const discount = parseFloat(q.discount) || 0;
+      const total = parseFloat(q.total_amount) || Math.max(0, subtotal - discount);
+      const isAccepted = (q.status || '').toLowerCase() === 'accepted';
+      const isInvoiced = (q.status || '').toLowerCase() === 'invoiced';
+
+      const dateStr = q.created_at
+        ? new Date(q.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      // Header values
+      const qdmId = document.getElementById('qdmQuoteId');
+      if (qdmId) qdmId.value = q.id;
+
+      const titleEl = document.getElementById('qdmTitle');
+      if (titleEl) titleEl.textContent = q.title || 'Commercial Proposal';
+
+      const subEl = document.getElementById('qdmSubtitle');
+      if (subEl) subEl.textContent = `${q.quote_number || ('QT-' + q.id)} · Prepared for ${q.recipient_name || 'Client'}`;
+
+      const totalBadge = document.getElementById('qdmTotalBadge');
+      if (totalBadge) totalBadge.textContent = 'KES ' + total.toLocaleString();
+
+      const statusBadge = document.getElementById('qdmStatusBadge');
+      if (statusBadge) {
+        statusBadge.textContent = (q.status ? q.status.toUpperCase() : 'DRAFT');
+        statusBadge.className = 'badge ' + (isInvoiced ? 'tint-green' : isAccepted ? 'tint-green' : (q.status || '').toLowerCase() === 'sent' ? 'tint-blue' : 'tint-amber');
+      }
+
+      const valText = document.getElementById('qdmValidityText');
+      if (valText) valText.textContent = `Valid for ${q.validity_days || 14} days from issue`;
+
+      // Printable Document Elements
+      const docNo = document.getElementById('qdmDocQuoteNo');
+      if (docNo) docNo.textContent = q.quote_number || ('QT-' + q.id);
+
+      const docDate = document.getElementById('qdmDocDate');
+      if (docDate) docDate.textContent = dateStr;
+
+      const docVal = document.getElementById('qdmDocValidity');
+      if (docVal) docVal.textContent = `${q.validity_days || 14} Days`;
+
+      const docRecName = document.getElementById('qdmDocRecipientName');
+      if (docRecName) docRecName.textContent = q.recipient_name || 'Valued Client';
+
+      const docRecContact = document.getElementById('qdmDocRecipientContact');
+      if (docRecContact) {
+        const parts = [];
+        if (q.recipient_email) parts.push(q.recipient_email);
+        if (q.recipient_phone) parts.push(q.recipient_phone);
+        docRecContact.textContent = parts.length ? parts.join(' · ') : 'Direct Client Account';
+      }
+
+      const docScope = document.getElementById('qdmDocScopeTitle');
+      if (docScope) docScope.textContent = q.title || 'Production & Creative Services';
+
+      const docSubtotal = document.getElementById('qdmDocSubtotal');
+      if (docSubtotal) docSubtotal.textContent = 'KES ' + subtotal.toLocaleString();
+
+      const docDiscount = document.getElementById('qdmDocDiscount');
+      const docDiscountRow = document.getElementById('qdmDocDiscountRow');
+      if (docDiscount) docDiscount.textContent = '- KES ' + discount.toLocaleString();
+      if (docDiscountRow) docDiscountRow.style.display = discount > 0 ? 'flex' : 'none';
+
+      const docTotal = document.getElementById('qdmDocTotal');
+      if (docTotal) docTotal.textContent = 'KES ' + total.toLocaleString();
 
       const itemsWrap = document.getElementById('qdmItemsContainer');
       if (itemsWrap) {
-        const items = Array.isArray(q.items) ? q.items : [];
         itemsWrap.innerHTML = `
           <div class="tablewrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
-            <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:12px;min-width:460px">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;min-width:460px">
               <thead>
-                <tr style="background:var(--panel-2);color:var(--muted);text-align:left">
-                  <th style="padding:8px 10px">Deliverable</th>
-                  <th style="padding:8px 10px;text-align:center">Qty</th>
-                  <th style="padding:8px 10px;text-align:right">Rate (KES)</th>
-                  <th style="padding:8px 10px;text-align:right">Total (KES)</th>
+                <tr style="background:#f4f5f7;color:#555;text-align:left;border-bottom:1px solid #ddd">
+                  <th style="padding:8px 10px">Deliverable / Scope Specification</th>
+                  <th style="padding:8px 10px;text-align:center;width:60px">Qty</th>
+                  <th style="padding:8px 10px;text-align:right;width:120px">Rate (KES)</th>
+                  <th style="padding:8px 10px;text-align:right;width:130px">Amount (KES)</th>
                 </tr>
               </thead>
               <tbody>
-                ${items.map(it => `
-                  <tr style="border-bottom:1px solid var(--line)">
-                    <td style="padding:8px 10px;font-weight:600;color:var(--ink)">${it.description}</td>
-                    <td style="padding:8px 10px;text-align:center">${it.quantity}</td>
-                    <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace">${Number(it.rate || it.unit_price).toLocaleString()}</td>
-                    <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700">${Number(it.amount || (it.quantity * (it.rate || it.unit_price))).toLocaleString()}</td>
-                  </tr>
-                `).join('')}
+                ${items.map(it => {
+                  const itQty = parseFloat(it.quantity) || 1;
+                  const itRate = parseFloat(it.rate || it.unit_price) || 0;
+                  const itAmt = parseFloat(it.amount) || (itQty * itRate);
+                  return `
+                    <tr style="border-bottom:1px solid #eee">
+                      <td style="padding:8px 10px;font-weight:600;color:#1a1a1a">${it.description}</td>
+                      <td style="padding:8px 10px;text-align:center;color:#444">${itQty}</td>
+                      <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;color:#444">${itRate.toLocaleString()}</td>
+                      <td style="padding:8px 10px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;color:#1a1a1a">${itAmt.toLocaleString()}</td>
+                    </tr>
+                  `;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -440,20 +601,47 @@
 
       const notesBox = document.getElementById('qdmNotesBox');
       if (notesBox) {
-        notesBox.textContent = q.notes || 'Scope notes: Full production includes filming gear, lighting kit, sound recording, editing & color grading.';
+        notesBox.textContent = q.notes || 'Full production includes high-end cinema optics, aerial drone coverage, location sound recording, professional edit, color grade & sound design.';
+      }
+
+      // Approve button state
+      const approveBtn = document.getElementById('qdmApproveBtn');
+      if (approveBtn) {
+        if (isInvoiced) {
+          approveBtn.style.display = 'none';
+        } else if (isAccepted) {
+          approveBtn.style.display = 'inline-flex';
+          approveBtn.disabled = true;
+          approveBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>✓ Approved';
+          approveBtn.style.opacity = '0.7';
+        } else {
+          approveBtn.style.display = 'inline-flex';
+          approveBtn.disabled = false;
+          approveBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve Quote';
+          approveBtn.style.opacity = '1';
+        }
       }
 
       // Upgrade button state
       const upgBtn = document.getElementById('qdmUpgradeInvoiceBtn');
       if (upgBtn) {
-        if (q.status === 'Invoiced' || q.converted_invoice_id) {
-          upgBtn.disabled = true;
-          upgBtn.textContent = 'Already Converted to Invoice';
-          upgBtn.style.opacity = '0.6';
+        if (isInvoiced) {
+          upgBtn.disabled = false;
+          upgBtn.textContent = 'View Invoice PDF ➔';
+          upgBtn.onclick = function () {
+            window.closeModal('quoteDetailModal');
+            if (q.converted_invoice_id && typeof window.openInvoiceDetailModal === 'function') {
+              window.openInvoiceDetailModal(q.converted_invoice_id);
+            }
+          };
+          upgBtn.style.background = 'var(--green)';
+          upgBtn.style.borderColor = 'var(--green)';
         } else {
           upgBtn.disabled = false;
-          upgBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>Upgrade to Invoice ➔';
-          upgBtn.style.opacity = '1';
+          upgBtn.textContent = 'Generate Invoice ➔';
+          upgBtn.onclick = function () { window.openUpgradeQuoteModal(); };
+          upgBtn.style.background = 'var(--red)';
+          upgBtn.style.borderColor = 'var(--red)';
         }
       }
 
@@ -461,6 +649,107 @@
     } catch (err) {
       if (window.showToast) window.showToast('Preview Error', err.message, true);
     }
+  };
+
+  // Approve Active Quote and trigger upgrade prompt
+  window.approveActiveQuote = async function () {
+    const q = window.JMOS_QUOTES.activeQuote;
+    if (!q) return;
+
+    try {
+      const token = localStorage.getItem('jmos_api_token');
+      const res = await fetch(`/api/quotes/${q.id}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to approve quotation');
+
+      const updatedQuote = data.data || data.quote;
+      window.JMOS_QUOTES.activeQuote = updatedQuote;
+
+      if (window.showToast) {
+        window.showToast('Quotation Approved! 🎉', 'Proposal marked as approved. Configure invoice terms to preview invoice PDF.');
+      }
+
+      // Update badges
+      const statusBadge = document.getElementById('qdmStatusBadge');
+      if (statusBadge) {
+        statusBadge.textContent = 'APPROVED';
+        statusBadge.className = 'badge tint-green';
+      }
+
+      const approveBtn = document.getElementById('qdmApproveBtn');
+      if (approveBtn) {
+        approveBtn.disabled = true;
+        approveBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>✓ Approved';
+        approveBtn.style.opacity = '0.7';
+      }
+
+      // Refresh listings
+      if (typeof window.refreshFinanceData === 'function') window.refreshFinanceData();
+      if (typeof window.refreshCrmData === 'function') window.refreshCrmData();
+      window.JMOS_QUOTES.loadQuotes();
+
+      // Seamlessly open upgrade modal
+      window.openUpgradeQuoteModal();
+    } catch (err) {
+      if (window.showToast) window.showToast('Approval Error', err.message, true);
+    }
+  };
+
+  // Print Quote PDF
+  window.printQuotePdf = function () {
+    const printableDoc = document.getElementById('printableQuoteDoc');
+    if (!printableDoc) {
+      window.print();
+      return;
+    }
+
+    const printWindow = window.open('', '_blank', 'width=880,height=900');
+    if (!printWindow) {
+      window.print();
+      return;
+    }
+
+    const htmlContent = printableDoc.outerHTML;
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Commercial Quotation - Jeota Media</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+        <style>
+          @page { size: A4; margin: 16mm; }
+          body { font-family: 'Poppins', -apple-system, sans-serif; background: #fff; color: #1a1a1a; margin: 0; padding: 20px; }
+          .mono { font-family: 'IBM Plex Mono', monospace; }
+          .printable-invoice-container { border: none !important; padding: 0 !important; }
+          table { width: 100%; border-collapse: collapse; }
+          @media print {
+            body { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        ${htmlContent}
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.close();
+            }, 300);
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   // Direct Quote Dispatch via Email
@@ -484,7 +773,7 @@
       subtitle: `Quotation #${q.quote_number}`,
       type: 'info',
       confirmText: 'Send Quotation Email',
-      message: `Send official commercial quotation <b>${escHtml(q.quote_number)}</b> directly to <b>${escHtml(targetEmail)}</b>?`,
+      message: `Send official commercial quotation <b>${esc(q.quote_number)}</b> directly to <b>${esc(targetEmail)}</b>?`,
       bullets: [
         `Recipient: ${q.recipient_name || 'Client'}`,
         `Quotation Value: KES ${parseFloat(q.total_amount || 0).toLocaleString()}`,
@@ -583,6 +872,8 @@
       amountInput.value = total;
     } else if (type === 'Milestone 50%') {
       amountInput.value = Math.round(total * 0.5);
+    } else if (type === 'Final Balance 40%') {
+      amountInput.value = Math.round(total * 0.4);
     }
   };
 
@@ -600,7 +891,7 @@
     const upgBtn = document.getElementById('upgSubmitBtn');
     if (upgBtn) {
       upgBtn.disabled = true;
-      upgBtn.textContent = 'Converting...';
+      upgBtn.textContent = 'Generating Invoice PDF...';
     }
 
     try {
@@ -623,10 +914,6 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to upgrade quote to invoice');
 
-      if (window.showToast) {
-        window.showToast('Invoice Created', 'Quote upgraded to live invoice successfully! 🧾');
-      }
-
       window.closeModal('upgradeQuoteModal');
       window.closeModal('quoteDetailModal');
 
@@ -634,12 +921,23 @@
       if (typeof window.refreshCrmData === 'function') window.refreshCrmData();
       if (typeof window.ensureInvoices === 'function') window.ensureInvoices();
       window.JMOS_QUOTES.loadQuotes();
+
+      if (window.showToast) {
+        window.showToast('Invoice Generated from Quote! 🧾', 'Review invoice PDF and payment details before dispatching to client.');
+      }
+
+      // Immediately open the Invoice PDF Detail Modal for preview before sending to client
+      if (data.invoice && data.invoice.id && typeof window.openInvoiceDetailModal === 'function') {
+        setTimeout(() => {
+          window.openInvoiceDetailModal(data.invoice.id);
+        }, 150);
+      }
     } catch (err) {
       if (window.showToast) window.showToast('Upgrade Error', err.message, true);
     } finally {
       if (upgBtn) {
         upgBtn.disabled = false;
-        upgBtn.textContent = 'Convert to Invoice Now';
+        upgBtn.textContent = 'Generate Invoice & Preview PDF ➔';
       }
     }
   };
@@ -653,7 +951,7 @@
       subtitle: `Quotation #${q.quote_number}`,
       type: 'danger',
       confirmText: 'Delete Quotation',
-      message: `Permanently delete quotation <b>${escHtml(q.quote_number)}</b> (${escHtml(q.title || 'Quotation')})?`,
+      message: `Permanently delete quotation <b>${esc(q.quote_number)}</b> (${esc(q.title || 'Quotation')})?`,
       bullets: [
         'This record will be permanently purged from the database.',
         'This action cannot be undone.'
@@ -686,6 +984,15 @@
       if (window.showToast) window.showToast('Delete Error', err.message, true);
     }
   };
+
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
   document.addEventListener('DOMContentLoaded', function () {
     window.JMOS_QUOTES.init();

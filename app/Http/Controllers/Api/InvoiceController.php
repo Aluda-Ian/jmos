@@ -161,4 +161,50 @@ class InvoiceController extends Controller
             'message' => 'Failed to dispatch email. Please check SMTP settings.',
         ], 500);
     }
+
+    /**
+     * Generate WhatsApp direct link and formatted invoice message
+     */
+    public function getWhatsAppLink(Invoice $invoice): JsonResponse
+    {
+        $client = Client::where('client_name', $invoice->client)->first();
+        $phone = preg_replace('/[^0-9]/', '', (string) ($client?->phone ?? ''));
+        if (str_starts_with($phone, '0')) {
+            $phone = '254'.substr($phone, 1);
+        } elseif (str_starts_with($phone, '7')) {
+            $phone = '254'.$phone;
+        }
+
+        $totalFormatted = number_format((float) $invoice->amount, 2);
+        $dueDate = $invoice->due_date ?: 'Immediate';
+
+        $message = "Hello *{$invoice->client}*,\n\n"
+            ."Here is your official commercial & tax invoice from *Jeota Media*:\n\n"
+            ."📄 *Invoice Ref:* {$invoice->invoice_no}\n"
+            ."🎯 *Milestone / Type:* {$invoice->type}\n"
+            ."📅 *Due Date:* {$dueDate}\n"
+            ."💰 *Total Due:* KES {$totalFormatted}\n\n"
+            ."*Payment Details:*\n"
+            ."📱 *M-Pesa Paybill:* 880100\n"
+            ."🔢 *Account No:* {$invoice->invoice_no}\n"
+            ."🏦 *Bank:* NCBA Bank Kenya · Branch: Upper Hill\n"
+            ."*Acc Name:* Jeota Media Limited · *Acc No:* 1002349871\n\n"
+            .($invoice->etims ? "✅ *eTIMS Electronic Tax Invoice:* Verified & Transmitted to KRA\n\n" : '')
+            ."Kindly share payment confirmation once processed.\n\n"
+            ."Best regards,\n"
+            ."*Jeota Media Finance Team*\n"
+            .'https://jeotamedia.co.ke';
+
+        $encodedText = urlencode($message);
+        $waUrl = ! empty($phone)
+            ? "https://api.whatsapp.com/send?phone={$phone}&text={$encodedText}"
+            : "https://api.whatsapp.com/send?text={$encodedText}";
+
+        return response()->json([
+            'status' => 'success',
+            'whatsapp_url' => $waUrl,
+            'phone' => $phone,
+            'message' => $message,
+        ]);
+    }
 }

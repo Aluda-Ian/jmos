@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'kra' => [
+        'pin' => env('KRA_PIN', 'P052209707D'),
+        'taxpayer_name' => env('KRA_TAXPAYER_NAME', 'Jeota Media Limited'),
+        'branch_id' => env('KRA_ETIMS_BRANCH', '00'),
+    ],
+
 ];

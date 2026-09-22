@@ -1291,7 +1291,11 @@ function populateClientInvoicesTab(client, invoices = []) {
 
           <div style="text-align:right">
             <div class="mono" style="font-size:15px;font-weight:700;color:var(--ink)">${fmt(inv.amount || 0)}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">${escHtml(inv.method || 'Direct Transfer')}</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:flex-end">
+              <button type="button" class="btn-xs" onclick="window.openInvoiceDetailModal('${inv.id}')" style="font-size:10.5px;padding:2px 7px;color:#C52523;border:1px solid rgba(197,37,35,0.25);border-radius:4px;background:#fff;cursor:pointer">
+                PDF / View
+              </button>
+            </div>
           </div>
         </div>
       </div>

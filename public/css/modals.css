@@ -2284,3 +2284,68 @@ input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
   gap: 10px !important;
 }
 
+/* ==========================================================================
+   Print & PDF Generation Styling (Tax Invoices & Commercial Quotations)
+   ========================================================================== */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  
+  #invoiceDetailModal,
+  #invoiceDetailModal .mbox,
+  #invoiceDetailModal #printableInvoiceDoc,
+  #invoiceDetailModal #printableInvoiceDoc *,
+  #quoteDetailModal,
+  #quoteDetailModal .mbox,
+  #quoteDetailModal .workspace-modal-body,
+  #quoteDetailModal .workspace-modal-body * {
+    visibility: visible !important;
+  }
+
+  #invoiceDetailModal,
+  #quoteDetailModal {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    display: block !important;
+  }
+
+  #invoiceDetailModal .mbg,
+  #invoiceDetailModal .mclose,
+  #invoiceDetailModal .workspace-cover-banner,
+  #invoiceDetailModal .workspace-modal-body > div:first-child,
+  #invoiceDetailModal .workspace-modal-body > div:last-child,
+  #quoteDetailModal .mbg,
+  #quoteDetailModal .mclose,
+  #quoteDetailModal .workspace-cover-banner,
+  #quoteDetailModal .workspace-modal-body > div:first-child,
+  #quoteDetailModal .workspace-modal-body > div:last-child {
+    display: none !important;
+  }
+
+  #invoiceDetailModal .mbox,
+  #quoteDetailModal .mbox {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #printableInvoiceDoc {
+    border: 1px solid #ddd !important;
+    border-radius: 0 !important;
+    padding: 24px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
