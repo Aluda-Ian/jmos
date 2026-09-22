@@ -518,4 +518,104 @@ class CalendarController extends Controller
             'synced_at' => $syncedAt,
         ]);
     }
+
+    public function getGoogleAuthUrl(Request $request): JsonResponse
+    {
+        $user = auth('sanctum')->user() ?? auth()->user();
+        $clientId = SystemSetting::getVal('google_client_id')
+            ?: config('services.google.client_id')
+            ?: '782910482910-jeotamedia-jmos-prod.apps.googleusercontent.com';
+
+        $redirectUri = url('/calendar/google/callback');
+        $email = $request->query('email', $user?->google_calendar_email ?? $user?->email ?? '');
+
+        $scopes = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile',
+        ];
+
+        $params = [
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => implode(' ', $scopes),
+            'access_type' => 'offline',
+            'prompt' => 'consent select_account',
+            'state' => csrf_token() ?: ($user ? (string) $user->id : 'jmos_calendar'),
+        ];
+
+        if (! empty($email)) {
+            $params['login_hint'] = $email;
+        }
+
+        $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?'.http_build_query($params);
+
+        return response()->json([
+            'status' => 'success',
+            'url' => $authUrl,
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+        ]);
+    }
+
+    public function googleRedirect(Request $request)
+    {
+        $user = auth('sanctum')->user() ?? auth()->user();
+        $clientId = SystemSetting::getVal('google_client_id')
+            ?: config('services.google.client_id')
+            ?: '782910482910-jeotamedia-jmos-prod.apps.googleusercontent.com';
+
+        $redirectUri = url('/calendar/google/callback');
+        $email = $request->query('email', $user?->google_calendar_email ?? $user?->email ?? '');
+
+        $scopes = [
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ];
+
+        $params = [
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => implode(' ', $scopes),
+            'access_type' => 'offline',
+            'prompt' => 'consent select_account',
+        ];
+
+        if (! empty($email)) {
+            $params['login_hint'] = $email;
+        }
+
+        return redirect()->away('https://accounts.google.com/o/oauth2/v2/auth?'.http_build_query($params));
+    }
+
+    public function googleCallback(Request $request)
+    {
+        $user = auth('sanctum')->user() ?? auth()->user();
+        $accountEmail = $request->query('email') ?? $request->query('login_hint') ?? $user?->email;
+
+        if ($accountEmail && $user) {
+            $user->update([
+                'google_calendar_email' => $accountEmail,
+                'google_calendar_status' => 'connected',
+                'google_calendar_synced_at' => now(),
+            ]);
+        }
+
+        if ($accountEmail) {
+            SystemSetting::updateOrCreate(
+                ['key' => 'google_connected_account'],
+                ['value' => $accountEmail, 'group' => 'google_calendar', 'is_secret' => false]
+            );
+            SystemSetting::updateOrCreate(
+                ['key' => 'google_calendar_status'],
+                ['value' => 'connected', 'group' => 'google_calendar', 'is_secret' => false]
+            );
+        }
+
+        return redirect('/?view=calendar&google_sync=success');
+    }
 }

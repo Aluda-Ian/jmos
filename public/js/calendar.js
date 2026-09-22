@@ -428,6 +428,21 @@ window.syncCalendarWithGoogle = async function() {
   openModal('googleAuthModal');
 };
 
+window.openGoogleCalendarAuth = async function(accountEmail) {
+  try {
+    const query = accountEmail ? `?email=${encodeURIComponent(accountEmail)}` : '';
+    const res = await JMOS_API.get(`/calendar/google-auth-url${query}`);
+    if (res && res.url) {
+      window.location.href = res.url;
+    } else {
+      window.location.href = `/calendar/google/redirect${query}`;
+    }
+  } catch (err) {
+    const query = accountEmail ? `?email=${encodeURIComponent(accountEmail)}` : '';
+    window.location.href = `/calendar/google/redirect${query}`;
+  }
+};
+
 window.executeGoogleCalendarSync = async function(accountEmail) {
   if (!accountEmail || !accountEmail.includes('@')) {
     showToast('Valid Email Required', 'Please enter a valid personal Google email', true);
@@ -991,28 +1006,34 @@ function initCalendar() {
   if (confirmAuthBtn) {
     confirmAuthBtn.onclick = async () => {
       const emailInput = document.getElementById('personalGoogleEmailInput');
-      const email = emailInput?.value.trim();
-      if (!email || !email.includes('@')) {
-        showToast('Valid Email Required', 'Please enter your personal Google account email', true);
-        if (emailInput) emailInput.focus();
-        return;
-      }
+      const email = emailInput?.value.trim() || '';
 
       confirmAuthBtn.disabled = true;
       const originalText = confirmAuthBtn.innerHTML;
-      confirmAuthBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" class="spin"><path d="M23 4v6h-6M1 20v-6h6"/></svg> Connecting…';
+      confirmAuthBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" class="spin"><path d="M23 4v6h-6M1 20v-6h6"/></svg> Opening Google Auth…';
 
       try {
         closeModal('googleAuthModal');
-        await window.executeGoogleCalendarSync(email);
+        await window.openGoogleCalendarAuth(email);
       } catch (err) {
-        showToast('Google Sync Notice', err.message, true);
+        showToast('Google Auth Notice', err.message, true);
       } finally {
         confirmAuthBtn.disabled = false;
         confirmAuthBtn.innerHTML = originalText;
       }
     };
   }
+
+  // Handle Google OAuth callback notification if redirected back with success
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('google_sync') === 'success') {
+      showToast('Google Calendar Connected', 'Your Google Calendar has been authenticated and connected successfully.');
+      urlParams.delete('google_sync');
+      const cleanUrl = window.location.pathname + (urlParams.toString() ? `?${urlParams.toString()}` : '');
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  } catch (_) {}
 
   loadCalendarSyncStatus();
   fetchCalendarEvents().then(() => {

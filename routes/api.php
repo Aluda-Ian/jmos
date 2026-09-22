@@ -130,6 +130,7 @@ Route::delete('calendar/events/{event}', [CalendarController::class, 'destroy'])
 Route::get('calendar/sync-status', [CalendarController::class, 'syncStatus']);
 Route::post('calendar/sync', [CalendarController::class, 'sync']);
 Route::post('calendar/disconnect', [CalendarController::class, 'disconnect']);
+Route::get('calendar/google-auth-url', [CalendarController::class, 'getGoogleAuthUrl']);
 
 // Team & 1-on-1 Chat Hub
 Route::get('chat/threads', [ChatController::class, 'index']);

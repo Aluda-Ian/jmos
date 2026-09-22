@@ -1948,7 +1948,7 @@
     <div style="padding:26px 28px 16px;text-align:center;border-bottom:1px solid #e8eaed;background:#fff">
       <div style="display:flex;justify-content:center;margin-bottom:12px">
         <!-- Official Google 4-Color 'G' Logo -->
-        <svg viewBox="0 0 48 48" width="40" height="40">
+        <svg viewBox="0 0 48 48" width="42" height="42">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
@@ -1956,7 +1956,7 @@
         </svg>
       </div>
       <h3 id="googleAuthTitle" style="font-family:'Google Sans',Roboto,Segoe UI,sans-serif;font-size:21px;font-weight:500;color:#202124;margin:0 0 6px">Connect Personal Google Calendar</h3>
-      <p style="font-size:13px;color:#5f6368;margin:0">Sign in with your Google account to mirror your schedule &amp; video meetings</p>
+      <p style="font-size:13px;color:#5f6368;margin:0">Authenticate directly via Google to mirror your shoots, deadlines &amp; video meetings</p>
     </div>
 
     <!-- Active User & Account Input -->
@@ -1975,41 +1975,41 @@
         <div style="font-weight:600;display:flex;align-items:center;gap:6px">
           <span style="font-size:14px">✓</span> Currently connected to: <span id="googleAuthCurrentConnectedEmail" style="font-weight:700">user@gmail.com</span>
         </div>
-        <div style="font-size:11px;color:#137333;margin-top:2px">You can enter a different Google account below to switch, or disconnect anytime.</div>
+        <div style="font-size:11px;color:#137333;margin-top:2px">Clicking the button below opens Google's authorization page to re-authenticate or switch accounts.</div>
       </div>
 
-      <!-- Personal Google Account Input -->
+      <!-- Personal Google Account Email (Optional Pre-fill) -->
       <div style="margin-bottom:16px">
         <label for="personalGoogleEmailInput" style="display:block;font-size:12.5px;font-weight:600;color:#3c4043;margin-bottom:6px">
-          Personal Google Account Email *
+          Personal Google Account Email (Optional Hint)
         </label>
         <div style="display:flex;gap:8px">
-          <input type="email" id="personalGoogleEmailInput" placeholder="e.g. yourname@gmail.com" style="flex:1;padding:9px 12px;border:1.5px solid #dadce0;border-radius:8px;font-size:13px;color:#202124;outline:none;background:#fff" autocomplete="email" required>
+          <input type="email" id="personalGoogleEmailInput" placeholder="e.g. yourname@gmail.com" style="flex:1;padding:9px 12px;border:1.5px solid #dadce0;border-radius:8px;font-size:13px;color:#202124;outline:none;background:#fff" autocomplete="email">
           <button type="button" class="btn" id="autofillMyEmailBtn" style="white-space:nowrap;font-size:11.5px;border:1px solid #dadce0;background:#f8f9fa;color:#1a73e8;padding:8px 12px" title="Use your logged-in email">
             Use my email
           </button>
         </div>
-        <span style="font-size:11px;color:#5f6368;margin-top:4px;display:block">Enter the personal Gmail or Google Workspace address you check on your phone or laptop.</span>
+        <span style="font-size:11px;color:#5f6368;margin-top:4px;display:block">Opening the Google Auth page allows you to pick any Google account on your device.</span>
       </div>
 
       <!-- Permissions & Scopes Disclosure -->
       <div style="background:#f8f9fa;border:1px solid #e8eaed;border-radius:12px;padding:14px">
         <div style="font-size:12px;font-weight:700;color:#202124;margin-bottom:8px;display:flex;align-items:center;gap:6px">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1a73e8" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Permissions for your personal account:
+          Google Authorized Access:
         </div>
         <div style="display:flex;flex-direction:column;gap:7px;font-size:11.5px;color:#3c4043">
           <div style="display:flex;align-items:flex-start;gap:8px">
             <span style="color:#34a853;font-weight:bold">✓</span>
-            <span><b>Bi-directional Event Sync:</b> Shoots, meetings, and deadlines are mirrored to your personal calendar.</span>
+            <span><b>Google OAuth Consent:</b> Secure authorization provided directly by Google (accounts.google.com).</span>
           </div>
           <div style="display:flex;align-items:flex-start;gap:8px">
             <span style="color:#34a853;font-weight:bold">✓</span>
-            <span><b>Google Meet Integration:</b> Generates active video rooms for client reviews and production syncs.</span>
+            <span><b>Bi-directional Calendar Sync:</b> Shoots, meetings, and milestones mirror to your Google Calendar.</span>
           </div>
           <div style="display:flex;align-items:flex-start;gap:8px">
             <span style="color:#34a853;font-weight:bold">✓</span>
-            <span><b>Privacy Protected:</b> Your Google password is never requested or stored. You can disconnect at any time.</span>
+            <span><b>Google Meet Integration:</b> Auto-generate video conferencing links for all scheduled client events.</span>
           </div>
         </div>
       </div>
@@ -2021,9 +2021,14 @@
         <button type="button" class="btn" data-close="googleAuthModal" style="background:#fff;border:1px solid #dadce0;color:#3c4043;font-size:12.5px;padding:8px 16px;border-radius:8px">Cancel</button>
         <button type="button" class="btn" id="modalDisconnectGoogleBtn" style="display:none;background:#fff;border:1px solid #fecaca;color:#dc2626;font-size:12px;padding:8px 14px;border-radius:8px" title="Disconnect personal calendar">Disconnect</button>
       </div>
-      <button type="button" class="btn primary" id="confirmGoogleAuthBtn" style="background:#1a73e8;border-color:#1a73e8;color:#fff;font-size:13px;padding:9px 22px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:8px">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-        Connect &amp; Sync Calendar
+      <button type="button" class="btn primary" id="confirmGoogleAuthBtn" style="background:#1a73e8;border-color:#1a73e8;color:#fff;font-size:13px;padding:9px 20px;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+        <svg viewBox="0 0 48 48" width="18" height="18" style="background:#fff;border-radius:50%;padding:1px">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        <span>Open Google Auth Page</span>
       </button>
     </div>
   </div>

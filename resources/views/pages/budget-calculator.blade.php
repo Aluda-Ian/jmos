@@ -464,18 +464,78 @@ function importJSON(e){const f=e.target.files[0];if(!f)return;const rd=new FileR
 
 /* ---- QUOTE ---- */
 function defaultQuoteItems(){
-  return [{name:S.meta.project? S.meta.project.replace(/—.*$/,'').trim().toUpperCase() || 'PRODUCTION' :'PRODUCTION',
-    deliverables:['Full production & filming','Edited final video','Social media cuts'],qty:1,amount:calc().fee}];
+  const markupMultiplier = 1 + ((S.pricing.markup || 0) / 100);
+  const items = [];
+  const secKeys = Object.keys(SECTIONS);
+
+  // Group items by each section defined in the budget entries
+  secKeys.forEach(secKey => {
+    const secCfg = SECTIONS[secKey];
+    const rawRows = S.data[secKey] || [];
+    
+    // Filter active items (rows with a non-empty name or rate > 0)
+    const activeRows = rawRows.filter(r => r && (r.name && r.name.trim() !== ''));
+    const secCost = rawRows.reduce((sum, r) => sum + (num(r.rate) * num(r.qty)), 0);
+
+    if (activeRows.length > 0 && secCost > 0) {
+      const deliverables = activeRows.map(r => {
+        const name = r.name.trim();
+        const qty = num(r.qty);
+        const qtyUnit = secCfg.cols[2] || 'Units';
+        const qtyStr = qty > 1 ? ` (${qty} ${qtyUnit.toLowerCase()})` : '';
+        return `${name}${qtyStr}`;
+      });
+
+      // Marked up section price (final client figure with markup applied, backend markup hidden)
+      const secClientAmount = Math.round(secCost * markupMultiplier);
+
+      items.push({
+        name: secCfg.title.toUpperCase(),
+        deliverables: deliverables,
+        qty: 1,
+        amount: secClientAmount
+      });
+    }
+  });
+
+  // If no sections had positive costs, fallback to project title / generic item with total fee
+  if (items.length === 0) {
+    const c = calc();
+    return [{
+      name: S.meta.project ? S.meta.project.replace(/—.*$/, '').trim().toUpperCase() || 'PRODUCTION SERVICES' : 'PRODUCTION SERVICES',
+      deliverables: ['Full creative production & filming', 'Post-production & master delivery', 'Social media revisions & deliverables'],
+      qty: 1,
+      amount: Math.round(c.fee)
+    }];
+  }
+
+  // Reconcile any rounding difference so the sum of section amounts matches calc().fee exactly
+  const totalFee = Math.round(calc().fee);
+  const currentSum = items.reduce((sum, it) => sum + num(it.amount), 0);
+  const diff = totalFee - currentSum;
+  if (diff !== 0 && items.length > 0) {
+    items[0].amount += diff;
+  }
+
+  return items;
 }
+
 function quoteSubtotal(){return (S.quote.items||[]).reduce((s,it)=>s+num(it.amount),0);}
 function quoteTotals(){
   const sub=quoteSubtotal(),vat=S.pricing.vat?sub*0.16:0,gross=sub+vat,wht=S.pricing.wht?sub*0.05:0,net=gross-wht;
   const dep=net*(S.pricing.deposit/100),bal=net-dep;return {sub,vat,gross,wht,net,dep,bal};
 }
-function resetQuoteFromBudget(){S.quote.items=defaultQuoteItems();renderQuote();toast('Quote reset to budget total');}
+function resetQuoteFromBudget(){S.quote.items=defaultQuoteItems();renderQuote();toast('Quote reset to section breakdowns with markup');}
 
-function openQuote(){saveMeta();if(!S.quote.items)S.quote.items=defaultQuoteItems();renderQuote();
-  document.getElementById('quote-overlay').classList.add('show');document.body.style.overflow='hidden';}
+function openQuote(){
+  saveMeta();
+  if(!S.quote.items || S.quote._autoSync !== false) {
+    S.quote.items = defaultQuoteItems();
+  }
+  renderQuote();
+  document.getElementById('quote-overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
 function closeQuote(){document.getElementById('quote-overlay').classList.remove('show');document.body.style.overflow='';}
 
 function renderQuote(){
@@ -574,13 +634,13 @@ function renderQuote(){
 }
 
 /* quote edit handlers */
-function qItemName(i,el){S.quote.items[i].name=el.textContent.trim();}
-function qDeliv(i,el){S.quote.items[i].deliverables=[...el.querySelectorAll('li')].map(li=>li.textContent.trim()).filter(Boolean);}
-function qQty(i,el){S.quote.items[i].qty=num(el.textContent)||1;el.textContent=S.quote.items[i].qty;}
+function qItemName(i,el){S.quote.items[i].name=el.textContent.trim();S.quote._autoSync=false;}
+function qDeliv(i,el){S.quote.items[i].deliverables=[...el.querySelectorAll('li')].map(li=>li.textContent.trim()).filter(Boolean);S.quote._autoSync=false;}
+function qQty(i,el){S.quote.items[i].qty=num(el.textContent)||1;el.textContent=S.quote.items[i].qty;S.quote._autoSync=false;}
 function qAmtRaw(el,i){el.textContent=String(num(S.quote.items[i].amount)||'');}
-function qAmt(i,el){S.quote.items[i].amount=num(el.textContent);renderQuote();}
-function qDel(i){if(S.quote.items.length<=1){toast('Keep at least one item');return;}S.quote.items.splice(i,1);renderQuote();}
-function qAdd(){S.quote.items.push({name:'ITEM',deliverables:['Deliverable'],qty:1,amount:0});renderQuote();}
+function qAmt(i,el){S.quote.items[i].amount=num(el.textContent);S.quote._autoSync=false;renderQuote();}
+function qDel(i){if(S.quote.items.length<=1){toast('Keep at least one item');return;}S.quote.items.splice(i,1);S.quote._autoSync=false;renderQuote();}
+function qAdd(){S.quote.items.push({name:'ITEM',deliverables:['Deliverable'],qty:1,amount:0});S.quote._autoSync=false;renderQuote();}
 function qCt(k,el){S.contact[k]=el.textContent.trim();}
 function qPay(k,el){S.quote[k]=el.textContent.trim();}
 function qNote(i,el){S.quote.notes[i]=el.textContent.trim();}
