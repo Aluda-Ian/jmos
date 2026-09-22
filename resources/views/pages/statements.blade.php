@@ -12,7 +12,7 @@
       <p>Comprehensive tracking of client invoices, commercial proposals, and account balances.</p>
     </div>
     <div class="head-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn" id="createQuoteBtn" onclick="showView('budget')" title="Create commercial quotation in Production Budget">
+      <button type="button" class="btn" id="createQuoteBtn" data-view="budget" onclick="showView('budget')" title="Create commercial quotation in Production Budget">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>+ Create Quote
       </button>
       <button type="button" class="btn primary" onclick="openModal('invoiceModal')" data-modal-open="invoiceModal" title="Issue new client invoice">

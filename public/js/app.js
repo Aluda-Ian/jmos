@@ -890,12 +890,20 @@ function renderAuditLogsTable(list) {
    ========================================================================== */
 window.JMOS_PWA = {
   deferredPrompt: null,
-  isInstalled: false,
+  isInstalled: (typeof localStorage !== 'undefined' && localStorage.getItem('jmos_pwa_installed') === '1') || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
   isIos: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
   isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true,
   currentStep: 1,
 
   init() {
+    // Check local storage persistence
+    if (this.isStandalone || localStorage.getItem('jmos_pwa_installed') === '1') {
+      this.isInstalled = true;
+      try {
+        localStorage.setItem('jmos_pwa_installed', '1');
+      } catch (_) {}
+    }
+
     // 1. Register Service Worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js')
@@ -912,8 +920,12 @@ window.JMOS_PWA = {
       e.preventDefault();
       this.deferredPrompt = e;
       this.updateInstallButtons(true);
-      if (!this.isInstalled && !this.isStandalone && typeof openModal === 'function') {
-        this.openInstallModal(1);
+      // Do not auto-popup if already installed or dismissed by user
+      const isDismissed = localStorage.getItem('jmos_pwa_dismissed') === '1';
+      const isAlreadyInstalled = this.isInstalled || this.isStandalone || localStorage.getItem('jmos_pwa_installed') === '1';
+      if (!isAlreadyInstalled && !isDismissed && typeof openModal === 'function') {
+        // Only prompt once on first visit if not dismissed
+        // this.openInstallModal(1);
       }
     });
 
@@ -921,6 +933,10 @@ window.JMOS_PWA = {
     window.addEventListener('appinstalled', () => {
       this.isInstalled = true;
       this.deferredPrompt = null;
+      try {
+        localStorage.setItem('jmos_pwa_installed', '1');
+        localStorage.setItem('jmos_pwa_dismissed', '1');
+      } catch (_) {}
       this.updateInstallButtons(false, true);
       if (typeof closeModal === 'function') {
         closeModal('pwaInstallModal');
@@ -938,15 +954,9 @@ window.JMOS_PWA = {
     });
 
     // Standalone check
-    if (this.isStandalone) {
+    if (this.isStandalone || this.isInstalled) {
       this.isInstalled = true;
       this.updateInstallButtons(false, true);
-    } else if (typeof openModal === 'function') {
-      setTimeout(() => {
-        if (!this.isInstalled && !this.isStandalone) {
-          this.openInstallModal(1);
-        }
-      }, 1200);
     }
   },
 
@@ -1080,6 +1090,10 @@ window.JMOS_PWA = {
         if (choice.outcome === 'accepted') {
           this.isInstalled = true;
           this.deferredPrompt = null;
+          try {
+            localStorage.setItem('jmos_pwa_installed', '1');
+            localStorage.setItem('jmos_pwa_dismissed', '1');
+          } catch (_) {}
           this.updateInstallButtons(false, true);
           if (typeof closeModal === 'function') {
             closeModal('pwaInstallModal');

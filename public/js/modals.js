@@ -393,6 +393,11 @@ window.closeModal = function(id) {
       const delBtn = document.getElementById('deleteInvoiceModalBtn');
       if (delBtn) delBtn.style.display = 'none';
     }
+    if (m.id === 'pwaInstallModal') {
+      try {
+        localStorage.setItem('jmos_pwa_dismissed', '1');
+      } catch (_) {}
+    }
   }
   if (!document.querySelector('.modal.on') && !document.querySelector('.cascade.on')) {
     document.body.style.overflow = '';

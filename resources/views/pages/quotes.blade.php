@@ -8,8 +8,8 @@
       <p>Draft commercial scopes, email proposals to clients, track approvals &amp; convert to invoices.</p>
     </div>
     <div class="head-actions">
-      <button type="button" class="btn primary" onclick="showView('budget')" title="Open Production Budget Calculator">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Create Quotation (Budget)
+      <button type="button" class="btn primary" data-view="budget" onclick="showView('budget')" title="Open Production Budget Calculator">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>+ Create Quotation (Budget)
       </button>
     </div>
   </div>

@@ -155,12 +155,15 @@ function initNavigation() {
   const nav = document.getElementById('nav');
   const menuBtn = document.getElementById('menuBtn');
 
-  // Delegate click for all [data-view] triggers
+  // Delegate click for navigation triggers (excluding .view section containers)
   document.addEventListener('click', (e) => {
-    const trigger = e.target.closest('[data-view]');
-    if (trigger) {
+    const trigger = e.target.closest('a[data-view], button[data-view], .nav [data-view], [data-nav-view]');
+    if (trigger && !trigger.classList.contains('view')) {
       e.preventDefault();
-      showView(trigger.getAttribute('data-view'));
+      const targetView = trigger.getAttribute('data-nav-view') || trigger.getAttribute('data-view');
+      if (targetView) {
+        showView(targetView);
+      }
     }
   });
 
