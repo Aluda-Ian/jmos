@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invoice extends Model
 {
@@ -12,18 +13,46 @@ class Invoice extends Model
     protected $fillable = [
         'invoice_no',
         'client',
+        'client_id',
+        'project_id',
+        'title',
         'type',
+        'items',
         'amount',
+        'subtotal',
+        'discount',
+        'tax',
         'method',
         'etims',
         'status',
         'due_date',
+        'notes',
+        'quote_id',
     ];
 
     protected $casts = [
+        'items' => 'array',
         'etims' => 'boolean',
         'amount' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'tax' => 'decimal:2',
     ];
+
+    public function clientModel(): BelongsTo
+    {
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'project_id');
+    }
+
+    public function quote(): BelongsTo
+    {
+        return $this->belongsTo(Quote::class, 'quote_id');
+    }
 
     protected static function booted(): void
     {

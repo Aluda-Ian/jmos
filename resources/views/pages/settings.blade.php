@@ -386,8 +386,9 @@
       </div>
 
       <div class="field">
-        <label for="cfg_google_api_key">Google API Key / Service Account Key</label>
-        <input id="cfg_google_api_key" type="password" placeholder="AIzaSy••••••••••••••••••••••••••••" value="••••••••" autocomplete="off">
+        <label for="cfg_google_api_key">Google API Key / Service Account JSON</label>
+        <textarea id="cfg_google_api_key" rows="2" placeholder="Paste Google API Key (AIzaSy...) or full Service Account JSON credentials..." autocomplete="off" style="font-family:monospace;font-size:12px;width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--paper);resize:vertical"></textarea>
+        <span style="font-size:11px;color:var(--muted);margin-top:3px">Supports standard API keys or full Google Cloud Service Account JSON keys.</span>
       </div>
 
       <!-- Google Calendar Sync Trigger Box -->

@@ -49,7 +49,7 @@
 
   <!-- Key Performance Indicators -->
   <div class="kpis">
-    <div class="kpi" data-perm="owner finance">
+    <div class="kpi" data-perm="owner">
       <div class="lbl">
         <span class="ic tint-green">
           <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
@@ -60,7 +60,7 @@
       <div class="src"><span class="dotg"></span>calculated live in JMOS</div>
     </div>
 
-    <div class="kpi" data-perm="owner finance">
+    <div class="kpi" data-perm="owner">
       <div class="lbl">
         <span class="ic tint-red">
           <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M3 17l6-6 4 4 8-8"/></svg>
@@ -82,7 +82,7 @@
       <div class="sub" id="kpiPipelineSub"><span class="mono">0</span> open deals</div>
     </div>
 
-    <div class="kpi" data-perm="owner finance">
+    <div class="kpi" data-perm="owner">
       <div class="lbl">
         <span class="ic tint-red">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
@@ -264,7 +264,7 @@
       <span>All systems operational</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.5.1') }}</span>
+      <span class="badge" style="font-size:10.5px;padding:2px 7px;background:var(--paper);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace">{{ config('app.version', 'v2.5.8') }}</span>
       <span>&copy; {{ date('Y') }} Jeota Media Ltd</span>
     </div>
   </footer>

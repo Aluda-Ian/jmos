@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\CalendarEvent;
+use App\Models\FundraisingOpportunity;
 use App\Models\Invoice;
 use App\Models\Project;
 use App\Models\SystemSetting;
@@ -97,8 +98,8 @@ class CalendarController extends Controller
                     'title' => 'Project Due: '.$p->project_name,
                     'description' => "Client: {$p->client} · Stage: {$p->stage} · Status: {$p->status}",
                     'event_type' => 'deadline',
-                    'start_time' => $parsedDate->setTime(17, 0)->toIso8601String(),
-                    'end_time' => $parsedDate->setTime(18, 0)->toIso8601String(),
+                    'start_time' => $parsedDate->copy()->setTime(17, 0)->toIso8601String(),
+                    'end_time' => $parsedDate->copy()->setTime(18, 0)->toIso8601String(),
                     'date' => $parsedDate->format('Y-m-d'),
                     'time' => '17:00',
                     'location' => 'JMOS Delivery Board',
@@ -110,7 +111,81 @@ class CalendarController extends Controller
             }
         }
 
-        // 3. Aggregate invoice due dates (finance & owner team only)
+        // 3. Aggregate task deadlines (only non-done tasks that involve user)
+        $tasks = Task::whereNotNull('due_date')->where('stage', '!=', 'done')->with('project')->get();
+        foreach ($tasks as $task) {
+            if (! $this->isUserInvolvedInTask($task, $user, $isOwner, $userName, $userEmail, $userInitials)) {
+                continue;
+            }
+
+            $parsedDate = null;
+            try {
+                $parsedDate = Carbon::parse($task->due_date);
+            } catch (\Exception $e) {
+            }
+
+            if ($parsedDate) {
+                $projectName = $task->project?->project_name ?? 'Task Board';
+                $events[] = [
+                    'id' => 'task_'.$task->id,
+                    'db_id' => $task->id,
+                    'title' => 'Task Due: '.$task->title,
+                    'description' => "Project: {$projectName} · Assigned to: {$task->assigned_to} · Priority: ".ucfirst($task->priority ?? 'medium'),
+                    'event_type' => 'deadline',
+                    'start_time' => $parsedDate->copy()->setTime(17, 0)->toIso8601String(),
+                    'end_time' => $parsedDate->copy()->setTime(18, 0)->toIso8601String(),
+                    'date' => $parsedDate->format('Y-m-d'),
+                    'time' => '17:00',
+                    'location' => $projectName,
+                    'meet_link' => null,
+                    'attendees' => $task->assigned_to,
+                    'status' => 'confirmed',
+                    'source' => 'task',
+                ];
+            }
+        }
+
+        // 4. Aggregate Fundraising & Impact Grants / Open Calls & Partnerships deadlines
+        $grantOpportunities = FundraisingOpportunity::whereNotNull('deadline')
+            ->whereNotIn('status', ['Closed', 'Missed'])
+            ->get();
+
+        foreach ($grantOpportunities as $grant) {
+            $deadlineStr = trim((string) $grant->deadline);
+            if (empty($deadlineStr)) {
+                continue;
+            }
+
+            $parsedDate = null;
+            try {
+                $parsedDate = Carbon::parse($deadlineStr);
+            } catch (\Exception $e) {
+            }
+
+            if ($parsedDate) {
+                $isPart = ($grant->category === 'partnerships');
+                $prefix = $isPart ? 'Partnership Target: ' : 'Grant Deadline: ';
+                $titleText = $grant->program_title ? $grant->program_title.' ('.$grant->organization.')' : $grant->organization;
+                $events[] = [
+                    'id' => 'grant_'.$grant->id,
+                    'db_id' => $grant->id,
+                    'title' => $prefix.$titleText,
+                    'description' => "Organization: {$grant->organization} · Funding: KES ".number_format((float) $grant->amount_kes)." · Status: {$grant->status}",
+                    'event_type' => 'deadline',
+                    'start_time' => $parsedDate->copy()->setTime(18, 0)->toIso8601String(),
+                    'end_time' => $parsedDate->copy()->setTime(19, 0)->toIso8601String(),
+                    'date' => $parsedDate->format('Y-m-d'),
+                    'time' => '18:00',
+                    'location' => 'Fundraising & Grants Master',
+                    'meet_link' => $grant->application_link,
+                    'attendees' => $grant->lead_owner ?? 'Fundraising Team',
+                    'status' => $grant->status,
+                    'source' => 'grant',
+                ];
+            }
+        }
+
+        // 5. Aggregate invoice due dates (finance & owner team only)
         if ($isFinance) {
             $invoices = Invoice::where('status', '!=', 'Paid')->whereNotNull('due_date')->get();
             foreach ($invoices as $inv) {
@@ -125,10 +200,10 @@ class CalendarController extends Controller
                         'id' => 'inv_'.$inv->id,
                         'db_id' => $inv->id,
                         'title' => "Invoice Due: {$inv->invoice_no} ({$inv->client})",
-                        'description' => 'Amount: KES '.number_format($inv->amount)." · Type: {$inv->type}",
+                        'description' => 'Amount: KES '.number_format((float) $inv->amount)." · Type: {$inv->type}",
                         'event_type' => 'invoice',
-                        'start_time' => $parsedDate->setTime(10, 0)->toIso8601String(),
-                        'end_time' => $parsedDate->setTime(11, 0)->toIso8601String(),
+                        'start_time' => $parsedDate->copy()->setTime(10, 0)->toIso8601String(),
+                        'end_time' => $parsedDate->copy()->setTime(11, 0)->toIso8601String(),
                         'date' => $parsedDate->format('Y-m-d'),
                         'time' => '10:00',
                         'location' => 'Accounts Receivable',
@@ -295,6 +370,51 @@ class CalendarController extends Controller
         return false;
     }
 
+    /**
+     * Determine if a task involves the given user.
+     */
+    protected function isUserInvolvedInTask(
+        Task $task,
+        ?User $user,
+        bool $isOwner,
+        string $userName,
+        string $userEmail,
+        string $userInitials
+    ): bool {
+        if (! $user && empty($userName) && empty($userEmail)) {
+            return true;
+        }
+
+        if ($isOwner) {
+            return true;
+        }
+
+        $assignee = strtolower((string) $task->assigned_to);
+        $initials = strtolower((string) $task->assigned_initials);
+
+        if ($userName !== '' && (str_contains($assignee, $userName) || str_contains($userName, $assignee))) {
+            return true;
+        }
+
+        if ($userInitials !== '' && ($initials === $userInitials || str_contains($assignee, "({$userInitials})"))) {
+            return true;
+        }
+
+        if ($task->assigned_to_id && $user && $task->assigned_to_id === $user->id) {
+            return true;
+        }
+
+        if ($task->assigned_by_id && $user && $task->assigned_by_id === $user->id) {
+            return true;
+        }
+
+        if ($task->project && $this->isUserInvolvedInProject($task->project, $user, $isOwner, $userName, $userEmail, $userInitials)) {
+            return true;
+        }
+
+        return false;
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -423,12 +543,33 @@ class CalendarController extends Controller
 
     public function sync(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'account_email' => 'required|email',
-        ]);
-
-        $accountEmail = strtolower(trim($validated['account_email']));
         $user = auth('sanctum')->user() ?? auth()->user();
+        $accountEmail = trim((string) $request->input('account_email', ''));
+
+        if (empty($accountEmail)) {
+            $accountEmail = $user?->google_calendar_email
+                ?: $user?->email
+                ?: SystemSetting::getVal('google_connected_account')
+                ?: SystemSetting::getVal('google_calendar_id');
+        }
+
+        // If service account key is saved, extract client_email if not set
+        $saRaw = SystemSetting::getVal('google_service_account_json') ?: SystemSetting::getVal('google_api_key');
+        if (! empty($saRaw) && str_starts_with(trim($saRaw), '{')) {
+            $parsed = json_decode($saRaw, true);
+            if (! empty($parsed['client_email']) && (empty($accountEmail) || $accountEmail === 'primary')) {
+                $accountEmail = $parsed['client_email'];
+            }
+        }
+
+        if (empty($accountEmail) || $accountEmail === 'primary') {
+            $accountEmail = $user?->email ?: 'jeotamedia@gmail.com';
+        }
+
+        $accountEmail = strtolower(trim($accountEmail));
+
+        // Test API verification with GoogleCalendarService
+        $verification = $this->googleCalendarService->verifyConnection($accountEmail);
 
         if ($user) {
             $user->update([
@@ -452,7 +593,7 @@ class CalendarController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => "Personal Google Calendar successfully authorized and synced for {$accountEmail}.",
+            'message' => $verification['message'] ?? "Google Calendar successfully authorized and synced ({$accountEmail}).",
             'account' => $accountEmail,
             'status_label' => 'connected',
             'synced_count' => $eventsCount,
@@ -524,7 +665,7 @@ class CalendarController extends Controller
         $user = auth('sanctum')->user() ?? auth()->user();
         $clientId = SystemSetting::getVal('google_client_id')
             ?: config('services.google.client_id')
-            ?: '782910482910-jeotamedia-jmos-prod.apps.googleusercontent.com';
+            ?: '337996386320-berd8925g6askvbrfgm5vdd8148te4r7.apps.googleusercontent.com';
 
         $redirectUri = url('/calendar/google/callback');
         $email = $request->query('email', $user?->google_calendar_email ?? $user?->email ?? '');
@@ -565,7 +706,7 @@ class CalendarController extends Controller
         $user = auth('sanctum')->user() ?? auth()->user();
         $clientId = SystemSetting::getVal('google_client_id')
             ?: config('services.google.client_id')
-            ?: '782910482910-jeotamedia-jmos-prod.apps.googleusercontent.com';
+            ?: '337996386320-berd8925g6askvbrfgm5vdd8148te4r7.apps.googleusercontent.com';
 
         $redirectUri = url('/calendar/google/callback');
         $email = $request->query('email', $user?->google_calendar_email ?? $user?->email ?? '');

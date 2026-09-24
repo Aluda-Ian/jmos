@@ -33,7 +33,7 @@ if ($zip->open($versionedZipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !=
     exit(1);
 }
 
-$folders = ['app', 'bootstrap', 'config', 'database', 'public', 'resources', 'routes', 'storage'];
+$folders = ['app', 'bootstrap', 'config', 'database', 'public', 'resources', 'routes', 'scripts', 'storage'];
 foreach ($folders as $folder) {
     $folderPath = $baseDir.DIRECTORY_SEPARATOR.$folder;
     if (! is_dir($folderPath)) {
@@ -65,7 +65,7 @@ foreach ($folders as $folder) {
     }
 }
 
-$standaloneFiles = ['.env.example', 'composer.json', 'package.json', 'README.md', 'vite.config.js', 'artisan'];
+$standaloneFiles = ['.htaccess', '.env.example', 'composer.json', 'composer.lock', 'package.json', 'README.md', 'vite.config.js', 'artisan'];
 foreach ($standaloneFiles as $f) {
     $filePath = $baseDir.DIRECTORY_SEPARATOR.$f;
     if (file_exists($filePath)) {

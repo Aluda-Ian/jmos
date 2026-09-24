@@ -2,7 +2,7 @@
    JMOS — Service Worker for Offline Caching, PWA & Web Push Notifications
    ========================================================================== */
 
-const CACHE_NAME = 'jmos-cache-v2.5.1';
+const CACHE_NAME = 'jmos-cache-v2.5.9';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

@@ -86,13 +86,11 @@ window.openProjectForClient = function(clientName) {
 };
 
 window.openInvoiceForClient = function(clientName) {
-  openModal('invoiceModal');
-  setTimeout(() => {
-    const select = document.getElementById('modalInvoiceClientSelect');
-    const hidden = document.getElementById('modalInvoiceClientHidden');
-    if (select) select.value = clientName;
-    if (hidden) hidden.value = clientName;
-  }, 50);
+  if (typeof window.openCreateInvoiceInBudget === 'function') {
+    window.openCreateInvoiceInBudget(clientName);
+  } else if (typeof window.showView === 'function') {
+    window.showView('budget');
+  }
 };
 
 // Helper to identify internal projects (e.g. JMOS system development)
@@ -502,8 +500,15 @@ window.openProjectWorkspace = async function(projectId) {
     const deadlineInput = document.getElementById('pdmDeadlineInput');
     if (deadlineInput) deadlineInput.value = dVal;
 
-    document.getElementById('pdmManagerSelect').value = project.project_manager || 'Barny Kiome';
-    document.getElementById('pdmPrioritySelect').value = project.priority || 'Medium';
+    if (typeof window.populateAllUserSelects === 'function') window.populateAllUserSelects();
+    const mgrSelect = document.getElementById('pdmManagerSelect');
+    if (mgrSelect) {
+      mgrSelect.value = project.project_manager || 'Barny Kiome';
+    }
+    const prioSelect = document.getElementById('pdmPrioritySelect');
+    if (prioSelect) {
+      prioSelect.value = project.priority || 'Medium';
+    }
 
     // Progress
     const pct = project.progress_pct || 0;
@@ -802,11 +807,17 @@ document.getElementById('pdmDeleteBtn')?.addEventListener('click', async () => {
 // Add Task from Workspace
 document.getElementById('pdmAddTaskBtn')?.addEventListener('click', () => {
   const projId = document.getElementById('pdmProjectId')?.value;
-  closeModal('projectDetailModal');
-  if (typeof openTaskModal === 'function') {
+  if (typeof window.closeModal === 'function') {
+    window.closeModal('projectDetailModal');
+  } else if (typeof closeModal === 'function') {
+    closeModal('projectDetailModal');
+  }
+  if (typeof window.openTaskModal === 'function') {
+    window.openTaskModal(projId);
+  } else if (typeof openTaskModal === 'function') {
     openTaskModal(projId);
   } else {
-    openModal('taskModal');
+    window.openModal('taskModal');
     const ntProj = document.getElementById('ntProject');
     if (ntProj && projId) ntProj.value = projId;
   }
@@ -1136,6 +1147,7 @@ function populateClientInfoTab(client) {
   const contactInput = document.getElementById('cdmInputContact');
   if (contactInput) contactInput.value = client.contact_person || '';
 
+  if (typeof window.populateAllUserSelects === 'function') window.populateAllUserSelects();
   const ownerSelect = document.getElementById('cdmSelectOwner');
   if (ownerSelect) ownerSelect.value = client.owner || 'Barny Kiome';
 

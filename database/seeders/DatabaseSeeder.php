@@ -74,15 +74,15 @@ class DatabaseSeeder extends Seeder
             ['group' => 'smtp', 'key' => 'mail_host', 'value' => 'mail.jeotamedia.co.ke', 'is_secret' => false],
             ['group' => 'smtp', 'key' => 'mail_port', 'value' => '587', 'is_secret' => false],
             ['group' => 'smtp', 'key' => 'mail_username', 'value' => 'jmos@jeotamedia.co.ke', 'is_secret' => false],
-            ['group' => 'smtp', 'key' => 'mail_password', 'value' => '@Munangwe212', 'is_secret' => true],
+            ['group' => 'smtp', 'key' => 'mail_password', 'value' => env('MAIL_PASSWORD', ''), 'is_secret' => true],
             ['group' => 'smtp', 'key' => 'mail_encryption', 'value' => 'tls', 'is_secret' => false],
             ['group' => 'smtp', 'key' => 'mail_from_address', 'value' => 'jmos@jeotamedia.co.ke', 'is_secret' => false],
             ['group' => 'smtp', 'key' => 'mail_from_name', 'value' => 'JMOS — Jeota Media', 'is_secret' => false],
 
             // Google Calendar & Notifications API Settings
-            ['group' => 'google_calendar', 'key' => 'google_client_id', 'value' => '', 'is_secret' => false],
-            ['group' => 'google_calendar', 'key' => 'google_client_secret', 'value' => '', 'is_secret' => true],
-            ['group' => 'google_calendar', 'key' => 'google_calendar_id', 'value' => 'primary', 'is_secret' => false],
+            ['group' => 'google_calendar', 'key' => 'google_client_id', 'value' => env('GOOGLE_CLIENT_ID', ''), 'is_secret' => false],
+            ['group' => 'google_calendar', 'key' => 'google_client_secret', 'value' => env('GOOGLE_CLIENT_SECRET', ''), 'is_secret' => true],
+            ['group' => 'google_calendar', 'key' => 'google_calendar_id', 'value' => 'jeotamedia@gmail.com', 'is_secret' => false],
             ['group' => 'google_calendar', 'key' => 'google_api_key', 'value' => '', 'is_secret' => true],
             ['group' => 'google_calendar', 'key' => 'google_sync_enabled', 'value' => '1', 'is_secret' => false],
 

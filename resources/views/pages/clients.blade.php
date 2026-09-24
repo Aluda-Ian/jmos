@@ -41,12 +41,12 @@
       <div class="action-card-arr">→</div>
     </div>
 
-    <div class="action-card" onclick="openModal('invoiceModal')" role="button" tabindex="0" title="Draft deposit or milestone invoice">
+    <div class="action-card" onclick="window.openCreateInvoiceInBudget()" role="button" tabindex="0" title="Draft deposit or milestone invoice via Production Budget">
       <div class="action-card-icon tint-green">
         <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
       </div>
       <div class="action-card-content">
-        <div class="action-card-title">Issue Invoice</div>
+        <div class="action-card-title">Issue Invoice (Budget)</div>
         <p class="action-card-sub">Generate retainer or milestone invoice</p>
       </div>
       <div class="action-card-arr">→</div>

@@ -178,6 +178,95 @@ function openEditUserModal(user) {
   openModal('userModal');
 }
 
+window.submitUserForm = async function(btn = null) {
+  const saveUserBtn = btn || document.getElementById('saveUserBtn');
+  const editIdEl = document.getElementById('editUserId');
+  const editUserId = editIdEl ? editIdEl.value.trim() : '';
+  const isEdit = Boolean(editUserId);
+
+  const name = document.getElementById('nuName')?.value.trim();
+  const email = document.getElementById('nuEmail')?.value.trim();
+  const title = document.getElementById('nuTitle')?.value.trim() || 'Team';
+  const department = document.getElementById('nuDept')?.value.trim() || 'Production';
+  const phone = document.getElementById('nuPhone')?.value.trim();
+  const role = document.getElementById('nuRole')?.value;
+  const type = document.getElementById('nuType')?.value;
+  const pay = document.getElementById('nuPay')?.value.trim() || '—';
+  const password = document.getElementById('nuPass')?.value;
+  const avatarInput = document.getElementById('nuAvatarFile');
+  const avatarFile = avatarInput && avatarInput.files && avatarInput.files[0];
+
+  if (!name || !email) {
+    showToast('Add a name and email', 'Both are needed for team login & identification', true);
+    return;
+  }
+
+  if (saveUserBtn) {
+    saveUserBtn.disabled = true;
+    saveUserBtn.textContent = isEdit ? 'Updating…' : 'Adding…';
+  }
+
+  const sendInviteEl = document.getElementById('nuSendInviteEmail');
+  const sendInvite = sendInviteEl ? sendInviteEl.checked : true;
+
+  try {
+    if (avatarFile) {
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      formData.append('title', title);
+      formData.append('department', department);
+      formData.append('phone', phone);
+      formData.append('role', role);
+      formData.append('type', type);
+      formData.append('pay', pay);
+      formData.append('send_invite_email', sendInvite ? '1' : '0');
+      if (password) formData.append('password', password);
+      formData.append('avatar', avatarFile);
+
+      if (isEdit) {
+        await JMOS_API.upload('/users/' + editUserId, formData);
+      } else {
+        await JMOS_API.upload('/users', formData);
+      }
+    } else {
+      const payload = {
+        name,
+        email,
+        title,
+        department,
+        phone,
+        role,
+        type,
+        pay,
+        send_invite_email: sendInvite
+      };
+      if (password) payload.password = password;
+
+      if (isEdit) {
+        await JMOS_API.put('/users/' + editUserId, payload);
+      } else {
+        payload.password = password || 'jeota2024';
+        await JMOS_API.post('/users', payload);
+      }
+    }
+
+    closeModal('userModal');
+    showToast(
+      isEdit ? 'Team member updated' : name + ' added',
+      isEdit ? 'Details, department, salary and role saved.' : (sendInvite ? `Invitation & password setup email sent to ${email}` : `${email} can now sign in.`)
+    );
+    await ensurePeople();
+  } catch (err) {
+    showToast(isEdit ? 'Failed to update member' : 'Failed to add person', err.message, true);
+  } finally {
+    if (saveUserBtn) {
+      saveUserBtn.disabled = false;
+      saveUserBtn.textContent = isEdit ? 'Update team member' : 'Add person & create login';
+    }
+  }
+};
+
 function initPeople() {
   const addUserBtn = document.getElementById('addUserBtn');
   const saveUserBtn = document.getElementById('saveUserBtn');
@@ -243,90 +332,9 @@ function initPeople() {
   }
 
   if (saveUserBtn) {
-    saveUserBtn.onclick = async () => {
-      const editIdEl = document.getElementById('editUserId');
-      const editUserId = editIdEl ? editIdEl.value.trim() : '';
-      const isEdit = Boolean(editUserId);
-
-      const name = document.getElementById('nuName').value.trim();
-      const email = document.getElementById('nuEmail').value.trim();
-      const title = document.getElementById('nuTitle').value.trim() || 'Team';
-      const department = document.getElementById('nuDept').value.trim() || 'Production';
-      const phone = document.getElementById('nuPhone').value.trim();
-      const role = document.getElementById('nuRole').value;
-      const type = document.getElementById('nuType').value;
-      const pay = document.getElementById('nuPay').value.trim() || '—';
-      const password = document.getElementById('nuPass').value;
-      const avatarInput = document.getElementById('nuAvatarFile');
-      const avatarFile = avatarInput && avatarInput.files && avatarInput.files[0];
-
-      if (!name || !email) {
-        showToast('Add a name and email', 'Both are needed for team login & identification', true);
-        return;
-      }
-
-      saveUserBtn.disabled = true;
-      saveUserBtn.textContent = isEdit ? 'Updating…' : 'Adding…';
-
-      const sendInviteEl = document.getElementById('nuSendInviteEmail');
-      const sendInvite = sendInviteEl ? sendInviteEl.checked : true;
-
-      try {
-        if (avatarFile) {
-          // Send via FormData to handle file upload
-          const formData = new FormData();
-          formData.append('name', name);
-          formData.append('email', email);
-          formData.append('title', title);
-          formData.append('department', department);
-          formData.append('phone', phone);
-          formData.append('role', role);
-          formData.append('type', type);
-          formData.append('pay', pay);
-          formData.append('send_invite_email', sendInvite ? '1' : '0');
-          if (password) formData.append('password', password);
-          formData.append('avatar', avatarFile);
-
-          if (isEdit) {
-            await JMOS_API.upload('/users/' + editUserId, formData);
-          } else {
-            await JMOS_API.upload('/users', formData);
-          }
-        } else {
-          // Send as JSON payload
-          const payload = {
-            name,
-            email,
-            title,
-            department,
-            phone,
-            role,
-            type,
-            pay,
-            send_invite_email: sendInvite
-          };
-          if (password) payload.password = password;
-
-          if (isEdit) {
-            await JMOS_API.put('/users/' + editUserId, payload);
-          } else {
-            payload.password = password || 'jeota2024';
-            await JMOS_API.post('/users', payload);
-          }
-        }
-
-        closeModal('userModal');
-        showToast(
-          isEdit ? 'Team member updated' : name + ' added',
-          isEdit ? 'Details, department, salary and role saved.' : (sendInvite ? `Invitation & password setup email sent to ${email}` : `${email} can now sign in.`)
-        );
-        await ensurePeople();
-      } catch (err) {
-        showToast(isEdit ? 'Failed to update member' : 'Failed to add person', err.message, true);
-      } finally {
-        saveUserBtn.disabled = false;
-        saveUserBtn.textContent = isEdit ? 'Update team member' : 'Add person & create login';
-      }
+    saveUserBtn.onclick = (e) => {
+      e.preventDefault();
+      window.submitUserForm(saveUserBtn);
     };
   }
 

@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: Expenses
      ========================================================================== -->
-<section class="view" data-view="expenses" hidden data-perm="owner finance">
+<section class="view" data-view="expenses" hidden data-perm="owner">
   <div class="page-head">
     <div>
       <h1 class="pt">Expenses</h1>

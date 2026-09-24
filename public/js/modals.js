@@ -172,8 +172,191 @@ window.getNextInvoiceNo = function() {
   return 'JM-' + String(next).padStart(4, '0');
 };
 
+/* ==========================================================================
+   Central User Selects Synchronizer
+   ========================================================================== */
+
+window.populateAllUserSelects = function(users = null) {
+  const state = (typeof window !== 'undefined' && window.JMOS_STATE) || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE : null);
+  const userList = (Array.isArray(users) && users.length) 
+    ? users 
+    : ((state && Array.isArray(state.users)) ? state.users : []);
+
+  if (!userList || !userList.length) return;
+
+  // 1. Task Modal Assignee (#ntAssigned)
+  const taskAssigned = document.getElementById('ntAssigned');
+  if (taskAssigned) {
+    const curVal = taskAssigned.value;
+    taskAssigned.innerHTML = userList.map(u => {
+      const ini = u.ini || u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : u.name.substring(0, 2).toUpperCase());
+      return `<option value="${escHtml(u.name)}">${escHtml(u.name)} (${escHtml(ini)})</option>`;
+    }).join('');
+    if (curVal && Array.from(taskAssigned.options).some(o => o.value === curVal)) {
+      taskAssigned.value = curVal;
+    }
+  }
+
+  // 2. Project Modal Manager (#npManager)
+  const npManager = document.getElementById('npManager');
+  if (npManager) {
+    const curVal = npManager.value;
+    npManager.innerHTML = userList.map(u => `
+      <option value="${escHtml(u.name)}">${escHtml(u.name)} (${escHtml(u.title || u.role || 'Team')})</option>
+    `).join('');
+    if (curVal && Array.from(npManager.options).some(o => o.value === curVal)) {
+      npManager.value = curVal;
+    }
+  }
+
+  // 3. Project Detail Drawer Manager (#pdmManagerSelect)
+  const pdmManager = document.getElementById('pdmManagerSelect');
+  if (pdmManager) {
+    const curVal = pdmManager.value;
+    pdmManager.innerHTML = userList.map(u => `
+      <option value="${escHtml(u.name)}">${escHtml(u.name)} (${escHtml(u.title || u.role || 'Team')})</option>
+    `).join('');
+    if (curVal && Array.from(pdmManager.options).some(o => o.value === curVal)) {
+      pdmManager.value = curVal;
+    }
+  }
+
+  // 4. Client Detail Drawer Owner (#cdmSelectOwner)
+  const cdmOwner = document.getElementById('cdmSelectOwner');
+  if (cdmOwner) {
+    const curVal = cdmOwner.value;
+    cdmOwner.innerHTML = userList.map(u => `
+      <option value="${escHtml(u.name)}">${escHtml(u.name)} (${escHtml(u.title || u.role || 'Team')})</option>
+    `).join('');
+    if (curVal && Array.from(cdmOwner.options).some(o => o.value === curVal)) {
+      cdmOwner.value = curVal;
+    }
+  }
+
+  // 5. Lead Modal Owner (#leadOwner)
+  const leadOwner = document.getElementById('leadOwner');
+  if (leadOwner) {
+    const curVal = leadOwner.value;
+    leadOwner.innerHTML = `
+      <option value="Jeota Media">Jeota Media</option>
+      ${userList.map(u => `
+        <option value="${escHtml(u.name)}">${escHtml(u.name)} (${escHtml(u.title || u.role || 'Team')})</option>
+      `).join('')}
+    `;
+    if (curVal && Array.from(leadOwner.options).some(o => o.value === curVal)) {
+      leadOwner.value = curVal;
+    }
+  }
+
+  // 6. Lead Filter Owner (#leadOwnerFilter)
+  const leadFilter = document.getElementById('leadOwnerFilter');
+  if (leadFilter) {
+    const curVal = leadFilter.value;
+    leadFilter.innerHTML = `
+      <option value="">All Owners</option>
+      <option value="Jeota Media">Jeota Media</option>
+      ${userList.map(u => `
+        <option value="${escHtml(u.name)}">${escHtml(u.name)}</option>
+      `).join('')}
+    `;
+    if (curVal && Array.from(leadFilter.options).some(o => o.value === curVal)) {
+      leadFilter.value = curVal;
+    }
+  }
+};
+
+window.ensureUsersLoaded = async function() {
+  const state = (typeof window !== 'undefined' && window.JMOS_STATE) || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE : null);
+  let users = state?.users;
+  if (Array.isArray(users) && users.length > 0) {
+    window.populateAllUserSelects(users);
+    return users;
+  }
+  try {
+    const api = (typeof JMOS_API !== 'undefined') ? JMOS_API : (typeof window !== 'undefined' ? window.JMOS_API : null);
+    if (api && typeof api.get === 'function') {
+      const res = await api.get('/users');
+      const uList = Array.isArray(res) ? res : (Array.isArray(res?.data) ? res.data : null);
+      if (uList && uList.length > 0) {
+        const mapped = uList.map((u, i) => ({
+          id: u.id,
+          name: u.name,
+          title: u.title || 'Team',
+          department: u.department || '',
+          email: u.email,
+          phone: u.phone || '',
+          secondary_email: u.secondary_email || null,
+          avatar_url: u.avatar_url || null,
+          bio: u.bio || '',
+          role: u.role || 'team',
+          type: u.type || 'Full-time',
+          pay: u.pay || '—',
+          color: u.color || (typeof JMOS_COLORS !== 'undefined' ? JMOS_COLORS[i % JMOS_COLORS.length] : '#C52523'),
+          ini: u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : u.name.substring(0, 2).toUpperCase())
+        }));
+        if (state) state.users = mapped;
+        if (typeof JMOS_STATE !== 'undefined') JMOS_STATE.users = mapped;
+        if (typeof window !== 'undefined') window.JMOS_STATE = window.JMOS_STATE || state || JMOS_STATE;
+        window.populateAllUserSelects(mapped);
+        return mapped;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load users for selectors:', err);
+  }
+  return [];
+};
+
 // Global Modal Open & Close Functions
+window.openCreateInvoiceInBudget = function(clientName = '', projectName = '', clientId = null) {
+  if (typeof window.showView === 'function') {
+    window.showView('budget');
+  } else if (typeof window.navigateTo === 'function') {
+    window.navigateTo('budget');
+  }
+  setTimeout(() => {
+    const frame = document.getElementById('budgetFrame');
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({
+        action: 'openInvoice',
+        mode: 'invoice',
+        client: clientName || '',
+        project: projectName || (clientName ? `${clientName} — Production Invoice` : ''),
+        clientId: clientId || null
+      }, '*');
+    }
+  }, 120);
+};
+
+window.openCreateQuoteInBudget = function(clientName = '', projectName = '', clientId = null, leadId = null) {
+  if (typeof window.showView === 'function') {
+    window.showView('budget');
+  } else if (typeof window.navigateTo === 'function') {
+    window.navigateTo('budget');
+  }
+  setTimeout(() => {
+    const frame = document.getElementById('budgetFrame');
+    if (frame && frame.contentWindow) {
+      frame.contentWindow.postMessage({
+        action: 'openQuote',
+        mode: 'quote',
+        client: clientName || '',
+        project: projectName || (clientName ? `${clientName} — Commercial Proposal` : ''),
+        clientId: clientId || null,
+        leadId: leadId || null
+      }, '*');
+    }
+  }, 120);
+};
+
 window.openModal = function(id) {
+  if (id === 'invoiceModal') {
+    const editId = document.getElementById('editInvoiceId')?.value;
+    if (!editId) {
+      window.openCreateInvoiceInBudget();
+      return;
+    }
+  }
   if (id === 'scheduleModal') {
     if (typeof window.openScheduleShootModal === 'function') {
       window.openScheduleShootModal();
@@ -183,6 +366,9 @@ window.openModal = function(id) {
   }
   const m = typeof id === 'string' ? document.getElementById(id) : id;
   if (!m) return;
+
+  // Make sure users are synchronized for dropdowns
+  window.ensureUsersLoaded();
 
   // Prepare / pre-fill modal-specific defaults
   const modalId = m.id;
@@ -213,12 +399,7 @@ window.openModal = function(id) {
     setupModalClientPicker('npClientSelect', 'npNewClientWrap', 'npNewClientInput', 'npClient', 'npToggleNewClientBtn');
 
     // Populate project managers from active team members
-    const mgrSelect = document.getElementById('npManager');
-    if (mgrSelect && JMOS_STATE.users && JMOS_STATE.users.length) {
-      mgrSelect.innerHTML = JMOS_STATE.users.map(u => `
-        <option value="${escHtml(u.name)}">${escHtml(u.name)} (${escHtml(u.title || u.role)})</option>
-      `).join('');
-    }
+    window.populateAllUserSelects();
 
     // Populate project types from registered service recipes
     const typeSelect = document.getElementById('npType');
@@ -238,56 +419,64 @@ window.openModal = function(id) {
   } else if (modalId === 'taskModal') {
     const el = document.getElementById('ntTitle');
     if (el) el.value = '';
+    const descEl = document.getElementById('ntDescription');
+    if (descEl) descEl.value = '';
     const st = document.getElementById('ntStage');
     if (st) st.value = 'todo';
+    const prio = document.getElementById('ntPriority');
+    if (prio) prio.value = 'medium';
+    const dueEl = document.getElementById('ntDueDate');
+    if (dueEl) dueEl.value = '';
 
-    // Reset searchable project picker
-    const searchInput = document.getElementById('taskProjectSearchInput');
-    if (searchInput) searchInput.value = '';
-    const searchClear = document.getElementById('taskProjectSearchClear');
-    if (searchClear) searchClear.style.display = 'none';
-    const dropdown = document.getElementById('taskProjectDropdown');
-    if (dropdown) dropdown.style.display = 'none';
-    const trigger = document.getElementById('taskProjectTrigger');
-    if (trigger) trigger.classList.remove('active');
+    // Synchronize assignees from active database users
+    if (typeof window.populateAllUserSelects === 'function') {
+      window.populateAllUserSelects();
+    }
 
-    const preselect = window._preselectedProjectId;
-    if (preselect) {
-      if (typeof window.selectTaskProject === 'function') {
-        window.selectTaskProject(preselect);
-      }
-      if (typeof window.ensureProjectsLoadedForTask === 'function') {
-        window.ensureProjectsLoadedForTask(preselect);
-      }
-    } else {
-      if (typeof window.selectTaskProject === 'function') {
-        window.selectTaskProject(null);
-      }
-      if (typeof window.ensureProjectsLoadedForTask === 'function') {
-        window.ensureProjectsLoadedForTask();
-      }
+    // Synchronize projects from active database projects
+    if (typeof window.populateAllProjectSelects === 'function') {
+      window.populateAllProjectSelects();
+    }
+    if (typeof window.ensureProjectsLoadedForTask === 'function') {
+      window.ensureProjectsLoadedForTask(window._preselectedProjectId);
     }
   } else if (modalId === 'invoiceModal') {
     const editId = document.getElementById('editInvoiceId')?.value;
     if (!editId) {
-      const titleEl = document.getElementById('invoiceModalTitle');
-      if (titleEl) titleEl.textContent = 'Issue new invoice';
-      const subEl = document.getElementById('invoiceModalSub');
-      if (subEl) subEl.textContent = 'Record an outgoing client invoice in JMOS.';
-      const saveBtn = document.getElementById('saveInvoiceBtn');
-      if (saveBtn) saveBtn.textContent = 'Issue invoice';
-      const delBtn = document.getElementById('deleteInvoiceModalBtn');
-      if (delBtn) delBtn.style.display = 'none';
+      window.openCreateInvoiceInBudget();
+      return;
+    }
 
-      const niNo = document.getElementById('niNo');
-      if (niNo) niNo.value = window.getNextInvoiceNo();
-      const niDue = document.getElementById('niDue');
-      if (niDue) niDue.value = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-      const st = document.getElementById('niStatus');
-      if (st) st.value = 'Sent';
-      const etims = document.getElementById('niEtims');
-      if (etims) etims.value = '1';
-      setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
+    const niNo = document.getElementById('niNo');
+    if (niNo) niNo.value = window.getNextInvoiceNo();
+    const niTitle = document.getElementById('niTitle');
+    if (niTitle) niTitle.value = '';
+    const niType = document.getElementById('niType');
+    if (niType) niType.value = 'Deposit 60%';
+    const niDue = document.getElementById('niDue');
+    if (niDue) niDue.value = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    const st = document.getElementById('niStatus');
+    if (st) st.value = 'Sent';
+    const etims = document.getElementById('niEtims');
+    if (etims) etims.value = '0';
+    const disc = document.getElementById('niDiscount');
+    if (disc) disc.value = '0';
+    const notes = document.getElementById('niNotes');
+    if (notes) notes.value = 'Payment Remittance: NCBA Bank Upper Hill Branch · A/C 1002349871 (Jeota Media Ltd) or Lipa na M-Pesa Paybill 880100.';
+    const method = document.getElementById('niMethod');
+    if (method) method.value = 'Bank Transfer / M-Pesa Paybill 880100';
+
+    setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
+
+    const tbody = document.getElementById('invoiceItemsTableBody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      if (typeof window.addInvoiceItemRow === 'function') {
+        window.addInvoiceItemRow({ description: 'Production & Creative Deliverables', quantity: 1, rate: '' });
+      }
+    }
+    if (typeof window.calcInvoiceTotals === 'function') {
+      window.calcInvoiceTotals();
     }
   } else if (modalId === 'expenseModal') {
     const editId = document.getElementById('editExpenseId')?.value;
@@ -435,19 +624,20 @@ window.showToast = function(title, subtitle, isRed = false) {
    ========================================================================== */
 
 function getSafeProjectsList() {
-  if (!window.JMOS_STATE) return [];
-  const p = window.JMOS_STATE.projects;
+  const state = (typeof window !== 'undefined' && window.JMOS_STATE) || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE : null);
+  if (!state) return [];
+  const p = state.projects;
   if (Array.isArray(p)) return p;
   if (p && Array.isArray(p.data)) return p.data;
   if (p && Array.isArray(p.projects)) return p.projects;
   return [];
 }
 
-window.populateTaskProjectOptions = function(filterText = '') {
+window.populateTaskProjectOptions = function(filterText = '', explicitProjects = null) {
   const listEl = document.getElementById('taskProjectOptionsList');
   if (!listEl) return;
 
-  const projects = getSafeProjectsList();
+  const projects = Array.isArray(explicitProjects) ? explicitProjects : getSafeProjectsList();
   const currentVal = document.getElementById('ntProject')?.value || '';
   const term = (filterText || '').trim().toLowerCase();
 
@@ -513,11 +703,11 @@ window.selectTaskProject = function(projectId) {
   const labelEl = document.getElementById('taskProjectSelectedLabel');
   const clearBtn = document.getElementById('taskProjectClearBtn');
 
-  const val = (projectId != null && projectId !== '') ? String(projectId) : '';
+  const val = (projectId != null && projectId !== '') ? String(projectId).trim() : '';
   if (hiddenInput) hiddenInput.value = val;
 
   const projects = getSafeProjectsList();
-  const project = val ? projects.find(p => String(p.id) === val) : null;
+  const project = val ? projects.find(p => String(p.id) === val || String(p.project_name || p.name || '').toLowerCase() === val.toLowerCase()) : null;
 
   if (labelEl) {
     if (project) {
@@ -543,17 +733,54 @@ window.selectTaskProject = function(projectId) {
   if (listEl) {
     listEl.querySelectorAll('.searchable-select-item').forEach(item => {
       const itemId = item.getAttribute('data-project-id');
-      const isSelected = (itemId === '' && !val) || (itemId === val);
+      const isSelected = (itemId === '' && !val) || (itemId === val) || (project && String(project.id) === itemId);
       item.classList.toggle('selected', isSelected);
       item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
     });
   }
 };
 
+window.populateAllProjectSelects = function(projects = null) {
+  const pList = (Array.isArray(projects) && projects.length) 
+    ? projects 
+    : (Array.isArray(window.JMOS_STATE?.projects) && window.JMOS_STATE.projects.length 
+        ? window.JMOS_STATE.projects 
+        : getSafeProjectsList());
+  const select = document.getElementById('ntProject');
+  if (!select) return;
+
+  const currentVal = select.value || window._preselectedProjectId || '';
+  let opts = '<option value="">— Standalone Task (No Project) —</option>';
+  if (Array.isArray(pList) && pList.length > 0) {
+    pList.forEach(p => {
+      const id = p.id;
+      const name = p.project_name || p.name || `Project #${id}`;
+      const client = p.client ? ` — ${p.client}` : '';
+      const stage = p.stage ? ` [${p.stage.replace(/_/g, ' ')}]` : '';
+      opts += `<option value="${id}">${escHtml(name)}${escHtml(client)}${escHtml(stage)}</option>`;
+    });
+  }
+  select.innerHTML = opts;
+  if (currentVal && pList && pList.some(p => String(p.id) === String(currentVal))) {
+    select.value = String(currentVal);
+  }
+};
+
+window.populateAllClientSelects = function(clients = null) {
+  const cList = (Array.isArray(clients) && clients.length)
+    ? clients
+    : (Array.isArray(window.JMOS_STATE?.clients) && window.JMOS_STATE.clients.length
+        ? window.JMOS_STATE.clients
+        : []);
+
+  setupModalClientPicker('npClientSelect', 'npNewClientWrap', 'npNewClientInput', 'npClient', 'npToggleNewClientBtn');
+  setupModalClientPicker('ndClientSelect', 'ndNewClientWrap', 'ndNewClientInput', 'ndClient', 'ndToggleNewClientBtn');
+  setupModalClientPicker('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient', 'niToggleNewClientBtn');
+};
+
 window.ensureProjectsLoadedForTask = async function(preselectId = null) {
-  const listEl = document.getElementById('taskProjectOptionsList');
   if (preselectId) {
-    window._preselectedProjectId = preselectId;
+    window._preselectedProjectId = String(preselectId);
   }
 
   function extractProjects(data) {
@@ -563,36 +790,36 @@ window.ensureProjectsLoadedForTask = async function(preselectId = null) {
     return null;
   }
 
-  let projects = extractProjects(window.JMOS_STATE?.projects);
-  const hasProjects = projects && projects.length > 0;
+  const state = (typeof window !== 'undefined' && window.JMOS_STATE) || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE : null);
+  let projects = extractProjects(state?.projects);
 
-  if (!hasProjects) {
-    if (listEl) {
-      listEl.innerHTML = `
-        <div class="searchable-select-loading">
-          <svg viewBox="0 0 24 24" width="16" height="16" class="spin" style="display:inline-block;vertical-align:middle;margin-right:6px;animation:spin 1s linear infinite"><path d="M23 4v6h-6M1 20v-6h6"/></svg>
-          Loading projects from database…
-        </div>
-      `;
-    }
+  if (projects && projects.length > 0) {
+    window.populateAllProjectSelects(projects);
+  }
+
+  if (!projects || projects.length === 0) {
     try {
-      const res = await JMOS_API.get('/projects');
-      const pList = extractProjects(res);
-      if (pList) {
-        JMOS_STATE.projects = pList;
-        projects = pList;
+      const api = (typeof JMOS_API !== 'undefined') ? JMOS_API : (typeof window !== 'undefined' ? window.JMOS_API : null);
+      if (api && typeof api.get === 'function') {
+        const res = await api.get('/projects');
+        const pList = extractProjects(res);
+        if (pList && pList.length > 0) {
+          if (state) state.projects = pList;
+          if (typeof JMOS_STATE !== 'undefined') JMOS_STATE.projects = pList;
+          if (typeof window !== 'undefined') window.JMOS_STATE = window.JMOS_STATE || state || JMOS_STATE;
+          projects = pList;
+          window.populateAllProjectSelects(pList);
+        }
       }
     } catch (err) {
       console.warn('Could not load projects for task selector:', err);
     }
   }
 
-  const searchInput = document.getElementById('taskProjectSearchInput');
-  window.populateTaskProjectOptions(searchInput ? searchInput.value : '');
-
   const targetId = window._preselectedProjectId || document.getElementById('ntProject')?.value;
   if (targetId) {
-    window.selectTaskProject(targetId);
+    const sel = document.getElementById('ntProject');
+    if (sel) sel.value = String(targetId);
   }
 };
 
@@ -736,7 +963,8 @@ window.ensureProjectsLoadedForExpense = async function(preselectVal = null) {
     return null;
   }
 
-  let projects = extractProjects(window.JMOS_STATE?.projects);
+  const state = (typeof window !== 'undefined' && window.JMOS_STATE) || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE : null);
+  let projects = extractProjects(state?.projects);
   const hasProjects = projects && projects.length > 0;
 
   if (!hasProjects) {
@@ -749,10 +977,16 @@ window.ensureProjectsLoadedForExpense = async function(preselectVal = null) {
       `;
     }
     try {
-      const res = await JMOS_API.get('/projects');
-      const pList = extractProjects(res);
-      if (pList) {
-        JMOS_STATE.projects = pList;
+      const api = (typeof JMOS_API !== 'undefined') ? JMOS_API : (typeof window !== 'undefined' ? window.JMOS_API : null);
+      if (api && typeof api.get === 'function') {
+        const res = await api.get('/projects');
+        const pList = extractProjects(res);
+        if (pList) {
+          if (state) state.projects = pList;
+          if (typeof JMOS_STATE !== 'undefined') JMOS_STATE.projects = pList;
+          if (typeof window !== 'undefined') window.JMOS_STATE = window.JMOS_STATE || state || JMOS_STATE;
+          projects = pList;
+        }
       }
     } catch (err) {
       console.warn('Could not load projects for expense selector:', err);
@@ -1050,6 +1284,42 @@ window.deleteExpense = async function(expenseId, expenseName = 'this expense') {
   }
 };
 
+window.openTaskProjectDropdown = function() {
+  const trigger = document.getElementById('taskProjectTrigger');
+  const dropdown = document.getElementById('taskProjectDropdown');
+  const searchInput = document.getElementById('taskProjectSearchInput');
+  if (!dropdown || !trigger) return;
+  dropdown.style.display = 'block';
+  trigger.classList.add('active');
+  trigger.setAttribute('aria-expanded', 'true');
+  if (typeof window.ensureProjectsLoadedForTask === 'function') {
+    window.ensureProjectsLoadedForTask();
+  }
+  setTimeout(() => searchInput?.focus(), 40);
+};
+
+window.closeTaskProjectDropdown = function() {
+  const trigger = document.getElementById('taskProjectTrigger');
+  const dropdown = document.getElementById('taskProjectDropdown');
+  if (!dropdown || !trigger) return;
+  dropdown.style.display = 'none';
+  trigger.classList.remove('active');
+  trigger.setAttribute('aria-expanded', 'false');
+};
+
+window.toggleTaskProjectDropdown = function(e) {
+  if (e) {
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
+  const dropdown = document.getElementById('taskProjectDropdown');
+  if (!dropdown) return;
+  if (dropdown.style.display === 'none' || !dropdown.style.display) {
+    window.openTaskProjectDropdown();
+  } else {
+    window.closeTaskProjectDropdown();
+  }
+};
+
 window.initTaskProjectPicker = function() {
   const wrap = document.getElementById('taskProjectSelectWrap');
   const trigger = document.getElementById('taskProjectTrigger');
@@ -1059,40 +1329,23 @@ window.initTaskProjectPicker = function() {
   const clearBtn = document.getElementById('taskProjectClearBtn');
   const listEl = document.getElementById('taskProjectOptionsList');
 
-  if (!wrap || wrap.dataset.initialized === 'true') return;
+  if (!wrap) return;
+  window.populateTaskProjectOptions(searchInput ? searchInput.value : '');
+
+  if (wrap.dataset.initialized === 'true') {
+    return;
+  }
   wrap.dataset.initialized = 'true';
-
-  function openDropdown() {
-    dropdown.style.display = 'block';
-    trigger.classList.add('active');
-    trigger.setAttribute('aria-expanded', 'true');
-    window.ensureProjectsLoadedForTask();
-    setTimeout(() => searchInput?.focus(), 40);
-  }
-
-  function closeDropdown() {
-    dropdown.style.display = 'none';
-    trigger.classList.remove('active');
-    trigger.setAttribute('aria-expanded', 'false');
-  }
-
-  function toggleDropdown() {
-    if (dropdown.style.display === 'none' || !dropdown.style.display) {
-      openDropdown();
-    } else {
-      closeDropdown();
-    }
-  }
 
   trigger.addEventListener('click', (e) => {
     if (e.target.closest('#taskProjectClearBtn')) return;
-    toggleDropdown();
+    window.toggleTaskProjectDropdown(e);
   });
 
   trigger.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
       e.preventDefault();
-      openDropdown();
+      window.openTaskProjectDropdown();
     }
   });
 
@@ -1104,6 +1357,10 @@ window.initTaskProjectPicker = function() {
   }
 
   if (searchInput) {
+    searchInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
     searchInput.addEventListener('input', () => {
       const val = searchInput.value;
       if (searchClear) searchClear.style.display = val ? 'inline-block' : 'none';
@@ -1113,7 +1370,7 @@ window.initTaskProjectPicker = function() {
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        closeDropdown();
+        window.closeTaskProjectDropdown();
         trigger.focus();
       } else if (e.key === 'Enter') {
         e.preventDefault();
@@ -1121,7 +1378,7 @@ window.initTaskProjectPicker = function() {
         if (firstItem) {
           const id = firstItem.getAttribute('data-project-id');
           window.selectTaskProject(id);
-          closeDropdown();
+          window.closeTaskProjectDropdown();
           trigger.focus();
         }
       }
@@ -1129,7 +1386,8 @@ window.initTaskProjectPicker = function() {
   }
 
   if (searchClear) {
-    searchClear.addEventListener('click', () => {
+    searchClear.addEventListener('click', (e) => {
+      e.stopPropagation();
       searchInput.value = '';
       searchClear.style.display = 'none';
       window.populateTaskProjectOptions('');
@@ -1139,18 +1397,19 @@ window.initTaskProjectPicker = function() {
 
   if (listEl) {
     listEl.addEventListener('click', (e) => {
+      e.stopPropagation();
       const item = e.target.closest('.searchable-select-item');
       if (!item) return;
       const id = item.getAttribute('data-project-id');
       window.selectTaskProject(id);
-      closeDropdown();
+      window.closeTaskProjectDropdown();
       trigger.focus();
     });
   }
 
   document.addEventListener('click', (e) => {
     if (!wrap.contains(e.target) && dropdown.style.display !== 'none') {
-      closeDropdown();
+      window.closeTaskProjectDropdown();
     }
   });
 };
@@ -1167,21 +1426,47 @@ if (document.readyState === 'loading') {
   if (typeof window.initExpenseUploader === 'function') window.initExpenseUploader();
 }
 
-window.openTaskModal = function(projectId) {
-  const pId = projectId ? String(projectId) : null;
+window.openCreateTaskModal = async function(projectId = null) {
+  const pId = projectId ? String(projectId) : (window._preselectedProjectId ? String(window._preselectedProjectId) : null);
   window._preselectedProjectId = pId;
+
+  const el = document.getElementById('ntTitle');
+  if (el) el.value = '';
+  const descEl = document.getElementById('ntDescription');
+  if (descEl) descEl.value = '';
+  const st = document.getElementById('ntStage');
+  if (st) st.value = 'todo';
+  const prio = document.getElementById('ntPriority');
+  if (prio) prio.value = 'medium';
+  const dueEl = document.getElementById('ntDueDate');
+  if (dueEl) dueEl.value = '';
+  const colorEl = document.getElementById('ntStickyColor');
+  if (colorEl) colorEl.value = '#FFFBEB';
+
+  if (typeof window.populateAllUserSelects === 'function') {
+    window.populateAllUserSelects();
+  }
+  if (typeof window.populateAllProjectSelects === 'function') {
+    window.populateAllProjectSelects();
+  }
+  const sel = document.getElementById('ntProject');
+  if (sel) {
+    if (pId) sel.value = pId;
+    else sel.value = '';
+  }
+
   openModal('taskModal');
-  if (pId) {
-    if (typeof window.selectTaskProject === 'function') {
-      window.selectTaskProject(pId);
-    }
-    if (typeof window.ensureProjectsLoadedForTask === 'function') {
-      window.ensureProjectsLoadedForTask(pId);
-    }
+
+  if (typeof window.ensureProjectsLoadedForTask === 'function') {
+    await window.ensureProjectsLoadedForTask(pId);
   }
 };
+window.openTaskModal = window.openCreateTaskModal;
 
 function initModals() {
+  if (window._jmosModalsInitialized) return;
+  window._jmosModalsInitialized = true;
+
   if (typeof window.initTaskProjectPicker === 'function') {
     window.initTaskProjectPicker();
   }
@@ -1196,25 +1481,57 @@ function initModals() {
   const cascadeDone = document.getElementById('cascadeDone');
   const cascadeBg = document.getElementById('cascadeBg');
 
-  // 1. Close modal on [data-close], .mclose, or backdrop (.mbg) click
+  // 1. Close modal on [data-close], .mclose, .mbg backdrop, or Cancel buttons
   document.addEventListener('click', (e) => {
     const closeBtn = e.target.closest('[data-close]');
     if (closeBtn) {
       e.preventDefault();
-      closeModal(closeBtn.getAttribute('data-close'));
+      const targetId = closeBtn.getAttribute('data-close');
+      if (targetId) {
+        closeModal(targetId);
+      } else {
+        const parentModal = closeBtn.closest('.modal, .cascade');
+        if (parentModal) closeModal(parentModal);
+      }
       return;
     }
 
     if (e.target.closest('.mclose')) {
       e.preventDefault();
-      const modal = e.target.closest('.modal');
+      const modal = e.target.closest('.modal, .cascade');
       if (modal) closeModal(modal);
       return;
     }
 
-    if (e.target.classList.contains('mbg')) {
-      const modal = e.target.closest('.modal');
+    if (e.target.classList.contains('mbg') || e.target.classList.contains('cbg')) {
+      const modal = e.target.closest('.modal, .cascade');
       if (modal) closeModal(modal);
+      return;
+    }
+
+    // Direct Cancel/Close button inside modal footer
+    const cancelBtn = e.target.closest('button, .btn');
+    if (cancelBtn) {
+      const txt = cancelBtn.textContent.trim().toLowerCase();
+      const isCancel = txt === 'cancel' || txt === 'close' || cancelBtn.classList.contains('cancel') || cancelBtn.hasAttribute('data-modal-close');
+      if (isCancel && !cancelBtn.id?.includes('save') && !cancelBtn.id?.includes('submit')) {
+        const modal = cancelBtn.closest('.modal, .cascade');
+        if (modal) {
+          e.preventDefault();
+          closeModal(modal);
+        }
+      }
+    }
+  });
+
+  // Global Escape Key Listener for Modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      const openModals = Array.from(document.querySelectorAll('.modal.on, .cascade.on'));
+      if (openModals.length > 0) {
+        const topModal = openModals[openModals.length - 1];
+        closeModal(topModal);
+      }
     }
   });
 
@@ -1293,39 +1610,346 @@ function initModals() {
     }
   });
 
+// ==========================================================================
+// Global Form Submission Handlers
+// ==========================================================================
+
+window.submitClientForm = async function(btn = null) {
+  const saveBtn = btn || document.getElementById('saveClientBtn');
+  const name = document.getElementById('ncName')?.value.trim();
+  if (!name) return showToast('Client name required', 'Please enter a client name', true);
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+  }
+  try {
+    await JMOS_API.post('/clients', {
+      client_name: name,
+      client_type: document.getElementById('ncType')?.value,
+      contact_person: document.getElementById('ncContact')?.value.trim(),
+      email: document.getElementById('ncEmail')?.value.trim() || null,
+      phone: document.getElementById('ncPhone')?.value.trim() || null,
+      owner: document.getElementById('ncOwner')?.value.trim(),
+      service: document.getElementById('ncService')?.value.trim(),
+      project_value: Number(document.getElementById('ncValue')?.value) || 0,
+      project_status: 'Active',
+      projects: 1
+    });
+    closeModal('clientModal');
+    showToast('Client created', `${name} saved to database`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast('Failed to save client', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save client';
+    }
+  }
+};
+
+window.submitProjectForm = async function(btn = null) {
+  const saveBtn = btn || document.getElementById('saveProjectBtn');
+  const name = document.getElementById('npName')?.value.trim();
+  const client = resolveModalClient('npClientSelect', 'npNewClientWrap', 'npNewClientInput', 'npClient');
+  if (!name || !client) return showToast('Name & Client required', 'Please fill project name and select or add a client', true);
+
+  const rawDeadline = document.getElementById('npDeadline')?.value.trim();
+  let deadlineStr = rawDeadline || 'To be scheduled';
+  if (rawDeadline) {
+    try {
+      const dParts = rawDeadline.split('-');
+      if (dParts.length === 3) {
+        const dObj = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
+        if (!isNaN(dObj.getTime())) {
+          deadlineStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+      }
+    } catch (_) {}
+  }
+
+  const rawCategory = document.getElementById('npCategory')?.value || 'video_production';
+  const category = rawCategory === 'custom'
+    ? (document.getElementById('npCustomCategoryInput')?.value.trim() || 'Custom')
+    : rawCategory;
+
+  const rawType = document.getElementById('npType')?.value.trim() || 'Brand film';
+  const project_type = rawType === 'custom'
+    ? (document.getElementById('npCustomTypeInput')?.value.trim() || 'Custom Project')
+    : rawType;
+
+  const rawStage = document.getElementById('npStage')?.value.trim() || 'Brief';
+  const stage = rawStage === 'custom'
+    ? (document.getElementById('npCustomStageInput')?.value.trim() || 'Planning')
+    : rawStage;
+
+  const rawStatus = document.getElementById('npStatus')?.value.trim() || 'On track';
+  const status = rawStatus === 'custom'
+    ? (document.getElementById('npCustomStatusInput')?.value.trim() || 'In Progress')
+    : rawStatus;
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Creating…';
+  }
+  try {
+    await JMOS_API.post('/projects', {
+      project_name: name,
+      client: client,
+      category: category,
+      project_type: project_type,
+      project_manager: document.getElementById('npManager')?.value.trim() || 'Barny Kiome',
+      stage: stage,
+      status: status,
+      priority: 'High',
+      deadline: deadlineStr,
+      budget: Number(document.getElementById('npBudget')?.value) || 0,
+      progress_pct: 10,
+      waiting_on: 'us'
+    });
+    closeModal('projectModal');
+    showToast('Project created', `${name} added to delivery board`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast('Failed to create project', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Create project';
+    }
+  }
+};
+
+window.submitDealForm = async function(btn = null) {
+  const saveBtn = btn || document.getElementById('saveDealBtn');
+  const title = document.getElementById('ndTitle')?.value.trim();
+  const client = resolveModalClient('ndClientSelect', 'ndNewClientWrap', 'ndNewClientInput', 'ndClient');
+  const val = Number(document.getElementById('ndValue')?.value) || 0;
+  if (!title || !client) return showToast('Title & Client required', 'Please enter deal title and select or add a client', true);
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Adding…';
+  }
+  try {
+    await JMOS_API.post('/pipeline', {
+      title,
+      client_name: client,
+      stage: document.getElementById('ndStage')?.value || 'lead',
+      value: val,
+      meta_text: fmtK(val)
+    });
+    closeModal('dealModal');
+    showToast('Deal added', `${title} added to pipeline`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast('Failed to add deal', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Add to pipeline';
+    }
+  }
+};
+
+window.submitTaskForm = async function(btn = null) {
+  const saveBtn = btn || document.getElementById('saveTaskBtn');
+  const title = document.getElementById('ntTitle')?.value.trim();
+  if (!title) return showToast('Task title required', 'Please enter a title', true);
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Creating…';
+  }
+  const assigned = document.getElementById('ntAssigned')?.value || 'Barny Kiome';
+  const userObj = (window.JMOS_STATE && JMOS_STATE.users) ? JMOS_STATE.users.find(u => u.name === assigned) : null;
+  const projectIdVal = document.getElementById('ntProject')?.value;
+  const stickyColorVal = document.getElementById('ntStickyColor')?.value || '#FFFBEB';
+  const descriptionVal = document.getElementById('ntDescription')?.value.trim() || null;
+  const priorityVal = document.getElementById('ntPriority')?.value || 'medium';
+  const dueDateVal = document.getElementById('ntDueDate')?.value || null;
+
+  try {
+    await JMOS_API.post('/tasks', {
+      project_id: projectIdVal ? Number(projectIdVal) : null,
+      title,
+      description: descriptionVal,
+      stage: document.getElementById('ntStage')?.value || 'todo',
+      priority: priorityVal,
+      due_date: dueDateVal,
+      sticky_color: stickyColorVal,
+      assigned_to: assigned,
+      assigned_initials: userObj ? userObj.ini : getInitials(assigned),
+      assigned_color: userObj ? userObj.color : '#C52523'
+    });
+    closeModal('taskModal');
+    showToast('Task created', `${title} assigned to ${assigned}`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast('Failed to create task', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Create task';
+    }
+  }
+};
+
+window.submitInvoiceForm = async function(mode = 'preview', btn = null) {
+  const saveBtn = btn || document.getElementById('saveInvoiceBtn');
+  const editId = document.getElementById('editInvoiceId')?.value;
+  const isEdit = Boolean(editId);
+
+  let no = document.getElementById('niNo')?.value.trim();
+  if (!no && !isEdit) {
+    no = window.getNextInvoiceNo();
+  }
+  const client = resolveModalClient('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient');
+  const amt = Number(document.getElementById('niAmount')?.value) || 0;
+  if (!client || !amt) return showToast('Invoice details required', 'Enter client and amount', true);
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = isEdit ? 'Updating…' : 'Issuing…';
+  }
+  try {
+    const payload = {
+      invoice_no: no,
+      client: client,
+      type: document.getElementById('niType')?.value || 'Deposit 60%',
+      amount: amt,
+      method: document.getElementById('niMethod')?.value.trim() || null,
+      etims: document.getElementById('niEtims')?.value === '1',
+      status: document.getElementById('niStatus')?.value || 'Sent',
+      due_date: document.getElementById('niDue')?.value.trim() || 'Sep 30'
+    };
+
+    let savedInv = null;
+    if (isEdit) {
+      const res = await JMOS_API.put(`/invoices/${editId}`, payload);
+      savedInv = res.data || res;
+      showToast('Invoice updated', `${no} for ${client} (${fmt(amt)})`);
+    } else {
+      const res = await JMOS_API.post('/invoices', payload);
+      savedInv = res.data || res;
+      showToast('Invoice issued', `${no} for ${client} (${fmt(amt)})`);
+    }
+
+    closeModal('invoiceModal');
+    await JMOS_API.fetchAll();
+    renderAllViews();
+    if (typeof recomputeFinance === 'function') {
+      await recomputeFinance();
+    }
+
+    if (savedInv && savedInv.id && typeof window.openInvoiceDetailModal === 'function') {
+      window.openInvoiceDetailModal(savedInv.id);
+    }
+  } catch (err) {
+    showToast(isEdit ? 'Failed to update invoice' : 'Failed to issue invoice', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? 'Save Changes' : 'Issue invoice';
+    }
+  }
+};
+
+window.submitExpenseForm = async function(btn = null) {
+  const saveBtn = btn || document.getElementById('saveExpenseBtn');
+  const editId = document.getElementById('editExpenseId')?.value;
+  const isEdit = Boolean(editId);
+
+  const name = document.getElementById('neName')?.value.trim();
+  const amt = Number(document.getElementById('neAmount')?.value) || 0;
+  if (!name || !amt) return showToast('Expense details required', 'Enter name and amount', true);
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = isEdit ? 'Updating…' : 'Logging…';
+  }
+
+  const payload = {
+    name,
+    category: document.getElementById('neCat')?.value || 'Equipment',
+    project: document.getElementById('neProject')?.value.trim() || 'overhead',
+    amount: amt,
+    etr: document.getElementById('neEtr')?.value || 'no',
+    etims_number: document.getElementById('neEtimsNumber')?.value.trim() || null,
+    receipt_url: document.getElementById('neReceiptUrl')?.value || null,
+    receipt_name: document.getElementById('neReceiptName')?.value || null,
+    notes: document.getElementById('neNotes')?.value.trim() || null,
+    date: document.getElementById('neDate')?.value.trim() || 'Today'
+  };
+
+  try {
+    if (isEdit) {
+      await JMOS_API.put(`/expenses/${editId}`, payload);
+      showToast('Expense updated', `${name} — ${fmt(amt)}`);
+    } else {
+      await JMOS_API.post('/expenses', payload);
+      showToast('Expense recorded', `${name} — ${fmt(amt)}`);
+    }
+    closeModal('expenseModal');
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast(isEdit ? 'Failed to update expense' : 'Failed to log expense', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = isEdit ? 'Update expense' : 'Log expense';
+    }
+  }
+};
+
+window.submitServiceForm = async function(btn = null) {
+  const saveBtn = btn || document.getElementById('saveServiceBtn');
+  const name = document.getElementById('nsName')?.value.trim();
+  const code = document.getElementById('nsCode')?.value.trim();
+  const deliv = document.getElementById('nsDeliverables')?.value.trim() || '';
+  const stagesStr = document.getElementById('nsStages')?.value.trim() || '';
+
+  if (!name || !code) return showToast('Name & Code required', 'Please enter service name and code', true);
+
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+  }
+
+  const stages = stagesStr ? stagesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  try {
+    await JMOS_API.post('/services', {
+      name,
+      code,
+      deliverables: deliv,
+      stages
+    });
+    closeModal('serviceModal');
+    showToast('Service recipe added', `${name} saved`);
+    await JMOS_API.fetchAll();
+    renderAllViews();
+  } catch (err) {
+    showToast('Failed to save service', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save service';
+    }
+  }
+};
+
   // 4. Modal Submissions via Event Delegation
   document.addEventListener('click', async (e) => {
     // 4.1 Submit: Add Client
     if (e.target.closest('#saveClientBtn')) {
-      const btn = e.target.closest('#saveClientBtn');
-      const name = document.getElementById('ncName')?.value.trim();
-      if (!name) return showToast('Client name required', 'Please enter a client name', true);
-
-      btn.disabled = true;
-      btn.textContent = 'Saving…';
-      try {
-        await JMOS_API.post('/clients', {
-          client_name: name,
-          client_type: document.getElementById('ncType')?.value,
-          contact_person: document.getElementById('ncContact')?.value.trim(),
-          email: document.getElementById('ncEmail')?.value.trim() || null,
-          phone: document.getElementById('ncPhone')?.value.trim() || null,
-          owner: document.getElementById('ncOwner')?.value.trim(),
-          service: document.getElementById('ncService')?.value.trim(),
-          project_value: Number(document.getElementById('ncValue')?.value) || 0,
-          project_status: 'Active',
-          projects: 1
-        });
-        closeModal('clientModal');
-        showToast('Client created', `${name} saved to database`);
-        await JMOS_API.fetchAll();
-        renderAllViews();
-      } catch (err) {
-        showToast('Failed to save client', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Save client';
-      }
+      await window.submitClientForm(e.target.closest('#saveClientBtn'));
       return;
     }
 
@@ -1348,203 +1972,25 @@ function initModals() {
 
     // 4.2 Submit: Add Project
     if (e.target.closest('#saveProjectBtn')) {
-      const btn = e.target.closest('#saveProjectBtn');
-      const name = document.getElementById('npName')?.value.trim();
-      const client = resolveModalClient('npClientSelect', 'npNewClientWrap', 'npNewClientInput', 'npClient');
-      if (!name || !client) return showToast('Name & Client required', 'Please fill project name and select or add a client', true);
-
-      const rawDeadline = document.getElementById('npDeadline')?.value.trim();
-      let deadlineStr = rawDeadline || 'To be scheduled';
-      if (rawDeadline) {
-        try {
-          const dParts = rawDeadline.split('-');
-          if (dParts.length === 3) {
-            const dObj = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
-            if (!isNaN(dObj.getTime())) {
-              deadlineStr = dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-            }
-          }
-        } catch (_) {}
-      }
-
-      const rawCategory = document.getElementById('npCategory')?.value || 'video_production';
-      const category = rawCategory === 'custom'
-        ? (document.getElementById('npCustomCategoryInput')?.value.trim() || 'Custom')
-        : rawCategory;
-
-      const rawType = document.getElementById('npType')?.value.trim() || 'Brand film';
-      const project_type = rawType === 'custom'
-        ? (document.getElementById('npCustomTypeInput')?.value.trim() || 'Custom Project')
-        : rawType;
-
-      const rawStage = document.getElementById('npStage')?.value.trim() || 'Brief';
-      const stage = rawStage === 'custom'
-        ? (document.getElementById('npCustomStageInput')?.value.trim() || 'Planning')
-        : rawStage;
-
-      const rawStatus = document.getElementById('npStatus')?.value.trim() || 'On track';
-      const status = rawStatus === 'custom'
-        ? (document.getElementById('npCustomStatusInput')?.value.trim() || 'In Progress')
-        : rawStatus;
-
-      btn.disabled = true;
-      btn.textContent = 'Creating…';
-      try {
-        await JMOS_API.post('/projects', {
-          project_name: name,
-          client: client,
-          category: category,
-          project_type: project_type,
-          project_manager: document.getElementById('npManager')?.value.trim() || 'Barny Kiome',
-          stage: stage,
-          status: status,
-          priority: 'High',
-          deadline: deadlineStr,
-          budget: Number(document.getElementById('npBudget')?.value) || 0,
-          progress_pct: 10,
-          waiting_on: 'us'
-        });
-        closeModal('projectModal');
-        showToast('Project created', `${name} added to delivery board`);
-        await JMOS_API.fetchAll();
-        renderAllViews();
-      } catch (err) {
-        showToast('Failed to create project', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Create project';
-      }
+      await window.submitProjectForm(e.target.closest('#saveProjectBtn'));
       return;
     }
 
     // 4.3 Submit: Add Pipeline Deal
     if (e.target.closest('#saveDealBtn')) {
-      const btn = e.target.closest('#saveDealBtn');
-      const title = document.getElementById('ndTitle')?.value.trim();
-      const client = resolveModalClient('ndClientSelect', 'ndNewClientWrap', 'ndNewClientInput', 'ndClient');
-      const val = Number(document.getElementById('ndValue')?.value) || 0;
-      if (!title || !client) return showToast('Title & Client required', 'Please enter deal title and select or add a client', true);
-
-      btn.disabled = true;
-      btn.textContent = 'Adding…';
-      try {
-        await JMOS_API.post('/pipeline', {
-          title,
-          client_name: client,
-          stage: document.getElementById('ndStage')?.value || 'lead',
-          value: val,
-          meta_text: fmtK(val)
-        });
-        closeModal('dealModal');
-        showToast('Deal added', `${title} added to pipeline`);
-        await JMOS_API.fetchAll();
-        renderAllViews();
-      } catch (err) {
-        showToast('Failed to add deal', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Add to pipeline';
-      }
+      await window.submitDealForm(e.target.closest('#saveDealBtn'));
       return;
     }
 
     // 4.4 Submit: Add Task
     if (e.target.closest('#saveTaskBtn')) {
-      const btn = e.target.closest('#saveTaskBtn');
-      const title = document.getElementById('ntTitle')?.value.trim();
-      if (!title) return showToast('Task title required', 'Please enter a title', true);
-
-      btn.disabled = true;
-      btn.textContent = 'Creating…';
-      const assigned = document.getElementById('ntAssigned')?.value || 'Barny Kiome';
-      const userObj = (window.JMOS_STATE && JMOS_STATE.users) ? JMOS_STATE.users.find(u => u.name === assigned) : null;
-      const projectIdVal = document.getElementById('ntProject')?.value;
-      const stickyColorVal = document.getElementById('ntStickyColor')?.value || '#FFFBEB';
-      const descriptionVal = document.getElementById('ntDescription')?.value.trim() || null;
-      const priorityVal = document.getElementById('ntPriority')?.value || 'medium';
-      const dueDateVal = document.getElementById('ntDueDate')?.value || null;
-
-      try {
-        await JMOS_API.post('/tasks', {
-          project_id: projectIdVal ? Number(projectIdVal) : null,
-          title,
-          description: descriptionVal,
-          stage: document.getElementById('ntStage')?.value || 'todo',
-          priority: priorityVal,
-          due_date: dueDateVal,
-          sticky_color: stickyColorVal,
-          assigned_to: assigned,
-          assigned_initials: userObj ? userObj.ini : getInitials(assigned),
-          assigned_color: userObj ? userObj.color : '#C52523'
-        });
-        closeModal('taskModal');
-        showToast('Task created', `${title} assigned to ${assigned}`);
-        await JMOS_API.fetchAll();
-        renderAllViews();
-      } catch (err) {
-        showToast('Failed to create task', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Create task';
-      }
+      await window.submitTaskForm(e.target.closest('#saveTaskBtn'));
       return;
     }
 
     // 4.5 Submit: Add / Edit Invoice
     if (e.target.closest('#saveInvoiceBtn')) {
-      const btn = e.target.closest('#saveInvoiceBtn');
-      const editId = document.getElementById('editInvoiceId')?.value;
-      const isEdit = Boolean(editId);
-
-      let no = document.getElementById('niNo')?.value.trim();
-      if (!no && !isEdit) {
-        no = window.getNextInvoiceNo();
-      }
-      const client = resolveModalClient('niClientSelect', 'niNewClientWrap', 'niNewClientInput', 'niClient');
-      const amt = Number(document.getElementById('niAmount')?.value) || 0;
-      if (!client || !amt) return showToast('Invoice details required', 'Enter client and amount', true);
-
-      btn.disabled = true;
-      btn.textContent = isEdit ? 'Updating…' : 'Issuing…';
-      try {
-        const payload = {
-          invoice_no: no,
-          client: client,
-          type: document.getElementById('niType')?.value || 'Deposit 60%',
-          amount: amt,
-          method: document.getElementById('niMethod')?.value.trim() || null,
-          etims: document.getElementById('niEtims')?.value === '1',
-          status: document.getElementById('niStatus')?.value || 'Sent',
-          due_date: document.getElementById('niDue')?.value.trim() || 'Sep 30'
-        };
-
-        let savedInv = null;
-        if (isEdit) {
-          const res = await JMOS_API.put(`/invoices/${editId}`, payload);
-          savedInv = res.data || res;
-          showToast('Invoice updated', `${no} for ${client} (${fmt(amt)})`);
-        } else {
-          const res = await JMOS_API.post('/invoices', payload);
-          savedInv = res.data || res;
-          showToast('Invoice issued', `${no} for ${client} (${fmt(amt)})`);
-        }
-
-        closeModal('invoiceModal');
-        await JMOS_API.fetchAll();
-        renderAllViews();
-        if (typeof recomputeFinance === 'function') {
-          await recomputeFinance();
-        }
-
-        if (savedInv && savedInv.id && typeof window.openInvoiceDetailModal === 'function') {
-          window.openInvoiceDetailModal(savedInv.id);
-        }
-      } catch (err) {
-        showToast(isEdit ? 'Failed to update invoice' : 'Failed to issue invoice', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = isEdit ? 'Save Changes' : 'Issue invoice';
-      }
+      await window.submitInvoiceForm('preview', e.target.closest('#saveInvoiceBtn'));
       return;
     }
 
@@ -1561,47 +2007,7 @@ function initModals() {
 
     // 4.6 Submit: Log / Edit Expense
     if (e.target.closest('#saveExpenseBtn')) {
-      const btn = e.target.closest('#saveExpenseBtn');
-      const editId = document.getElementById('editExpenseId')?.value;
-      const isEdit = Boolean(editId);
-
-      const name = document.getElementById('neName')?.value.trim();
-      const amt = Number(document.getElementById('neAmount')?.value) || 0;
-      if (!name || !amt) return showToast('Expense details required', 'Enter name and amount', true);
-
-      btn.disabled = true;
-      btn.textContent = isEdit ? 'Updating…' : 'Logging…';
-
-      const payload = {
-        name,
-        category: document.getElementById('neCat')?.value || 'Equipment',
-        project: document.getElementById('neProject')?.value.trim() || 'overhead',
-        amount: amt,
-        etr: document.getElementById('neEtr')?.value || 'no',
-        etims_number: document.getElementById('neEtimsNumber')?.value.trim() || null,
-        receipt_url: document.getElementById('neReceiptUrl')?.value || null,
-        receipt_name: document.getElementById('neReceiptName')?.value || null,
-        notes: document.getElementById('neNotes')?.value.trim() || null,
-        date: document.getElementById('neDate')?.value.trim() || 'Today'
-      };
-
-      try {
-        if (isEdit) {
-          await JMOS_API.put(`/expenses/${editId}`, payload);
-          showToast('Expense updated', `${name} — ${fmt(amt)}`);
-        } else {
-          await JMOS_API.post('/expenses', payload);
-          showToast('Expense recorded', `${name} — ${fmt(amt)}`);
-        }
-        closeModal('expenseModal');
-        await JMOS_API.fetchAll();
-        renderAllViews();
-      } catch (err) {
-        showToast(isEdit ? 'Failed to update expense' : 'Failed to log expense', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = isEdit ? 'Update expense' : 'Log expense';
-      }
+      await window.submitExpenseForm(e.target.closest('#saveExpenseBtn'));
       return;
     }
 
@@ -1627,36 +2033,7 @@ function initModals() {
 
     // 4.7 Submit: Add Service Recipe
     if (e.target.closest('#saveServiceBtn')) {
-      const btn = e.target.closest('#saveServiceBtn');
-      const name = document.getElementById('nsName')?.value.trim();
-      const code = document.getElementById('nsCode')?.value.trim();
-      const deliv = document.getElementById('nsDeliverables')?.value.trim() || '';
-      const stagesStr = document.getElementById('nsStages')?.value.trim() || '';
-
-      if (!name || !code) return showToast('Name & Code required', 'Please enter service name and code', true);
-
-      btn.disabled = true;
-      btn.textContent = 'Saving…';
-
-      const stages = stagesStr ? stagesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
-
-      try {
-        await JMOS_API.post('/services', {
-          name,
-          code,
-          deliverables: deliv,
-          stages
-        });
-        closeModal('serviceModal');
-        showToast('Service recipe added', `${name} saved`);
-        await JMOS_API.fetchAll();
-        renderAllViews();
-      } catch (err) {
-        showToast('Failed to save service', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Save service';
-      }
+      await window.submitServiceForm(e.target.closest('#saveServiceBtn'));
       return;
     }
   });
@@ -2042,23 +2419,48 @@ window.openInvoiceDetailModal = async function(invoiceId) {
   const docMpesaAcc = document.getElementById('idmDocMpesaAcc');
   if (docMpesaAcc) docMpesaAcc.textContent = inv.invoice_no;
 
-  const itemDesc = document.getElementById('idmItemDesc');
-  if (itemDesc) itemDesc.textContent = `${inv.type || 'Commercial Services'} — ${inv.client}`;
+  // Line Items Table rendering (itemized deliverables support)
+  const tbody = document.getElementById('idmLineItemsTableBody');
+  if (tbody) {
+    if (Array.isArray(inv.items) && inv.items.length > 0) {
+      tbody.innerHTML = inv.items.map(it => {
+        const desc = it.description || 'Deliverable';
+        const qty = it.quantity || 1;
+        const rate = Number(it.rate || it.unit_price || it.amount || 0);
+        const lineTotal = Number(it.amount || (qty * rate));
+        return `
+          <tr style="border-bottom:1px solid #e2e8f0">
+            <td style="padding:10px 12px;font-weight:600;color:#0f172a">${escHtml(desc)}</td>
+            <td style="padding:10px 12px;text-align:center;color:#475569">${escHtml(inv.type || 'Deliverable')}</td>
+            <td style="padding:10px 12px;text-align:right;color:#475569">${qty}</td>
+            <td class="mono" style="padding:10px 12px;text-align:right;font-weight:700;color:#0f172a">KES ${Math.round(lineTotal).toLocaleString()}</td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      tbody.innerHTML = `
+        <tr style="border-bottom:1px solid #e2e8f0">
+          <td style="padding:10px 12px;font-weight:600;color:#0f172a">${escHtml(inv.title || (inv.type + ' — ' + inv.client))}</td>
+          <td style="padding:10px 12px;text-align:center;color:#475569">${escHtml(inv.type || 'Commercial Services')}</td>
+          <td style="padding:10px 12px;text-align:right;color:#475569">1</td>
+          <td class="mono" style="padding:10px 12px;text-align:right;font-weight:700;color:#0f172a">KES ${amountFormatted}</td>
+        </tr>
+      `;
+    }
+  }
 
-  const itemMilestone = document.getElementById('idmItemMilestone');
-  if (itemMilestone) itemMilestone.textContent = inv.type || 'Deliverable';
-
-  const itemAmt = document.getElementById('idmItemAmount');
-  if (itemAmt) itemAmt.textContent = `KES ${amountFormatted}`;
+  const subtotalVal = Number(inv.subtotal || inv.amount || 0);
+  const taxVal = Number(inv.tax || 0);
+  const totalVal = Number(inv.amount || 0);
 
   const docSub = document.getElementById('idmDocSubtotal');
-  if (docSub) docSub.textContent = `KES ${amountFormatted}`;
+  if (docSub) docSub.textContent = `KES ${Math.round(subtotalVal).toLocaleString()}`;
 
   const docTax = document.getElementById('idmDocTax');
-  if (docTax) docTax.textContent = inv.etims ? 'KES 0.00 (eTIMS Direct Filing)' : 'KES 0.00 (Exempt/Direct)';
+  if (docTax) docTax.textContent = taxVal > 0 ? `KES ${Math.round(taxVal).toLocaleString()} (VAT 16%)` : (inv.etims ? 'KES 0.00 (eTIMS Direct Filing)' : 'KES 0.00 (Exempt/Direct)');
 
   const docGrand = document.getElementById('idmDocGrandTotal');
-  if (docGrand) docGrand.textContent = `KES ${amountFormatted}`;
+  if (docGrand) docGrand.textContent = `KES ${Math.round(totalVal).toLocaleString()}`;
 
   const footerTime = document.getElementById('idmFooterTimestamp');
   if (footerTime) footerTime.textContent = `Generated on ${issueDateStr} · JMOS Financial Engine`;
@@ -2203,6 +2605,9 @@ window.openEditInvoiceModal = async function(invoiceId) {
   const niNo = document.getElementById('niNo');
   if (niNo) niNo.value = inv.invoice_no || '';
 
+  const niTitle = document.getElementById('niTitle');
+  if (niTitle) niTitle.value = inv.title || '';
+
   const niAmount = document.getElementById('niAmount');
   if (niAmount) niAmount.value = inv.amount != null ? inv.amount : '';
 
@@ -2213,7 +2618,13 @@ window.openEditInvoiceModal = async function(invoiceId) {
   if (niDue) niDue.value = inv.due_date || '';
 
   const niEtims = document.getElementById('niEtims');
-  if (niEtims) niEtims.value = inv.etims ? '1' : '0';
+  if (niEtims) niEtims.value = inv.tax > 0 ? 'vat16' : (inv.etims ? '1' : '0');
+
+  const niDiscount = document.getElementById('niDiscount');
+  if (niDiscount) niDiscount.value = inv.discount || 0;
+
+  const niNotes = document.getElementById('niNotes');
+  if (niNotes) niNotes.value = inv.notes || '';
 
   const niStatus = document.getElementById('niStatus');
   if (niStatus) niStatus.value = inv.status || 'Sent';
@@ -2243,6 +2654,23 @@ window.openEditInvoiceModal = async function(invoiceId) {
     if (hid) hid.value = inv.client;
   }
 
+  // Populate line items table
+  const tbody = document.getElementById('invoiceItemsTableBody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    const items = Array.isArray(inv.items) && inv.items.length ? inv.items : [
+      { description: inv.title || (inv.type + ' — ' + inv.client), quantity: 1, rate: inv.amount }
+    ];
+    items.forEach(it => {
+      window.addInvoiceItemRow({
+        description: it.description,
+        quantity: it.quantity || 1,
+        rate: it.rate || it.unit_price || it.amount
+      });
+    });
+  }
+
+  window.calcInvoiceTotals();
   openModal('invoiceModal');
 };
 
@@ -2284,6 +2712,201 @@ window.deleteInvoice = async function(id, invoiceNo) {
   }
 };
 
+// Helper to append a deliverable line item row in invoice modal
+window.addInvoiceItemRow = function(item) {
+  const tbody = document.getElementById('invoiceItemsTableBody');
+  if (!tbody) return;
+
+  const desc = item && item.description ? item.description : '';
+  const qty = item && item.quantity ? item.quantity : 1;
+  const rate = item && (item.rate != null || item.unit_price != null || item.amount != null) 
+    ? (item.rate ?? item.unit_price ?? item.amount) 
+    : '';
+  const amt = (parseFloat(qty) || 1) * (parseFloat(rate) || 0);
+
+  const tr = document.createElement('tr');
+  tr.className = 'inv-item-row';
+  tr.innerHTML = `
+    <td style="padding:4px">
+      <input type="text" class="inv-item-desc" placeholder="e.g. 4K Commercial Shoot & Post-Production" value="${escHtml(desc)}" required style="font-size:12px;padding:6px 8px;width:100%;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+    </td>
+    <td style="padding:4px;width:70px">
+      <input type="number" class="inv-item-qty" min="1" value="${qty}" required oninput="window.calcInvoiceTotals()" style="font-size:12px;padding:6px;width:100%;text-align:center;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+    </td>
+    <td style="padding:4px;width:120px">
+      <input type="number" class="inv-item-rate" placeholder="Rate" value="${rate}" required oninput="window.calcInvoiceTotals()" style="font-size:12px;padding:6px 8px;width:100%;text-align:right;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink)">
+    </td>
+    <td style="padding:4px 8px;width:120px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--ink)" class="inv-item-total">
+      KES ${amt.toLocaleString()}
+    </td>
+    <td style="padding:4px;width:30px;text-align:center">
+      <button type="button" onclick="this.closest('tr').remove(); window.calcInvoiceTotals();" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:16px;font-weight:700" title="Remove row">&times;</button>
+    </td>
+  `;
+  tbody.appendChild(tr);
+  window.calcInvoiceTotals();
+};
+
+// Compute total amount and update invoice form totals
+window.calcInvoiceTotals = function() {
+  const rows = document.querySelectorAll('.inv-item-row');
+  let subtotal = 0;
+
+  rows.forEach(row => {
+    const qty = parseFloat(row.querySelector('.inv-item-qty')?.value) || 0;
+    const rate = parseFloat(row.querySelector('.inv-item-rate')?.value) || 0;
+    const rowAmt = qty * rate;
+    const totalCell = row.querySelector('.inv-item-total');
+    if (totalCell) totalCell.textContent = 'KES ' + rowAmt.toLocaleString();
+    subtotal += rowAmt;
+  });
+
+  const discount = parseFloat(document.getElementById('niDiscount')?.value) || 0;
+  const etimsMode = document.getElementById('niEtims')?.value || '0';
+  const taxableBase = Math.max(0, subtotal - discount);
+  const tax = etimsMode === 'vat16' ? Math.round(taxableBase * 0.16) : 0;
+  const finalTotal = Math.max(0, taxableBase + tax);
+
+  const displayEl = document.getElementById('niTotalDisplay');
+  if (displayEl) displayEl.textContent = 'KES ' + finalTotal.toLocaleString();
+
+  const hiddenTotal = document.getElementById('niAmount');
+  if (hiddenTotal) hiddenTotal.value = finalTotal;
+
+  const hiddenSubtotal = document.getElementById('niSubtotal');
+  if (hiddenSubtotal) hiddenSubtotal.value = subtotal;
+
+  const hiddenTax = document.getElementById('niTax');
+  if (hiddenTax) hiddenTax.value = tax;
+};
+
+// Submit create/edit invoice form
+window.submitInvoiceForm = async function(dispatchMode = 'preview') {
+  const editId = document.getElementById('editInvoiceId')?.value;
+  const invoiceNo = document.getElementById('niNo')?.value.trim() || window.getNextInvoiceNo();
+  const clientName = (document.getElementById('niClient')?.value || document.getElementById('niClientSelect')?.value || '').trim();
+  const title = document.getElementById('niTitle')?.value.trim() || '';
+  const type = document.getElementById('niType')?.value || 'Deposit 60%';
+  const dueDate = document.getElementById('niDue')?.value || '';
+  const status = document.getElementById('niStatus')?.value || 'Sent';
+  const etimsMode = document.getElementById('niEtims')?.value || '0';
+  const discount = parseFloat(document.getElementById('niDiscount')?.value) || 0;
+  const notes = document.getElementById('niNotes')?.value.trim() || '';
+  const method = document.getElementById('niMethod')?.value.trim() || 'Bank Transfer / M-Pesa Paybill 880100';
+  const quoteId = document.getElementById('niQuoteId')?.value || null;
+
+  if (!clientName || clientName === '__new__') {
+    showToast('Client Required', 'Please select or add a client for this invoice', true);
+    return;
+  }
+
+  if (!title) {
+    showToast('Title Required', 'Please enter an invoice project scope / title', true);
+    return;
+  }
+
+  const rows = document.querySelectorAll('.inv-item-row');
+  const items = [];
+  let subtotal = 0;
+
+  rows.forEach(row => {
+    const desc = row.querySelector('.inv-item-desc')?.value.trim();
+    const qty = parseFloat(row.querySelector('.inv-item-qty')?.value) || 1;
+    const rate = parseFloat(row.querySelector('.inv-item-rate')?.value) || 0;
+    if (desc && rate > 0) {
+      const amt = qty * rate;
+      subtotal += amt;
+      items.push({
+        description: desc,
+        quantity: qty,
+        rate: rate,
+        amount: amt
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    showToast('Line Items Required', 'Please add at least one line item with a rate', true);
+    return;
+  }
+
+  const taxableBase = Math.max(0, subtotal - discount);
+  const tax = etimsMode === 'vat16' ? Math.round(taxableBase * 0.16) : 0;
+  const totalAmount = Math.max(0, taxableBase + tax);
+
+  // Find client_id if available
+  const clients = (window.JMOS_STATE && JMOS_STATE.clients) ? JMOS_STATE.clients : [];
+  const clientObj = clients.find(c => (c.client_name || c.name || '').toLowerCase() === clientName.toLowerCase());
+  const clientId = clientObj?.id || null;
+
+  const payload = {
+    invoice_no: invoiceNo,
+    client: clientName,
+    client_id: clientId,
+    title: title,
+    type: type,
+    due_date: dueDate,
+    status: status,
+    etims: etimsMode === '1' || etimsMode === 'vat16',
+    subtotal: subtotal,
+    discount: discount,
+    tax: tax,
+    amount: totalAmount,
+    notes: notes,
+    method: method,
+    quote_id: quoteId,
+    items: items
+  };
+
+  const saveBtn = document.getElementById('saveInvoiceBtn');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving Invoice...';
+  }
+
+  try {
+    let savedInvoice = null;
+    if (editId) {
+      const res = await JMOS_API.put(`/invoices/${editId}`, payload);
+      savedInvoice = res.data || res;
+      showToast('Invoice Updated', `Invoice ${invoiceNo} updated successfully.`);
+    } else {
+      const res = await JMOS_API.post('/invoices', payload);
+      savedInvoice = res.data || res;
+      showToast('Invoice Created', `Invoice ${invoiceNo} generated successfully! 🧾`);
+    }
+
+    closeModal('invoiceModal');
+
+    await JMOS_API.fetchAll();
+    renderAllViews();
+    if (typeof recomputeFinance === 'function') {
+      await recomputeFinance();
+    }
+
+    const targetInvoiceId = (savedInvoice && savedInvoice.id) ? savedInvoice.id : (editId || invoiceNo);
+
+    // Immediately open invoice PDF detail modal
+    if (typeof window.openInvoiceDetailModal === 'function') {
+      setTimeout(() => {
+        window.openInvoiceDetailModal(targetInvoiceId);
+        if (dispatchMode === 'whatsapp') {
+          setTimeout(() => window.dispatchInvoiceWhatsApp(), 300);
+        } else if (dispatchMode === 'email') {
+          setTimeout(() => window.dispatchInvoiceEmail(), 300);
+        }
+      }, 150);
+    }
+  } catch (err) {
+    showToast('Invoice Save Failed', err.message, true);
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & Preview PDF ➔';
+    }
+  }
+};
+
 /* ==========================================================================
    STICKY NOTE TASK DETAIL & WORKSPACE CONTROLLER
    ========================================================================== */
@@ -2317,9 +2940,43 @@ function fmtRelativeTime(isoStr) {
   }
 }
 
-window.openTaskDetailModal = function(taskId) {
-  const task = (JMOS_STATE.tasks || []).find(t => String(t.id) === String(taskId));
-  if (!task) return;
+// NOTE: must NOT be declared as a global `function fmtDate` — that silently
+// replaced window.fmtDate from data.js with itself and caused infinite
+// recursion (RangeError) whenever a task with a due date was opened.
+function tdFormatDate(dateStr) {
+  if (typeof window.fmtDate === 'function' && window.fmtDate !== tdFormatDate) return window.fmtDate(dateStr);
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? String(dateStr) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (_) {
+    return String(dateStr);
+  }
+}
+
+window.openTaskDetailModal = async function(taskId) {
+  if (!taskId) return;
+  // Several click handlers (inline onclick + document delegations) can fire for
+  // one click on a task card — collapse them into a single open.
+  const _now = Date.now();
+  if (window._tdLastOpen && window._tdLastOpen.id === String(taskId) && (_now - window._tdLastOpen.at) < 400) return;
+  window._tdLastOpen = { id: String(taskId), at: _now };
+  let task = (window.JMOS_STATE?.tasks || []).find(t => String(t.id) === String(taskId));
+  if (!task) {
+    try {
+      const res = await JMOS_API.get(`/tasks/${taskId}`);
+      task = (res && res.data) ? res.data : res;
+      if (task && Array.isArray(window.JMOS_STATE?.tasks)) {
+        window.JMOS_STATE.tasks.push(task);
+      }
+    } catch (e) {
+      console.warn('Could not fetch task by id:', e);
+    }
+  }
+  if (!task) {
+    if (typeof showToast === 'function') showToast('Task Not Found', 'Could not find task details in database.', true);
+    return;
+  }
 
   const idEl = document.getElementById('tdTaskId');
   const titleEl = document.getElementById('tdTaskTitle');
@@ -2405,7 +3062,7 @@ window.openTaskDetailModal = function(taskId) {
   // Assigner & Due date
   const creator = task.assigned_by?.name || (task.assigned_by_id && JMOS_STATE.users ? (JMOS_STATE.users.find(u => u.id === task.assigned_by_id)?.name) : 'Production Lead');
   if (assignerName) assignerName.textContent = creator;
-  if (dueDateText) dueDateText.textContent = task.due_date ? fmtDate(task.due_date) : 'Flexible Timeline';
+  if (dueDateText) dueDateText.textContent = task.due_date ? tdFormatDate(task.due_date) : 'Flexible Timeline';
 
   // Sticky Theme Color
   const stickyColor = task.sticky_color || '#FFFBEB';
@@ -2439,14 +3096,33 @@ window.openTaskDetailModal = function(taskId) {
     descBox.textContent = task.description ? task.description : 'No detailed instructions provided for this task.';
   }
 
-  // Render Deliverable Review Links
-  window.renderTaskDetailLinks(task);
+  // Open modal box
+  openModal('taskDetailModal');
 
-  // Render Stepper & PM Workflow Buttons
-  window.renderTaskWorkflowControls(task);
+  // Render Sub-Components with error isolation
+  try {
+    if (typeof window.renderTaskDetailLinks === 'function') {
+      window.renderTaskDetailLinks(task);
+    }
+  } catch (err) {
+    console.warn('Error rendering task links:', err);
+  }
 
-  // Render Comments & Activity Stream
-  window.renderTaskDetailComments(task);
+  try {
+    if (typeof window.renderTaskWorkflowControls === 'function') {
+      window.renderTaskWorkflowControls(task);
+    }
+  } catch (err) {
+    console.warn('Error rendering task workflow:', err);
+  }
+
+  try {
+    if (typeof window.renderTaskDetailComments === 'function') {
+      window.renderTaskDetailComments(task);
+    }
+  } catch (err) {
+    console.warn('Error rendering task comments:', err);
+  }
 
   // Clear new link & comment input fields
   const linkTitleInput = document.getElementById('tdNewLinkTitle');
@@ -2457,8 +3133,6 @@ window.openTaskDetailModal = function(taskId) {
   if (linkUrlInput) linkUrlInput.value = '';
   if (linkDetectBadge) linkDetectBadge.style.display = 'none';
   if (commentMsgInput) commentMsgInput.value = '';
-
-  openModal('taskDetailModal');
 };
 
 window.renderTaskDetailLinks = function(task) {
@@ -2985,5 +3659,11 @@ window.onProjectStatusChange = function(val, prefix) {
   }
 };
 
-
-
+// Auto-initialize modal triggers and listeners on script load
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initModals);
+  } else {
+    initModals();
+  }
+}

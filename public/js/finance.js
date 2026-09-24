@@ -384,10 +384,10 @@
           <td>${statusHtml}</td>
           <td style="text-align:right">
             <div class="row-actions-wrap" style="justify-content:flex-end">
-              <button type="button" class="btn small" onclick="openModal('invoiceModal')" title="Bill this client" style="font-size:11px;padding:3px 8px">
+              <button type="button" class="btn small" onclick="window.openCreateInvoiceInBudget('${escHtml(acc.name)}')" title="Bill this client via Production Budget" style="font-size:11px;padding:3px 8px">
                 + Invoice
               </button>
-              <button type="button" class="btn small" onclick="window.JMOS_QUOTES.openCreateModal()" title="Create proposal" style="font-size:11px;padding:3px 8px">
+              <button type="button" class="btn small" onclick="window.openCreateQuoteInBudget ? window.openCreateQuoteInBudget('${escHtml(acc.name)}') : window.JMOS_QUOTES.openCreateModal()" title="Create proposal" style="font-size:11px;padding:3px 8px">
                 + Quote
               </button>
             </div>

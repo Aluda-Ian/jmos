@@ -332,12 +332,20 @@ class QuoteController extends Controller
         $invoice = Invoice::create([
             'invoice_no' => $nextNo,
             'client' => $clientName,
+            'client_id' => $quote->client_id,
+            'title' => $quote->title,
             'type' => $validated['invoice_type'],
+            'items' => $quote->items,
             'amount' => $validated['amount'],
+            'subtotal' => $quote->subtotal ?: $validated['amount'],
+            'discount' => $quote->discount ?: 0,
+            'tax' => $quote->tax ?: 0,
             'method' => null,
             'etims' => false,
             'status' => 'Sent',
             'due_date' => ! empty($validated['due_date']) ? $validated['due_date'] : now()->addDays(7)->format('M d'),
+            'notes' => $validated['notes'] ?? $quote->notes,
+            'quote_id' => $quote->id,
         ]);
 
         $quote->update([

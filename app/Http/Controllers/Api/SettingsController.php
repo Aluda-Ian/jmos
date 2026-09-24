@@ -9,6 +9,7 @@ use App\Mail\MeetingReminderMail;
 use App\Mail\NewChatMessageMail;
 use App\Mail\TaskAssignedMail;
 use App\Models\SystemSetting;
+use App\Services\GoogleCalendarService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -200,14 +201,17 @@ class SettingsController extends Controller
         $calendarId = SystemSetting::getVal('google_calendar_id', 'primary');
         $apiKey = SystemSetting::getVal('google_api_key');
 
+        $calendarService = app(GoogleCalendarService::class);
+        $result = $calendarService->verifyConnection($calendarId);
+
         return response()->json([
-            'status' => 'success',
-            'message' => "Google Calendar API configuration verified. Ready for bi-directional event and notification syncing (Calendar: {$calendarId}).",
+            'status' => $result['success'] ? 'success' : 'error',
+            'message' => $result['message'],
             'data' => [
                 'client_id_configured' => ! empty($clientId),
                 'api_key_configured' => ! empty($apiKey),
                 'calendar_id' => $calendarId,
             ],
-        ]);
+        ], $result['success'] ? 200 : 422);
     }
 }

@@ -749,9 +749,15 @@ window.openScheduleModal = function(prefillDate) {
 
   // Reset & re-initialize attendees picker
   CALENDAR_STATE.selectedAttendees = [];
-  initAttendeesPicker();
+  if (typeof initAttendeesPicker === 'function') {
+    initAttendeesPicker();
+  }
 
-  openModal('eventModal');
+  if (typeof window.openModal === 'function') {
+    window.openModal('eventModal');
+  } else if (typeof openModal === 'function') {
+    openModal('eventModal');
+  }
 };
 
 window.openScheduleShootModal = function(projectName = '', clientName = '', prefillDate = null) {
@@ -886,58 +892,66 @@ function initCalendar() {
     }
   });
 
+window.submitEventForm = async function(btn = null) {
+  const saveEventBtn = btn || document.getElementById('saveEventBtn');
+  const title = document.getElementById('nevtTitle')?.value.trim();
+  const date = document.getElementById('nevtDate')?.value;
+  const time = document.getElementById('nevtTime')?.value || '10:00';
+  const endTime = document.getElementById('nevtEndTime')?.value;
+  const type = document.getElementById('nevtType')?.value || 'meeting';
+  const location = document.getElementById('nevtLocation')?.value.trim();
+  const attendees = document.getElementById('nevtAttendees')?.value.trim();
+  const desc = document.getElementById('nevtDesc')?.value.trim();
+  const addMeet = document.getElementById('nevtAddMeet') ? document.getElementById('nevtAddMeet').checked : true;
+
+  if (!title || !date) {
+    showToast('Title and Date Required', 'Please enter event title and date', true);
+    return;
+  }
+
+  if (saveEventBtn) {
+    saveEventBtn.disabled = true;
+    saveEventBtn.textContent = 'Scheduling…';
+  }
+
+  try {
+    const startDateTime = `${date}T${time}:00`;
+    const endDateTime = endTime ? `${date}T${endTime}:00` : null;
+
+    const res = await JMOS_API.post('/calendar/events', {
+      title,
+      event_type: type,
+      start_time: startDateTime,
+      end_time: endDateTime,
+      location,
+      attendees,
+      description: desc,
+      generate_meet: addMeet ? 1 : 0
+    });
+
+    closeModal('eventModal');
+    const hasMeet = res.data && res.data.meet_link;
+    showToast(
+      'Event Scheduled',
+      hasMeet ? `${title} scheduled with Google Meet video link` : `${title} added to calendar`
+    );
+    await fetchCalendarEvents();
+    renderDashboardCalendar();
+    renderFullCalendar();
+  } catch (err) {
+    showToast('Scheduling Failed', err.message, true);
+  } finally {
+    if (saveEventBtn) {
+      saveEventBtn.disabled = false;
+      saveEventBtn.textContent = 'Schedule event';
+    }
+  }
+};
+
   // Save new calendar event submission
   document.addEventListener('click', async (e) => {
     if (e.target.closest('#saveEventBtn')) {
-      const btn = e.target.closest('#saveEventBtn');
-      const title = document.getElementById('nevtTitle')?.value.trim();
-      const date = document.getElementById('nevtDate')?.value;
-      const time = document.getElementById('nevtTime')?.value || '10:00';
-      const endTime = document.getElementById('nevtEndTime')?.value;
-      const type = document.getElementById('nevtType')?.value || 'meeting';
-      const location = document.getElementById('nevtLocation')?.value.trim();
-      const attendees = document.getElementById('nevtAttendees')?.value.trim();
-      const desc = document.getElementById('nevtDesc')?.value.trim();
-      const addMeet = document.getElementById('nevtAddMeet') ? document.getElementById('nevtAddMeet').checked : true;
-
-      if (!title || !date) {
-        showToast('Title and Date Required', 'Please enter event title and date', true);
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'Scheduling…';
-
-      try {
-        const startDateTime = `${date}T${time}:00`;
-        const endDateTime = endTime ? `${date}T${endTime}:00` : null;
-
-        const res = await JMOS_API.post('/calendar/events', {
-          title,
-          event_type: type,
-          start_time: startDateTime,
-          end_time: endDateTime,
-          location,
-          attendees,
-          description: desc,
-          generate_meet: addMeet ? 1 : 0
-        });
-
-        closeModal('eventModal');
-        const hasMeet = res.data && res.data.meet_link;
-        showToast(
-          'Event Scheduled',
-          hasMeet ? `${title} scheduled with Google Meet video link` : `${title} added to calendar`
-        );
-        await fetchCalendarEvents();
-        renderDashboardCalendar();
-        renderFullCalendar();
-      } catch (err) {
-        showToast('Scheduling Failed', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Schedule event';
-      }
+      await window.submitEventForm(e.target.closest('#saveEventBtn'));
     }
   });
 
@@ -1206,6 +1220,56 @@ window.openEventDetailModal = function(eventId) {
       };
     } else {
       delBtn.style.display = 'none';
+    }
+  }
+
+  // Source Record Action Button
+  const viewSrcBtn = document.getElementById('eventDetailViewSourceBtn');
+  if (viewSrcBtn) {
+    if (event.source === 'task' && event.db_id) {
+      viewSrcBtn.style.display = 'inline-flex';
+      viewSrcBtn.textContent = 'View Task Workspace ➔';
+      viewSrcBtn.onclick = () => {
+        closeModal('eventDetailModal');
+        if (typeof window.openTaskDetailModal === 'function') {
+          window.openTaskDetailModal(event.db_id);
+        } else if (typeof window.showView === 'function') {
+          window.showView('tasks');
+        }
+      };
+    } else if (event.source === 'project' && event.db_id) {
+      viewSrcBtn.style.display = 'inline-flex';
+      viewSrcBtn.textContent = 'View Project ➔';
+      viewSrcBtn.onclick = () => {
+        closeModal('eventDetailModal');
+        if (typeof window.openProjectDetailModal === 'function') {
+          window.openProjectDetailModal(event.db_id);
+        } else if (typeof window.showView === 'function') {
+          window.showView('projects');
+        }
+      };
+    } else if (event.source === 'invoice' && event.db_id) {
+      viewSrcBtn.style.display = 'inline-flex';
+      viewSrcBtn.textContent = 'View Invoice PDF ➔';
+      viewSrcBtn.onclick = () => {
+        closeModal('eventDetailModal');
+        if (typeof window.openInvoiceDetailModal === 'function') {
+          window.openInvoiceDetailModal(event.db_id);
+        } else if (typeof window.showView === 'function') {
+          window.showView('invoices');
+        }
+      };
+    } else if (event.source === 'grant' && event.db_id) {
+      viewSrcBtn.style.display = 'inline-flex';
+      viewSrcBtn.textContent = 'View Grant in Directory ➔';
+      viewSrcBtn.onclick = () => {
+        closeModal('eventDetailModal');
+        if (typeof window.showView === 'function') {
+          window.showView('fundraising');
+        }
+      };
+    } else {
+      viewSrcBtn.style.display = 'none';
     }
   }
 

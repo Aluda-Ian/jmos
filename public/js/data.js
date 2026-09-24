@@ -10,10 +10,12 @@ const JMOS_COLORS = [
 function getInitials(name) {
   return (name || '').trim().split(/\s+/).map(w => w[0] || '').slice(0, 2).join('').toUpperCase();
 }
+window.getInitials = getInitials;
 
 function fmt(n) {
   return 'KES ' + (Number(n) || 0).toLocaleString('en-US');
 }
+window.fmt = fmt;
 
 function fmtK(n) {
   n = Number(n) || 0;
@@ -21,6 +23,7 @@ function fmtK(n) {
   if (n >= 1e3) return 'KES ' + Math.round(n / 1e3) + 'K';
   return 'KES ' + n.toLocaleString();
 }
+window.fmtK = fmtK;
 
 function escHtml(str) {
   return String(str == null ? '' : str)
@@ -29,6 +32,175 @@ function escHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+window.escHtml = escHtml;
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (_) {
+    return String(dateStr);
+  }
+}
+window.fmtDate = fmtDate;
+
+function fmtRelativeTime(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const diffSec = Math.floor((now - d) / 1000);
+    if (diffSec < 60) return 'Just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour}h ago`;
+    const diffDays = Math.floor(diffHour / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch (_) {
+    return '';
+  }
+}
+window.fmtRelativeTime = fmtRelativeTime;
+
+window.showToast = function(title, subtitle, isRed = false) {
+  const toastsContainer = document.getElementById('toasts');
+  if (!toastsContainer) {
+    console.log(`[Toast] ${title}: ${subtitle || ''}`);
+    return;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `
+    <div class="tk ${isRed ? 'red' : ''}">
+      <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+    </div>
+    <div>
+      <b>${escHtml(title)}</b>
+      <small>${escHtml(subtitle || '')}</small>
+    </div>
+  `;
+
+  toastsContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.transition = 'opacity .4s, transform .4s';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(8px)';
+    setTimeout(() => toast.remove(), 400);
+  }, 3400);
+};
+
+window.openModal = function(id) {
+  const m = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!m) return;
+  m.classList.add('on');
+  m.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeModal = function(id) {
+  if (!id) {
+    const openModals = Array.from(document.querySelectorAll('.modal.on, .cascade.on'));
+    openModals.forEach(m => window.closeModal(m));
+    return;
+  }
+  const m = typeof id === 'string' ? document.getElementById(id) : id;
+  if (m) {
+    m.classList.remove('on');
+    m.style.display = 'none';
+    m.style.removeProperty('display');
+    m.style.removeProperty('z-index');
+  }
+  if (!document.querySelector('.modal.on') && !document.querySelector('.cascade.on')) {
+    document.body.style.overflow = '';
+  }
+};
+
+// Universal Modal Event Delegation (Active immediately from script load)
+document.addEventListener('click', (e) => {
+  // 1. Close triggers: [data-close], [data-modal-close], .mclose
+  const closeTrigger = e.target.closest('[data-close], [data-modal-close], .mclose');
+  if (closeTrigger) {
+    e.preventDefault();
+    const targetId = closeTrigger.getAttribute('data-close') || closeTrigger.getAttribute('data-modal-close');
+    if (targetId) {
+      window.closeModal(targetId);
+    } else {
+      const parentModal = closeTrigger.closest('.modal, .cascade');
+      if (parentModal) window.closeModal(parentModal);
+    }
+    return;
+  }
+
+  // 2. Backdrop click
+  if (e.target.classList.contains('mbg') || e.target.classList.contains('cbg')) {
+    const parentModal = e.target.closest('.modal, .cascade') || e.target.parentElement;
+    if (parentModal) window.closeModal(parentModal);
+    return;
+  }
+
+  // 3. Cancel / Close buttons inside modal footers
+  const btn = e.target.closest('button, .btn');
+  if (btn) {
+    const txt = btn.textContent.trim().toLowerCase();
+    if (txt === 'cancel' || txt === 'close' || btn.classList.contains('cancel') || btn.classList.contains('btn-cancel')) {
+      if (!btn.id?.includes('save') && !btn.id?.includes('submit') && !btn.getAttribute('onclick')?.includes('open') && !btn.closest('.tab-content')) {
+        const parentModal = btn.closest('.modal, .cascade');
+        if (parentModal) {
+          e.preventDefault();
+          window.closeModal(parentModal);
+          return;
+        }
+      }
+    }
+  }
+
+  // 4. Modal Openers: [data-modal-open]
+  const openTrigger = e.target.closest('[data-modal-open]');
+  if (openTrigger) {
+    e.preventDefault();
+    const modalId = openTrigger.getAttribute('data-modal-open');
+    if (modalId) window.openModal(modalId);
+    return;
+  }
+
+  // 5. Task Detail Openers: [data-view-task] and .tcard[data-task-id]
+  const viewTaskBtn = e.target.closest('[data-view-task]');
+  if (viewTaskBtn) {
+    e.preventDefault();
+    const taskId = viewTaskBtn.getAttribute('data-view-task');
+    if (typeof window.openTaskDetailModal === 'function') {
+      window.openTaskDetailModal(taskId);
+    }
+    return;
+  }
+
+  const taskCard = e.target.closest('.tcard[data-task-id]');
+  if (taskCard && !e.target.closest('button') && !e.target.closest('a') && !e.target.closest('[data-close]')) {
+    const taskId = taskCard.getAttribute('data-task-id');
+    if (typeof window.openTaskDetailModal === 'function') {
+      window.openTaskDetailModal(taskId);
+    }
+    return;
+  }
+});
+
+// Universal Escape Key Listener
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' || e.keyCode === 27) {
+    const openModals = Array.from(document.querySelectorAll('.modal.on, .cascade.on'));
+    if (openModals.length > 0) {
+      window.closeModal(openModals[openModals.length - 1]);
+    }
+  }
+});
 
 // App State
 const JMOS_STATE = {
@@ -68,6 +240,9 @@ const JMOS_STATE = {
     team: ''
   }
 };
+if (typeof window !== 'undefined') {
+  window.JMOS_STATE = JMOS_STATE;
+}
 
 // Unified Central API Client
 const JMOS_API = {
@@ -83,6 +258,9 @@ const JMOS_API = {
 
     if (JMOS_STATE.apiToken) {
       headers['Authorization'] = 'Bearer ' + JMOS_STATE.apiToken;
+    }
+    if (JMOS_STATE.currentUser && JMOS_STATE.currentUser.id) {
+      headers['X-User-Id'] = String(JMOS_STATE.currentUser.id);
     }
     return headers;
   },
@@ -243,6 +421,12 @@ const JMOS_API = {
         await fetchCalendarEvents();
       }
 
+      if (typeof populateAllUserSelects === 'function') {
+        populateAllUserSelects();
+      } else if (typeof window !== 'undefined' && typeof window.populateAllUserSelects === 'function') {
+        window.populateAllUserSelects();
+      }
+
       return true;
     } catch (err) {
       console.error('Failed to sync state from database:', err);
@@ -250,3 +434,7 @@ const JMOS_API = {
     }
   }
 };
+if (typeof window !== 'undefined') {
+  window.JMOS_API = JMOS_API;
+}
+

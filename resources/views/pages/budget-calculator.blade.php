@@ -62,7 +62,7 @@
   .field.grow{flex:1 1 240px} .field.grow input{width:100%}
 
   /* ---------- Layout ---------- */
-  .wrap{max-width:1240px;margin:0 auto;padding:20px 22px 230px}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 22px 28px}
   .columns{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
   @media(max-width:900px){.columns{grid-template-columns:1fr}}
   .col-head{display:flex;align-items:center;gap:9px;margin:6px 2px 12px}
@@ -96,9 +96,10 @@
   .add-row svg{width:14px;height:14px;stroke-width:2.2}
 
   /* ---------- Dock ---------- */
-  .dock{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -8px 32px rgba(23,22,26,.09)}
+  /* Markup & totals panel sits in normal flow at the end of the page (not pinned to the viewport) */
+  .dock{position:static;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -8px 32px rgba(23,22,26,.06)}
   .dock-inner{max-width:1240px;margin:0 auto;padding:16px 22px;display:grid;grid-template-columns:1.15fr 1fr 1.05fr;gap:26px;align-items:center}
-  @media(max-width:900px){.dock-inner{grid-template-columns:1fr;gap:14px;padding:14px 18px}.dock{max-height:62vh;overflow:auto}}
+  @media(max-width:900px){.dock-inner{grid-template-columns:1fr;gap:14px;padding:14px 18px}}
   .dock-block h4{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
   .markup-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
   .markup-val{font-family:var(--display);font-weight:700;font-size:22px;color:var(--red)}
@@ -257,7 +258,8 @@
     <button class="btn" onclick="exportJSON()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Save</button>
     <button class="btn" onclick="document.getElementById('importer').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 8l5-5 5 5M12 3v12"/></svg>Open</button>
     <input type="file" id="importer" accept="application/json" style="display:none" onchange="importJSON(event)">
-    <button class="btn btn-primary" onclick="openQuote()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>Generate quote</button>
+    <button class="btn" onclick="openQuote()" style="background:var(--red);color:#fff;border-color:var(--red);font-weight:600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>Generate quote</button>
+    <button class="btn btn-primary" onclick="openInvoice()" style="background:#0F172A;border-color:#0F172A;font-weight:700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Generate invoice</button>
   </div>
 </header>
 
@@ -332,9 +334,9 @@
 <div id="dispatch-modal-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:90;place-items:center;padding:16px">
   <div style="background:#fff;border-radius:12px;max-width:540px;width:100%;padding:26px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.25);position:relative">
     <button onclick="closeDispatchModal()" style="position:absolute;top:14px;right:14px;border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted)">&times;</button>
-    <div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">JMOS · PROPOSAL DISPATCH</div>
-    <h3 style="margin:0 0 4px;font-size:19px;color:var(--ink);font-family:var(--display)">Send Quotation to Client</h3>
-    <p style="margin:0 0 16px;font-size:12.5px;color:var(--muted)">Select an existing client or lead in the system to auto-fill contact info and send with an instant online approval button.</p>
+    <div id="dispatchModalTag" style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">JMOS · PROPOSAL DISPATCH</div>
+    <h3 id="dispatchModalTitle" style="margin:0 0 4px;font-size:19px;color:var(--ink);font-family:var(--display)">Send Quotation to Client</h3>
+    <p id="dispatchModalSub" style="margin:0 0 16px;font-size:12.5px;color:var(--muted)">Select an existing client or lead in the system to auto-fill contact info and send with an instant online approval button.</p>
 
     <!-- Client / Lead Selector Dropdown -->
     <div style="margin-bottom:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px">
@@ -400,6 +402,12 @@ const SECTIONS={
 function today(){return new Date().toISOString().slice(0,10);}
 function plusDays(iso,d){const dt=new Date(iso);dt.setDate(dt.getDate()+d);return dt.toISOString().slice(0,10);}
 function prettyDate(iso){const dt=new Date(iso);if(isNaN(dt))return iso;return dt.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}).toUpperCase();}
+function parseDateEdit(str){
+  if (!str) return null;
+  const dt = new Date(str);
+  if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+  return null;
+}
 
 function seed(){
   return {
@@ -580,20 +588,66 @@ function quoteTotals(){
   const sub=quoteSubtotal(),vat=S.pricing.vat?sub*0.16:0,gross=sub+vat,wht=S.pricing.wht?sub*0.05:0,net=gross-wht;
   const dep=net*(S.pricing.deposit/100),bal=net-dep;return {sub,vat,gross,wht,net,dep,bal};
 }
-function resetQuoteFromBudget(){S.quote.items=defaultQuoteItems();renderQuote();toast('Quote reset to section breakdowns with markup');}
+function resetQuoteFromBudget(){
+  if (S.docMode === 'invoice') {
+    S.invoice.items = defaultQuoteItems();
+  } else {
+    S.quote.items = defaultQuoteItems();
+  }
+  renderDoc();
+  toast(S.docMode === 'invoice' ? 'Invoice reset to budget breakdown with markup' : 'Quote reset to section breakdowns with markup');
+}
 
 function openQuote(){
+  S.docMode = 'quote';
   saveMeta();
   if(!S.quote.items || S.quote._autoSync !== false) {
     S.quote.items = defaultQuoteItems();
   }
-  renderQuote();
+  renderDoc();
+  const ttl = document.getElementById('doc-preview-title');
+  if (ttl) ttl.textContent = 'Quote preview — edit fields, then print, email, or save as PDF';
   document.getElementById('quote-overlay').classList.add('show');
   document.body.style.overflow='hidden';
 }
+
+function openInvoice(){
+  S.docMode = 'invoice';
+  saveMeta();
+  if (!S.invoice) {
+    S.invoice = {
+      invoiceNo: 'JM-' + String(Math.floor(100 + Math.random() * 900)),
+      date: today(),
+      dueDate: plusDays(today(), 14),
+      items: defaultQuoteItems(),
+      mpesa: 'Paybill 880100 · Acc: JMOS-INV',
+      bank: 'NCBA — Junction Branch · A/C: Jeota Media Limited · A/C No. 6237790012',
+      notes: [
+        'Payment terms: Remittance due upon receipt or within 14 days of invoice issue date.',
+        'Deliverables master files released upon complete settlement of this commercial invoice.'
+      ]
+    };
+  } else if (!S.invoice.items || S.invoice._autoSync !== false) {
+    S.invoice.items = defaultQuoteItems();
+  }
+  renderDoc();
+  const ttl = document.getElementById('doc-preview-title');
+  if (ttl) ttl.textContent = 'Invoice preview — itemized deliverables, eTIMS compliance, and official remittance';
+  document.getElementById('quote-overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
 function closeQuote(){document.getElementById('quote-overlay').classList.remove('show');document.body.style.overflow='';}
 
-function renderQuote(){
+function renderDoc(){
+  if (S.docMode === 'invoice') {
+    renderInvoiceDoc();
+  } else {
+    renderQuoteDoc();
+  }
+}
+
+function renderQuoteDoc(){
   const q=S.quote,ct=S.contact,t=quoteTotals();
   const validUntil=plusDays(S.meta.date,30);
   let rows='';
@@ -688,17 +742,123 @@ function renderQuote(){
   </div>`;
 }
 
+function renderInvoiceDoc(){
+  const inv=S.invoice,ct=S.contact,t=quoteTotals();
+  const dueDateStr=prettyDate(inv.dueDate || plusDays(today(), 14));
+  let rows='';
+  (inv.items||[]).forEach((it,i)=>{
+    const bullets=(it.deliverables||[]).map(d=>`<li>${esc(d)}</li>`).join('')||'<li>Deliverable execution & delivery</li>';
+    rows+=`<tr>
+      <td class="it-name"><span class="qi" contenteditable onblur="invItemName(${i},this)">${esc(it.name)}</span></td>
+      <td><ul class="q-deliv" contenteditable onblur="invDeliv(${i},this)">${bullets}</ul></td>
+      <td class="q-qty"><span class="qi" contenteditable onblur="invQty(${i},this)">${it.qty}</span></td>
+      <td class="q-amt-cell"><span class="qi" contenteditable onfocus="qAmtRaw(this,${i})" onblur="invAmt(${i},this)">${fmt(it.amount)}</span></td>
+      <td class="q-del"><button title="Remove item" onclick="invDel(${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg></button></td>
+    </tr>`;
+  });
+  const vatRow=S.pricing.vat?`<div class="row"><span class="k">VAT (16%)</span><span class="v">${fmt(t.vat)}</span></div>
+    <div class="row"><span class="k">Total incl. VAT</span><span class="v">${fmt(t.gross)}</span></div>`:'';
+  const whtRow=S.pricing.wht?`<div class="row wht"><span class="k">Less: withholding tax (5%)</span><span class="v">− ${fmt(t.wht)}</span></div>`:'';
+  const grandLbl=S.pricing.wht?'Net payable':'Total payable';
+  const whtCallout=S.pricing.wht?`<div class="wht-callout"><b>eTIMS & Withholding tax.</b> As an eTIMS-registered entity, 5% WHT (${fmt(t.wht)}) may be deducted at source and remitted directly to KRA with certificate issued to Jeota Media Ltd.</div>`:'';
+  const notesHtml=(inv.notes||[]).map((n,i)=>`<li><span class="qedit" contenteditable onblur="invNote(${i},this)">${esc(n)}</span></li>`).join('');
+
+  document.getElementById('quote-doc').innerHTML=`
+  <div class="q-banner" style="background:#0f172a;color:#fff">
+    <div>
+      <div class="co" style="color:#fff">JEOTA MEDIA LTD</div>
+      <div class="tag" style="color:#94a3b8">TAX &amp; COMMERCIAL INVOICE</div>
+    </div>
+    <div class="right">
+      <div class="contact">
+        <div><span class="qedit" contenteditable onblur="qCt('email',this)">${esc(ct.email)}</span></div>
+        <div><span class="qedit" contenteditable onblur="qCt('phone',this)">${esc(ct.phone)}</span></div>
+        <div><span class="qedit" contenteditable onblur="qCt('web',this)">${esc(ct.web)}</span></div>
+        <div><span class="qedit" contenteditable onblur="qCt('addr1',this)">${esc(ct.addr1)}</span></div>
+        <div><span class="qedit" contenteditable onblur="qCt('addr2',this)">${esc(ct.addr2)}</span></div>
+      </div>
+      <div class="q-logo"><img src="${LOGO}" alt="Jeota Media"></div>
+    </div>
+  </div>
+
+  <div class="q-body">
+    <div class="q-top">
+      <div>
+        <div class="big" style="color:#0f172a">INVOICE</div>
+        <div class="meta-l">
+          <div>Issue date: <span class="qedit" contenteditable onblur="S.invoice.date=parseDateEdit(this.textContent)||S.invoice.date">${prettyDate(S.invoice.date)}</span></div>
+          <div>Invoice no. <span class="qedit" contenteditable onblur="S.invoice.invoiceNo=this.textContent.trim()">${esc(S.invoice.invoiceNo)}</span></div>
+          <div>Due date: <span class="qedit" contenteditable onblur="S.invoice.dueDate=parseDateEdit(this.textContent)||S.invoice.dueDate">${dueDateStr}</span></div>
+        </div>
+      </div>
+      <div class="meta-r">
+        <div class="k">Project Scope</div><span class="v qedit" contenteditable onblur="S.meta.project=this.textContent.trim()">${esc(S.meta.project||'—')}</span>
+        <div class="k">Billed To</div><span class="v qedit" contenteditable onblur="S.meta.client=this.textContent.trim()">${esc(S.meta.client||'—')}</span>
+      </div>
+    </div>
+
+    <table class="q-table">
+      <thead><tr><th>Deliverable</th><th>Scope Details</th><th class="n" style="text-align:center">Qty</th><th class="n">${CUR[S.meta.currency].sym}</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr class="q-total-row"><td colspan="3" class="lbl">Subtotal</td><td class="val">${fmt(t.sub)}</td><td></td></tr></tfoot>
+    </table>
+    <button class="q-additem" onclick="invAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg>Add deliverable</button>
+
+    <div class="q-totals">
+      <div class="row"><span class="k">Subtotal</span><span class="v">${fmt(t.sub)}</span></div>
+      ${vatRow}${whtRow}
+      <div class="row grand" style="color:#0f172a"><span class="k">${grandLbl}</span><span class="v">${fmt(t.net)}</span></div>
+    </div>
+    ${whtCallout}
+
+    <div class="q-sections">
+      <div>
+        <h5>Official Remittance Banking</h5>
+        <div class="pay-line"><span class="pk">Bank</span><span class="pv qedit" contenteditable onblur="invPay('bank',this)">${esc(inv.bank)}</span></div>
+        <div class="pay-line"><span class="pk">M-Pesa</span><span class="pv qedit" contenteditable onblur="invPay('mpesa',this)">${esc(inv.mpesa)}</span></div>
+      </div>
+      <div>
+        <h5>Settlement Terms</h5>
+        <div class="terms-pay">
+          <div class="cell"><div class="k">Milestone / Type</div><div class="v" style="font-size:13px">${S.pricing.deposit}% Deposit / Full</div></div>
+          <div class="cell"><div class="k">Due Date</div><div class="v" style="font-size:13px">${dueDateStr}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="q-notes">
+      <h5>Invoice Notes &amp; Terms</h5>
+      <ul>${notesHtml}</ul>
+    </div>
+
+    <div class="q-foot">Official Commercial Invoice · Jeota Media Ltd · ${esc(ct.web)}</div>
+  </div>`;
+}
+
 /* quote edit handlers */
 function qItemName(i,el){S.quote.items[i].name=el.textContent.trim();S.quote._autoSync=false;}
 function qDeliv(i,el){S.quote.items[i].deliverables=[...el.querySelectorAll('li')].map(li=>li.textContent.trim()).filter(Boolean);S.quote._autoSync=false;}
 function qQty(i,el){S.quote.items[i].qty=num(el.textContent)||1;el.textContent=S.quote.items[i].qty;S.quote._autoSync=false;}
-function qAmtRaw(el,i){el.textContent=String(num(S.quote.items[i].amount)||'');}
-function qAmt(i,el){S.quote.items[i].amount=num(el.textContent);S.quote._autoSync=false;renderQuote();}
-function qDel(i){if(S.quote.items.length<=1){toast('Keep at least one item');return;}S.quote.items.splice(i,1);S.quote._autoSync=false;renderQuote();}
-function qAdd(){S.quote.items.push({name:'ITEM',deliverables:['Deliverable'],qty:1,amount:0});S.quote._autoSync=false;renderQuote();}
+function qAmtRaw(el,i){
+  const items = (S.docMode === 'invoice' ? S.invoice.items : S.quote.items);
+  el.textContent=String(num(items[i].amount)||'');
+}
+function qAmt(i,el){S.quote.items[i].amount=num(el.textContent);S.quote._autoSync=false;renderDoc();}
+function qDel(i){if(S.quote.items.length<=1){toast('Keep at least one item');return;}S.quote.items.splice(i,1);S.quote._autoSync=false;renderDoc();}
+function qAdd(){S.quote.items.push({name:'ITEM',deliverables:['Deliverable'],qty:1,amount:0});S.quote._autoSync=false;renderDoc();}
 function qCt(k,el){S.contact[k]=el.textContent.trim();}
 function qPay(k,el){S.quote[k]=el.textContent.trim();}
 function qNote(i,el){S.quote.notes[i]=el.textContent.trim();}
+
+/* invoice edit handlers */
+function invItemName(i,el){S.invoice.items[i].name=el.textContent.trim();S.invoice._autoSync=false;}
+function invDeliv(i,el){S.invoice.items[i].deliverables=[...el.querySelectorAll('li')].map(li=>li.textContent.trim()).filter(Boolean);S.invoice._autoSync=false;}
+function invQty(i,el){S.invoice.items[i].qty=num(el.textContent)||1;el.textContent=S.invoice.items[i].qty;S.invoice._autoSync=false;}
+function invAmt(i,el){S.invoice.items[i].amount=num(el.textContent);S.invoice._autoSync=false;renderDoc();}
+function invDel(i){if(S.invoice.items.length<=1){toast('Keep at least one item');return;}S.invoice.items.splice(i,1);S.invoice._autoSync=false;renderDoc();}
+function invAdd(){S.invoice.items.push({name:'DELIVERABLE',deliverables:['Deliverable scope'],qty:1,amount:0});S.invoice._autoSync=false;renderDoc();}
+function invPay(k,el){S.invoice[k]=el.textContent.trim();}
+function invNote(i,el){S.invoice.notes[i]=el.textContent.trim();}
 
 let JMOS_CLIENTS_CACHE = [];
 let JMOS_LEADS_CACHE = [];
@@ -788,10 +948,25 @@ function openDispatchModal() {
   const overlay = document.getElementById('dispatch-modal-overlay');
   if (overlay) overlay.style.display = 'grid';
 
+  const isInv = S.docMode === 'invoice';
+  const tagEl = document.getElementById('dispatchModalTag');
+  if (tagEl) tagEl.textContent = isInv ? 'JMOS · COMMERCIAL INVOICE DISPATCH' : 'JMOS · PROPOSAL DISPATCH';
+
+  const titleModalEl = document.getElementById('dispatchModalTitle');
+  if (titleModalEl) titleModalEl.textContent = isInv ? 'Issue Invoice to Client' : 'Send Quotation to Client';
+
+  const subModalEl = document.getElementById('dispatchModalSub');
+  if (subModalEl) subModalEl.textContent = isInv 
+    ? 'Select a client to auto-fill contact info and issue an itemized tax/commercial invoice with remittance details.' 
+    : 'Select an existing client or lead in the system to auto-fill contact info and send with an instant online approval button.';
+
+  const sendEmailBtn = document.getElementById('btnBudgetSendEmail');
+  if (sendEmailBtn) sendEmailBtn.textContent = isInv ? 'Issue & Email Invoice ➔' : 'Send Email with Approval Button ➔';
+
   const nameInput = document.getElementById('modalRecipientName');
   const titleInput = document.getElementById('modalProjectTitle');
   if (nameInput) nameInput.value = S.meta.client || '';
-  if (titleInput) titleInput.value = S.meta.project || 'Production Scope';
+  if (titleInput) titleInput.value = S.meta.project || (isInv ? 'Commercial Invoice Scope' : 'Production Scope');
 
   loadSystemClientsAndLeads();
 }
@@ -803,14 +978,14 @@ function closeDispatchModal() {
 
 async function submitBudgetQuoteDispatch(mode = 'email') {
   const name = document.getElementById('modalRecipientName')?.value.trim();
-  const title = document.getElementById('modalProjectTitle')?.value.trim() || S.meta.project || 'Production Proposal';
+  const title = document.getElementById('modalProjectTitle')?.value.trim() || S.meta.project || 'Commercial Scope';
   const email = document.getElementById('modalRecipientEmail')?.value.trim();
   const phone = document.getElementById('modalRecipientPhone')?.value.trim();
   const leadId = document.getElementById('modalLeadId')?.value || null;
   const clientId = document.getElementById('modalClientId')?.value || null;
 
   if (!name) {
-    alert('Please enter or select a recipient name.');
+    alert('Please enter or select a recipient / client name.');
     return;
   }
 
@@ -820,28 +995,13 @@ async function submitBudgetQuoteDispatch(mode = 'email') {
   }
 
   const t = calc();
-  const items = (S.quote.items || defaultQuoteItems()).map(it => ({
+  const rawItems = (S.docMode === 'invoice' ? (S.invoice?.items || defaultQuoteItems()) : (S.quote?.items || defaultQuoteItems()));
+  const items = rawItems.map(it => ({
     description: it.name + (it.deliverables && it.deliverables.length ? ` (${it.deliverables.join(', ')})` : ''),
     quantity: it.qty || 1,
     rate: it.amount || 0,
     amount: it.amount || 0
   }));
-
-  const payload = {
-    title: title,
-    recipient_name: name,
-    recipient_email: email || null,
-    recipient_phone: phone || null,
-    lead_id: leadId,
-    client_id: clientId,
-    subtotal: t.cost + t.profit,
-    discount: 0,
-    tax: 0,
-    total_amount: t.net || (t.cost + t.profit),
-    validity_days: 14,
-    notes: (S.quote.notes || []).join('\n'),
-    items: items.length ? items : [{ description: title, quantity: 1, rate: t.fee, amount: t.fee }]
-  };
 
   const sendBtn = document.getElementById('btnBudgetSendEmail');
   if (sendBtn) {
@@ -851,61 +1011,151 @@ async function submitBudgetQuoteDispatch(mode = 'email') {
 
   try {
     const token = localStorage.getItem('jmos_api_token');
-    const res = await fetch('/api/quotes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
-      },
-      body: JSON.stringify(payload)
-    });
+    const isInv = S.docMode === 'invoice';
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to save quote');
+    if (isInv) {
+      // Create Invoice API dispatch
+      const payload = {
+        invoice_no: S.invoice?.invoiceNo || ('JM-' + Math.floor(100 + Math.random() * 900)),
+        client: name,
+        client_id: clientId,
+        title: title,
+        type: `Deposit ${S.pricing.deposit}%`,
+        due_date: S.invoice?.dueDate || plusDays(today(), 14),
+        status: 'Sent',
+        etims: S.pricing.vat || S.pricing.wht,
+        subtotal: t.cost + t.profit,
+        discount: 0,
+        tax: t.vat || 0,
+        amount: t.net || (t.cost + t.profit),
+        notes: (S.invoice?.notes || []).join('\n'),
+        method: 'M-Pesa Paybill 880100 / NCBA Bank',
+        items: items.length ? items : [{ description: title, quantity: 1, rate: t.fee, amount: t.fee }]
+      };
 
-    const createdQuote = data.data || data.quote;
-
-    if (mode === 'email' && email && createdQuote && createdQuote.id) {
-      await fetch(`/api/quotes/${createdQuote.id}/send-email`, {
+      const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'Authorization': token ? `Bearer ${token}` : ''
         },
-        body: JSON.stringify({ email: email })
+        body: JSON.stringify(payload)
       });
-      toast(`Quotation saved & emailed to ${email} with online approval link! 📧`);
-    } else if (mode === 'whatsapp' && createdQuote && createdQuote.id) {
-      const waRes = await fetch(`/api/quotes/${createdQuote.id}/whatsapp`, {
-        headers: { 'Accept': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }
-      });
-      const waData = await waRes.json();
-      if (waData.whatsapp_url) {
-        window.open(waData.whatsapp_url, '_blank');
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to create invoice');
+      const createdInvoice = data.data || data;
+
+      if (mode === 'email' && email && createdInvoice && createdInvoice.id) {
+        await fetch(`/api/invoices/${createdInvoice.id}/send-reminder`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ email: email })
+        });
+        toast(`Invoice generated & emailed to ${email}! 📧`);
+      } else if (mode === 'whatsapp' && createdInvoice && createdInvoice.id) {
+        const waRes = await fetch(`/api/invoices/${createdInvoice.id}/whatsapp`, {
+          headers: { 'Accept': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }
+        });
+        const waData = await waRes.json();
+        if (waData.whatsapp_url) {
+          window.open(waData.whatsapp_url, '_blank');
+        }
+        toast('Invoice generated & WhatsApp opened with remittance info! 💬');
+      } else {
+        toast('Invoice generated in JMOS successfully! 🧾');
       }
-      toast('Quotation saved & WhatsApp opened with approval link! 💬');
+
+      closeDispatchModal();
+      closeQuote();
+
+      if (window.parent) {
+        if (typeof window.parent.refreshFinanceData === 'function') window.parent.refreshFinanceData();
+        if (typeof window.parent.renderInvoices === 'function') window.parent.renderInvoices();
+        if (typeof window.parent.JMOS_API?.fetchAll === 'function') window.parent.JMOS_API.fetchAll();
+        if (createdInvoice && createdInvoice.id && typeof window.parent.openInvoiceDetailModal === 'function') {
+          setTimeout(() => window.parent.openInvoiceDetailModal(createdInvoice.id), 200);
+        }
+      }
     } else {
-      toast('Quotation saved to JMOS successfully!');
-    }
+      // Create Quotation API dispatch
+      const payload = {
+        title: title,
+        recipient_name: name,
+        recipient_email: email || null,
+        recipient_phone: phone || null,
+        lead_id: leadId,
+        client_id: clientId,
+        subtotal: t.cost + t.profit,
+        discount: 0,
+        tax: 0,
+        total_amount: t.net || (t.cost + t.profit),
+        validity_days: 14,
+        notes: (S.quote?.notes || []).join('\n'),
+        items: items.length ? items : [{ description: title, quantity: 1, rate: t.fee, amount: t.fee }]
+      };
 
-    closeDispatchModal();
-    closeQuote();
+      const res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify(payload)
+      });
 
-    // If parent JMOS window exists, sync quotes, invoices, and finance views
-    if (window.parent) {
-      if (window.parent.JMOS_QUOTES && typeof window.parent.JMOS_QUOTES.loadQuotes === 'function') {
-        window.parent.JMOS_QUOTES.loadQuotes();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to save quote');
+
+      const createdQuote = data.data || data.quote;
+
+      if (mode === 'email' && email && createdQuote && createdQuote.id) {
+        await fetch(`/api/quotes/${createdQuote.id}/send-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({ email: email })
+        });
+        toast(`Quotation saved & emailed to ${email} with online approval link! 📧`);
+      } else if (mode === 'whatsapp' && createdQuote && createdQuote.id) {
+        const waRes = await fetch(`/api/quotes/${createdQuote.id}/whatsapp`, {
+          headers: { 'Accept': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }
+        });
+        const waData = await waRes.json();
+        if (waData.whatsapp_url) {
+          window.open(waData.whatsapp_url, '_blank');
+        }
+        toast('Quotation saved & WhatsApp opened with approval link! 💬');
+      } else {
+        toast('Quotation saved to JMOS successfully!');
       }
-      if (typeof window.parent.refreshFinanceData === 'function') {
-        window.parent.refreshFinanceData();
-      }
-      if (typeof window.parent.renderInvoices === 'function') {
-        window.parent.renderInvoices();
-      }
-      if (typeof window.parent.refreshCrmData === 'function') {
-        window.parent.refreshCrmData();
+
+      closeDispatchModal();
+      closeQuote();
+
+      // If parent JMOS window exists, sync quotes, invoices, and finance views
+      if (window.parent) {
+        if (window.parent.JMOS_QUOTES && typeof window.parent.JMOS_QUOTES.loadQuotes === 'function') {
+          window.parent.JMOS_QUOTES.loadQuotes();
+        }
+        if (typeof window.parent.refreshFinanceData === 'function') {
+          window.parent.refreshFinanceData();
+        }
+        if (typeof window.parent.renderInvoices === 'function') {
+          window.parent.renderInvoices();
+        }
+        if (typeof window.parent.refreshCrmData === 'function') {
+          window.parent.refreshCrmData();
+        }
       }
     }
   } catch (err) {
@@ -924,25 +1174,39 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDispatchModal(
 
 window.addEventListener('message', function(e) {
   if (!e.data || typeof e.data !== 'object') return;
-  if (e.data.action === 'setClient') {
-    if (e.data.client) {
-      S.meta.client = e.data.client;
-      const clientInp = document.getElementById('meta-client');
-      if (clientInp) clientInp.value = e.data.client;
-    }
-    if (e.data.project) {
-      S.meta.project = e.data.project;
-      const projInp = document.getElementById('meta-project');
-      if (projInp) projInp.value = e.data.project;
-    }
-    if (e.data.leadId) {
-      const leadInp = document.getElementById('modalLeadId');
-      if (leadInp) leadInp.value = e.data.leadId;
-    }
-    if (e.data.clientId) {
-      const clientInp = document.getElementById('modalClientId');
-      if (clientInp) clientInp.value = e.data.clientId;
-    }
+  const isInvoice = e.data.action === 'openInvoice' || e.data.mode === 'invoice';
+  const isQuote = e.data.action === 'openQuote' || e.data.mode === 'quote';
+
+  if (e.data.client) {
+    S.meta.client = e.data.client;
+    const clientInp = document.getElementById('m-client') || document.getElementById('meta-client');
+    if (clientInp) clientInp.value = e.data.client;
+  }
+  if (e.data.project) {
+    S.meta.project = e.data.project;
+    const projInp = document.getElementById('m-project') || document.getElementById('meta-project');
+    if (projInp) projInp.value = e.data.project;
+  }
+  if (e.data.leadId) {
+    const leadInp = document.getElementById('modalLeadId');
+    if (leadInp) leadInp.value = e.data.leadId;
+  }
+  if (e.data.clientId) {
+    const clientInp = document.getElementById('modalClientId');
+    if (clientInp) clientInp.value = e.data.clientId;
+  }
+
+  if (isInvoice) {
+    S.docMode = 'invoice';
+    renderAll();
+    openInvoice();
+    toast('Invoice mode ready — edit items or save PDF');
+  } else if (isQuote) {
+    S.docMode = 'quote';
+    renderAll();
+    openQuote();
+    toast('Quote mode ready — edit items or save PDF');
+  } else {
     renderAll();
   }
 });

@@ -48,8 +48,16 @@ class TaskController extends Controller
             return $user;
         }
 
+        if ($user = auth()->user()) {
+            return $user;
+        }
+
         $userId = $request->header('X-User-Id') ?? $request->input('user_id');
         if ($userId && $found = User::find($userId)) {
+            return $found;
+        }
+
+        if (session()->has('user_id') && $found = User::find(session('user_id'))) {
             return $found;
         }
 
@@ -62,6 +70,10 @@ class TaskController extends Controller
     public function canMoveTask(?User $user, Task $task): bool
     {
         if (! $user) {
+            $user = auth()->user() ?? (session()->has('user_id') ? User::find(session('user_id')) : null);
+        }
+
+        if (! $user) {
             return false;
         }
 
@@ -70,17 +82,22 @@ class TaskController extends Controller
             return true;
         }
 
-        // 2. Task Assigner (Creator)
+        // 2. Managers, IT Specialists, and Admins with task management access
+        if (in_array($user->role, ['manager', 'admin', 'it_manager', 'super_admin'], true)) {
+            return true;
+        }
+
+        // 3. Task Assigner (Creator)
         if ($task->assigned_by_id && (int) $task->assigned_by_id === (int) $user->id) {
             return true;
         }
 
-        // 3. Task Assignee (by ID)
+        // 4. Task Assignee (by ID)
         if ($task->assigned_to_id && (int) $task->assigned_to_id === (int) $user->id) {
             return true;
         }
 
-        // 4. Task Assignee (by name match fallback)
+        // 5. Task Assignee (by name match fallback)
         if (! empty($task->assigned_to)) {
             $nameLower = strtolower(trim($task->assigned_to));
             $userNameLower = strtolower(trim($user->name));
@@ -91,18 +108,13 @@ class TaskController extends Controller
             }
         }
 
-        // 5. Project Manager of the associated project
+        // 6. Project Manager of the associated project
         if ($task->project && ! empty($task->project->project_manager)) {
             $pmLower = strtolower(trim($task->project->project_manager));
             $userNameLower = strtolower(trim($user->name));
             if ($pmLower === $userNameLower || str_contains($pmLower, $userNameLower)) {
                 return true;
             }
-        }
-
-        // 6. Managers / IT Administrators with tasks.manage permission
-        if ($user->hasPermission('tasks.manage') && in_array($user->role, ['manager', 'admin', 'it_manager'], true)) {
-            return true;
         }
 
         return false;

@@ -30,12 +30,21 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'invoice_no' => 'nullable|string|unique:invoices,invoice_no',
             'client' => 'required|string',
+            'client_id' => 'nullable|integer|exists:clients,id',
+            'project_id' => 'nullable|integer|exists:projects,id',
+            'title' => 'nullable|string',
             'type' => 'required|string',
+            'items' => 'nullable|array',
             'amount' => 'required|numeric',
+            'subtotal' => 'nullable|numeric',
+            'discount' => 'nullable|numeric',
+            'tax' => 'nullable|numeric',
             'method' => 'nullable|string',
             'etims' => 'nullable|boolean',
             'status' => 'nullable|in:Sent,Paid,Overdue',
             'due_date' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'quote_id' => 'nullable|integer|exists:quotes,id',
         ]);
 
         if (empty($validated['invoice_no'])) {
@@ -66,12 +75,21 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'invoice_no' => 'sometimes|required|string|unique:invoices,invoice_no,'.$invoice->id,
             'client' => 'sometimes|required|string',
+            'client_id' => 'nullable|integer|exists:clients,id',
+            'project_id' => 'nullable|integer|exists:projects,id',
+            'title' => 'nullable|string',
             'type' => 'nullable|string',
+            'items' => 'nullable|array',
             'amount' => 'sometimes|required|numeric',
+            'subtotal' => 'nullable|numeric',
+            'discount' => 'nullable|numeric',
+            'tax' => 'nullable|numeric',
             'method' => 'nullable|string',
             'etims' => 'nullable|boolean',
             'status' => 'nullable|in:Sent,Paid,Overdue',
             'due_date' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'quote_id' => 'nullable|integer|exists:quotes,id',
         ]);
 
         $invoice->update($validated);

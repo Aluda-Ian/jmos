@@ -68,7 +68,7 @@
         <h1>Run all of Jeota from one place.</h1>
         <p>Clients, projects, tasks and finances — your whole operation, signed in and ready.</p>
       </div>
-      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.5.1') }}</span></div>
+      <div class="foot">JMOS · Jeota Media Operating System <span style="opacity:0.75;margin-left:6px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ config('app.version', 'v2.5.9') }}</span></div>
       <div class="bdrip" style="left:46px;height:60px"></div>
       <div class="bdrip" style="left:62px;height:96px"></div>
       <div class="bdrip" style="left:77px;height:44px"></div>
@@ -186,7 +186,7 @@
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         <span class="nav-text">Calendar</span>
       </a>
-      <a class="item" href="#" data-view="documents" data-perm="owner finance sales manager editor crew" title="Documents & Media Assets">
+      <a class="item" href="#" data-view="documents" title="Documents & Media Assets">
         <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         <span class="nav-text">Documents</span>
       </a>
@@ -197,45 +197,45 @@
       </a>
 
       <div class="grp">Lead Generation</div>
-      <a class="item" href="#" data-view="clients" data-perm="owner finance sales manager" title="Clients & Accounts">
+      <a class="item" href="#" data-view="clients" title="Clients & Accounts">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="nav-text">Clients</span>
       </a>
-      <a class="item" href="#" data-view="pipeline" data-perm="owner finance sales manager" title="Commercial Deals Pipeline">
+      <a class="item" href="#" data-view="pipeline" title="Commercial Deals Pipeline">
         <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20v-11"/></svg>
         <span class="nav-text">Pipeline</span>
       </a>
-      <a class="item" href="#" data-view="fundraising" data-perm="owner finance sales manager" title="Grants & Open Calls">
+      <a class="item" href="#" data-view="fundraising" title="Grants & Open Calls">
         <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M12 18v4M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
         <span class="nav-text">Grants &amp; Open Calls</span>
       </a>
-      <a class="item" href="#" data-view="partnerships" data-perm="owner finance sales manager" title="Partnership Exploration">
+      <a class="item" href="#" data-view="partnerships" title="Partnership Exploration">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="nav-text">Partnership Exploration</span>
       </a>
 
-      <div class="grp" data-perm="owner finance">Money</div>
-      <a class="item" href="#" data-view="finance" data-perm="owner finance" title="Finance Overview & Cash Flow">
+      <div class="grp" data-perm="owner">Money</div>
+      <a class="item" href="#" data-view="finance" data-perm="owner" title="Finance Overview & Cash Flow">
         <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg>
         <span class="nav-text">Finance</span>
       </a>
-      <a class="item" href="#" data-view="quotes" data-perm="owner finance sales manager" title="Commercial Quotations">
+      <a class="item" href="#" data-view="quotes" data-perm="owner" title="Commercial Quotations">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span class="nav-text">Quotations</span>
       </a>
-      <a class="item" href="#" data-view="invoices" data-perm="owner finance" title="Invoices & Billing">
+      <a class="item" href="#" data-view="invoices" data-perm="owner" title="Invoices & Billing">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
         <span class="nav-text">Invoices</span>
       </a>
-      <a class="item" href="#" data-view="expenses" data-perm="owner finance" title="Expenses & ETR Tracking">
+      <a class="item" href="#" data-view="expenses" data-perm="owner" title="Expenses & ETR Tracking">
         <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         <span class="nav-text">Expenses</span>
       </a>
-      <a class="item" href="#" data-view="budget" data-perm="owner finance sales manager" title="Production Budget Calculator">
+      <a class="item" href="#" data-view="budget" data-perm="owner" title="Production Budget Calculator">
         <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
         <span class="nav-text">Production Budget</span>
       </a>
-      <a class="item" href="#" data-view="statements" data-perm="owner finance" title="Financial Statements & Ledger">
+      <a class="item" href="#" data-view="statements" data-perm="owner" title="Financial Statements & Ledger">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
         <span class="nav-text">Financial Statements</span>
       </a>
@@ -267,7 +267,7 @@
       </div>
       <div class="nav-footer-version" style="padding:4px 16px 14px;font-size:10.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;opacity:0.7;display:flex;align-items:center;gap:6px">
         <span>JMOS</span>
-        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.5.1') }}</span>
+        <span class="badge" style="font-size:9.5px;padding:1px 5px;background:var(--paper);border:1px solid var(--line);color:var(--muted)">{{ config('app.version', 'v2.5.9') }}</span>
       </div>
     </aside>
 
@@ -507,6 +507,7 @@
   <script src="{{ asset('js/data.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/auth.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/navigation.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/modals.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/finance.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/clients-api.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/people.js') }}?v={{ time() }}"></script>
@@ -519,7 +520,6 @@
   <script src="{{ asset('js/fundraising.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/settings.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/ai-assistant.js') }}?v={{ time() }}"></script>
-  <script src="{{ asset('js/modals.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/app.js') }}?v={{ time() }}"></script>
 </body>
 </html>

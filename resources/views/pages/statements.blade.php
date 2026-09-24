@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: Financial Statements & Client / Lead Billing Hub
      ========================================================================== -->
-<section class="view" data-view="statements" hidden data-perm="owner finance">
+<section class="view" data-view="statements" hidden data-perm="owner">
   <div class="page-head">
     <div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -15,8 +15,8 @@
       <button type="button" class="btn" id="createQuoteBtn" data-view="budget" onclick="showView('budget')" title="Create commercial quotation in Production Budget">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>+ Create Quote
       </button>
-      <button type="button" class="btn primary" onclick="openModal('invoiceModal')" data-modal-open="invoiceModal" title="Issue new client invoice">
-        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>+ New Invoice
+      <button type="button" class="btn primary" onclick="window.openCreateInvoiceInBudget()" data-view="budget" title="Issue new client invoice via Production Budget">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>+ Create Invoice (Budget)
       </button>
     </div>
   </div>

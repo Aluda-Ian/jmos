@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'JMOS — Jeota Media Operating System'),
-    'version' => env('APP_VERSION', 'v2.5.1'),
+    'version' => env('APP_VERSION', 'v2.5.9'),
 
     /*
     |--------------------------------------------------------------------------

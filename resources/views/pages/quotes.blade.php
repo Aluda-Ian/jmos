@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: Quotations & Commercial Proposals
      ========================================================================== -->
-<section class="view" data-view="quotes" hidden data-perm="owner finance sales manager">
+<section class="view" data-view="quotes" hidden data-perm="owner">
   <div class="page-head">
     <div>
       <h1 class="pt">Quotations</h1>

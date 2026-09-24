@@ -5,6 +5,19 @@
 function showView(view) {
   if (!view) view = 'dashboard';
 
+  // Access guard: a view with data-perm (e.g. Money = owner only) cannot be
+  // opened by other roles via links, notifications, URLs or quote buttons.
+  const role = window.JMOS_STATE && JMOS_STATE.currentUser ? JMOS_STATE.currentUser.role : null;
+  const targetSection = document.querySelector(`.view[data-view="${view}"]`);
+  if (role && targetSection && targetSection.getAttribute('data-perm')) {
+    const allowed = targetSection.getAttribute('data-perm').split(' ');
+    if (allowed.indexOf(role) < 0) {
+      if (typeof showToast === 'function') showToast('Owner access only', 'Money tools are reserved for the account owner.', true);
+      if (view !== 'dashboard') return showView('dashboard');
+      return;
+    }
+  }
+
   // Toggle active view container
   document.querySelectorAll('.view').forEach(v => {
     const isTarget = v.getAttribute('data-view') === view;
@@ -104,8 +117,8 @@ function applyRole(role) {
   const banner = document.getElementById('roleBanner');
   const bannerT = document.getElementById('roleBannerText');
   const bannerText = {
-    finance: 'Signed in as Matthew (Finance): money and delivery, not the Services setup.',
-    sales: 'Signed in as Patrick (Sales): clients, pipeline, projects & tasks — no finances.',
+    finance: 'Signed in as Finance: projects, tasks & lead generation. Money tools are owner-only.',
+    sales: 'Signed in as Sales: clients, pipeline, projects & tasks. Money tools are owner-only.',
     manager: 'Signed in as Ian (IT Specialist & System Manager): platform settings, infrastructure & operations.'
   };
 

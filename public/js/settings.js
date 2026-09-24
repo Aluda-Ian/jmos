@@ -232,7 +232,8 @@ function initSettings() {
       }
 
       try {
-        const res = await JMOS_API.post('/calendar/sync', {});
+        const targetEmail = document.getElementById('cfg_google_calendar_id')?.value.trim() || 'jeotamedia@gmail.com';
+        const res = await JMOS_API.post('/calendar/sync', { account_email: targetEmail });
         if (calSyncResult) {
           calSyncResult.style.color = 'var(--green)';
           calSyncResult.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> <b>Synced:</b></span> ${escHtml(res.message)}`;
@@ -928,20 +929,25 @@ function initSystemUpgrade() {
         return;
       }
 
-      const confirmed = await window.showConfirmDialog({
-        title: 'Deploy Software Upgrade?',
-        subtitle: 'Zero Data Loss Deployment Pipeline',
-        type: 'upgrade',
-        confirmText: 'Install & Deploy',
-        cancelText: 'Cancel',
-        message: `Are you sure you want to install and deploy <b>${escHtml(selectedUpgradeFile.name)}</b>?`,
-        bullets: [
-          `Package archive size: ${(selectedUpgradeFile.size / (1024 * 1024)).toFixed(2)} MB`,
-          'Automated safety database backup snapshot will be generated first.',
-          'Existing .env configuration and media uploads in storage/ are safely protected.',
-          'Pending database migrations will be executed non-destructively.'
-        ]
-      });
+      let confirmed = true;
+      if (typeof window.showConfirmDialog === 'function') {
+        confirmed = await window.showConfirmDialog({
+          title: 'Deploy Software Upgrade?',
+          subtitle: 'Zero Data Loss Deployment Pipeline',
+          type: 'upgrade',
+          confirmText: 'Install & Deploy',
+          cancelText: 'Cancel',
+          message: `Are you sure you want to install and deploy <b>${escHtml(selectedUpgradeFile.name)}</b>?`,
+          bullets: [
+            `Package archive size: ${(selectedUpgradeFile.size / (1024 * 1024)).toFixed(2)} MB`,
+            'Automated safety database backup snapshot will be generated first.',
+            'Existing .env configuration and media uploads in storage/ are safely protected.',
+            'Pending database migrations will be executed non-destructively.'
+          ]
+        });
+      } else {
+        confirmed = window.confirm(`Deploy upgrade ${selectedUpgradeFile.name}?`);
+      }
       if (!confirmed) return;
 
       applyBtn.disabled = true;
@@ -1343,17 +1349,22 @@ window.saveRole = async function() {
 };
 
 window.deleteRole = async function(roleId, roleName) {
-  const confirmed = await window.showConfirmDialog({
-    title: `Delete Role "${roleName}"?`,
-    subtitle: 'Access Control Modification',
-    type: 'danger',
-    confirmText: 'Delete Role',
-    message: `Are you sure you want to permanently delete custom role <b>${escHtml(roleName)}</b>?`,
-    bullets: [
-      'Any users currently assigned to this role will be automatically reassigned to the standard Team Member role.',
-      'This action cannot be undone.'
-    ]
-  });
+  let confirmed = true;
+  if (typeof window.showConfirmDialog === 'function') {
+    confirmed = await window.showConfirmDialog({
+      title: `Delete Role "${roleName}"?`,
+      subtitle: 'Access Control Modification',
+      type: 'danger',
+      confirmText: 'Delete Role',
+      message: `Are you sure you want to permanently delete custom role <b>${escHtml(roleName)}</b>?`,
+      bullets: [
+        'Any users currently assigned to this role will be automatically reassigned to the standard Team Member role.',
+        'This action cannot be undone.'
+      ]
+    });
+  } else {
+    confirmed = window.confirm(`Are you sure you want to delete role ${roleName}?`);
+  }
   if (!confirmed) return;
 
   try {

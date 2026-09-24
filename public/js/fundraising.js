@@ -382,7 +382,20 @@
       document.getElementById('frProgram').value = item.program_title || '';
       document.getElementById('frLink').value = item.application_link || '';
       document.getElementById('frAmount').value = item.amount_kes || '';
-      document.getElementById('frDeadline').value = item.deadline || '';
+      let dVal = '';
+      if (item.deadline) {
+        try {
+          const dt = new Date(item.deadline);
+          if (!isNaN(dt.getTime())) {
+            dVal = dt.toISOString().slice(0, 10);
+          } else {
+            dVal = item.deadline.slice(0, 10);
+          }
+        } catch (_) {
+          dVal = (item.deadline || '').slice(0, 10);
+        }
+      }
+      document.getElementById('frDeadline').value = dVal;
       document.getElementById('frStatus').value = item.status || 'Pending';
       document.getElementById('frNotes').value = item.notes || '';
 
@@ -443,6 +456,13 @@
 
         window.closeModal('fundraisingModal');
         this.loadOpportunities();
+
+        if (typeof window.fetchCalendarEvents === 'function') {
+          window.fetchCalendarEvents().then(() => {
+            if (typeof window.renderDashboardCalendar === 'function') window.renderDashboardCalendar();
+            if (typeof window.renderFullCalendar === 'function') window.renderFullCalendar();
+          });
+        }
       } catch (err) {
         if (window.showToast) window.showToast('Save Error', err.message, true);
       } finally {
@@ -491,6 +511,13 @@
           window.showToast('Record Deleted', 'Entity removed from master directory');
         }
         this.loadOpportunities();
+
+        if (typeof window.fetchCalendarEvents === 'function') {
+          window.fetchCalendarEvents().then(() => {
+            if (typeof window.renderDashboardCalendar === 'function') window.renderDashboardCalendar();
+            if (typeof window.renderFullCalendar === 'function') window.renderFullCalendar();
+          });
+        }
       } catch (err) {
         if (window.showToast) window.showToast('Delete Error', err.message, true);
       }

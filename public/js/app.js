@@ -160,7 +160,7 @@ function renderDashboard() {
               <div class="t">${escHtml(task.title)}</div>
               <div class="m">Stage: <b>${escHtml(task.stage || 'To do')}</b>${task.due_date ? ` · Due: ${escHtml(task.due_date)}` : ''}</div>
             </div>
-            <button class="act" onclick="openTaskModal(${task.project_id || 'null'})">Open task</button>
+            <button class="act" onclick="event.stopPropagation(); window.openTaskDetailModal('${task.id}')">Open task</button>
           </div>
         `);
       });
@@ -400,15 +400,7 @@ function renderTasks() {
       const isManager = isOwnerOrSuper || isItOrManager;
       const canAdvance = isManager || isAssigner || isAssignee;
 
-      // Quick advance action
-      let nextStageBtn = '';
-      if (canAdvance) {
-        if (st.key === 'todo') nextStageBtn = `<button type="button" class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="in_progress" onclick="event.stopPropagation()">Start →</button>`;
-        else if (st.key === 'in_progress') nextStageBtn = `<button type="button" class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="review_internal" onclick="event.stopPropagation()">Submit review →</button>`;
-        else if (st.key === 'review_internal') nextStageBtn = `<button type="button" class="linkbtn" style="font-size:11px" data-move-task="${t.id}" data-to-stage="done" onclick="event.stopPropagation()">Mark done ✓</button>`;
-      } else {
-        nextStageBtn = `<span style="font-size:10px;color:var(--muted);font-style:italic">Assigned to ${escHtml(who)}</span>`;
-      }
+      const viewTaskBtn = `<button type="button" class="btn small" style="font-size:11px;padding:3px 9px;border-radius:6px;font-weight:600;display:inline-flex;align-items:center;gap:4px;color:var(--red);border:1px solid rgba(197,37,35,0.25);background:rgba(197,37,35,0.05);cursor:pointer" data-view-task="${t.id}" onclick="event.stopPropagation(); if (typeof window.openTaskDetailModal === 'function') { window.openTaskDetailModal('${t.id}'); }">View task →</button>`;
 
       const proj = t.project || (t.project_id && JMOS_STATE.projects ? JMOS_STATE.projects.find(p => p.id === t.project_id) : null);
       const projBadge = proj ? `<span class="badge" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(197,37,35,0.08);color:var(--red);font-weight:600;display:inline-block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Attached to ${escHtml(proj.project_name)}">${escHtml(proj.project_name)}</span>` : '';
@@ -422,7 +414,7 @@ function renderTasks() {
       const commentsPill = commentsCount > 0 ? `<span class="tcard-pill-stat has-comments" title="${commentsCount} discussion comment(s)">💬 ${commentsCount}</span>` : '';
 
       return `
-        <div class="tcard sticky-tcard" data-task-id="${t.id}" style="border-left: 4px solid ${personColor}; background: linear-gradient(180deg, ${stickyBg} 0%, rgba(255,255,255,0.02) 100%), var(--paper);">
+        <div class="tcard sticky-tcard" data-task-id="${t.id}" onclick="if (typeof window.openTaskDetailModal === 'function') { window.openTaskDetailModal('${t.id}'); }" style="border-left: 4px solid ${personColor}; background: linear-gradient(180deg, ${stickyBg} 0%, rgba(255,255,255,0.02) 100%), var(--paper); cursor:pointer;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px">
             ${projBadge || '<span></span>'}
             ${priorityBadge}
@@ -439,7 +431,10 @@ function renderTasks() {
               ${commentsPill}
             </div>
           </div>
-          ${nextStageBtn ? `<div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--line-soft, rgba(0,0,0,0.06));display:flex;justify-content:flex-end">${nextStageBtn}</div>` : ''}
+          <div style="margin-top:8px;padding-top:6px;border-top:1px dashed var(--line-soft, rgba(0,0,0,0.06));display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10.5px;color:var(--muted)">${escHtml(who)}</span>
+            ${viewTaskBtn}
+          </div>
         </div>
       `;
     }).join('');
@@ -499,19 +494,67 @@ function renderServices() {
 
 // Master Render All Active Views
 function renderAllViews() {
+  if (typeof window.populateAllUserSelects === 'function') {
+    window.populateAllUserSelects();
+  }
+  if (typeof window.populateAllProjectSelects === 'function') {
+    window.populateAllProjectSelects();
+  }
+  if (typeof window.populateAllClientSelects === 'function') {
+    window.populateAllClientSelects();
+  }
   renderDashboard();
   renderClientsTable();
   renderPipeline();
   renderProjectsTable();
   renderTasks();
   renderInvoices();
-  renderExpenses();
+  if (typeof window.renderExpenses === 'function') window.renderExpenses();
   recomputeFinance();
   renderPeople();
   renderServices();
   if (typeof renderDashboardCalendar === 'function') renderDashboardCalendar();
   if (typeof renderFullCalendar === 'function') renderFullCalendar();
 }
+
+// Expenses table (#expBody). Was called by renderAllViews() but never defined,
+// which threw and stopped finance, people, services and calendar from rendering.
+window.renderExpenses = function renderExpenses() {
+  const body = document.getElementById('expBody');
+  if (!body) return;
+  const list = (window.JMOS_STATE && Array.isArray(JMOS_STATE.expenses)) ? JMOS_STATE.expenses : [];
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="8" style="padding:26px;text-align:center;color:var(--muted)">No expenses logged yet.</td></tr>';
+    return;
+  }
+  const projects = Array.isArray(JMOS_STATE.projects) ? JMOS_STATE.projects : [];
+  const projName = (val) => {
+    if (!val || val === 'overhead') return 'Overhead';
+    const p = projects.find(pr => String(pr.id) === String(val));
+    return p ? p.project_name : String(val);
+  };
+  const etrLabel = (e) => {
+    if (e.etims_number) return `<span class="badge" style="background:rgba(16,185,129,0.12);color:#059669">${escHtml(e.etims_number)}</span>`;
+    if (e.etr === 'yes') return '<span class="badge" style="background:rgba(16,185,129,0.12);color:#059669">ETR ✓</span>';
+    if (e.etr === 'no') return '<span class="badge" style="background:rgba(220,38,38,0.12);color:#DC2626">Missing</span>';
+    return '<span style="color:var(--muted)">N/A</span>';
+  };
+  const sorted = list.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  body.innerHTML = sorted.map(e => `
+    <tr>
+      <td><b>${escHtml(e.name || '—')}</b>${e.notes ? `<div style="font-size:11.5px;color:var(--muted)">${escHtml(e.notes)}</div>` : ''}</td>
+      <td>${escHtml(e.category || e.cat || '—')}</td>
+      <td>${escHtml(projName(e.project))}</td>
+      <td style="font-weight:600">${fmt(e.amount)}</td>
+      <td>${etrLabel(e)}</td>
+      <td>${e.receipt_url ? `<a href="${escHtml(e.receipt_url)}" target="_blank" rel="noopener" style="color:var(--red)">${escHtml(e.receipt_name || 'View receipt')}</a>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${escHtml(e.date || '')}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button type="button" class="btn small" onclick="window.openEditExpenseModal(${Number(e.id)})">Edit</button>
+      </td>
+    </tr>
+  `).join('');
+};
 
 // Task Stage Advancing Event Delegation
 document.addEventListener('click', async (e) => {

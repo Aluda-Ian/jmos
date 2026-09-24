@@ -58,7 +58,7 @@
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="clientModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveClientBtn">Save client</button>
+      <button type="button" class="btn primary" id="saveClientBtn" onclick="window.submitClientForm(this)">Save client</button>
     </div>
   </div>
 </div>
@@ -209,10 +209,6 @@
             <label for="cdmSelectOwner">Account Lead / Owner</label>
             <select id="cdmSelectOwner">
               <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
-              <option value="Ian Aluda">Ian Aluda (IT &amp; Systems)</option>
-              <option value="Lesley Chacha">Lesley Chacha (Client Relations)</option>
-              <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
-              <option value="Matthew Muange">Matthew Muange (Finance)</option>
             </select>
           </div>
         </div>
@@ -503,12 +499,6 @@
       <label for="npManager">Project manager / Lead</label>
       <select id="npManager">
         <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
-        <option value="Ian Aluda">Ian Aluda (IT & Systems)</option>
-        <option value="Stephen Otieno">Stephen Otieno (Video Editor)</option>
-        <option value="Amos Muthama">Amos Muthama (Cinematographer)</option>
-        <option value="Matthew Muange">Matthew Muange (Finance)</option>
-        <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
-        <option value="Lesley Chacha">Lesley Chacha (Copywriter)</option>
       </select>
     </div>
     <div class="grid2">
@@ -591,7 +581,7 @@
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="projectModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveProjectBtn">Create project</button>
+      <button type="button" class="btn primary" id="saveProjectBtn" onclick="window.submitProjectForm(this)">Create project</button>
     </div>
   </div>
 </div>
@@ -806,12 +796,6 @@
           <div class="project-prop-control">
             <select id="pdmManagerSelect" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:8px;background:var(--surface)">
               <option value="Barny Kiome">Barny Kiome (Executive Producer)</option>
-              <option value="Ian Aluda">Ian Aluda (IT &amp; Systems)</option>
-              <option value="Lesley Chacha">Lesley Chacha (Client Relations)</option>
-              <option value="Amos Muthama">Amos Muthama (Cinematography)</option>
-              <option value="Stephen Otieno">Stephen Otieno (Post-Production)</option>
-              <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
-              <option value="Matthew Muange">Matthew Muange (Finance)</option>
             </select>
           </div>
         </div>
@@ -990,7 +974,7 @@
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="dealModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveDealBtn">Add to pipeline</button>
+      <button type="button" class="btn primary" id="saveDealBtn" onclick="window.submitDealForm(this)">Add to pipeline</button>
     </div>
   </div>
 </div>
@@ -1075,30 +1059,10 @@
     <h3 id="taskModalTitle">Create a task</h3>
     <p class="msub">Assign a task to team members across project workflows with sticky-note styling & deliverables tracking.</p>
     <div class="field" id="taskProjectPickerField">
-      <label for="taskProjectTrigger">Attach to Project</label>
-      <input type="hidden" id="ntProject" name="project_id" value="">
-      <div class="searchable-select-wrap" id="taskProjectSelectWrap">
-        <div class="searchable-select-trigger" id="taskProjectTrigger" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-          <span class="searchable-select-label" id="taskProjectSelectedLabel">
-            <span style="color:var(--muted)">— Select a project —</span>
-          </span>
-          <div class="searchable-select-trigger-actions">
-            <button type="button" class="searchable-select-clear" id="taskProjectClearBtn" title="Clear project selection" style="display:none" aria-label="Clear project selection">&times;</button>
-            <svg class="searchable-select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </div>
-        </div>
-
-        <div class="searchable-select-dropdown" id="taskProjectDropdown" style="display:none">
-          <div class="searchable-select-search-wrap">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="taskProjectSearchInput" placeholder="Search projects by name or client…" autocomplete="off">
-            <button type="button" class="searchable-select-input-clear" id="taskProjectSearchClear" style="display:none" title="Clear search">&times;</button>
-          </div>
-          <div class="searchable-select-list" id="taskProjectOptionsList" role="listbox">
-            <!-- Populated dynamically with search options -->
-          </div>
-        </div>
-      </div>
+      <label for="ntProject">Attach to Project</label>
+      <select id="ntProject" name="project_id" style="width:100%;cursor:pointer">
+        <option value="">— Standalone Task (No Project) —</option>
+      </select>
     </div>
     <div class="field">
       <label for="ntTitle">Task title *</label>
@@ -1137,13 +1101,7 @@
       <div class="field">
         <label for="ntAssigned">Assign to</label>
         <select id="ntAssigned">
-          <option value="Stephen Otieno">Stephen Otieno (SO)</option>
           <option value="Barny Kiome">Barny Kiome (BK)</option>
-          <option value="Amos Muthama">Amos Muthama (AM)</option>
-          <option value="Lesley Chacha">Lesley Chacha (LC)</option>
-          <option value="Ian Aluda">Ian Aluda (IA)</option>
-          <option value="Matthew Muange">Matthew Muange (MM)</option>
-          <option value="Patrick Mwendwa">Patrick Mwendwa (PM)</option>
         </select>
       </div>
       <div class="field">
@@ -1162,7 +1120,7 @@
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="taskModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveTaskBtn">Create task</button>
+      <button type="button" class="btn primary" id="saveTaskBtn" onclick="window.submitTaskForm(this)">Create task</button>
     </div>
   </div>
 </div>
@@ -1378,14 +1336,20 @@
   </div>
 </div>
 
-<!-- 5. Add Invoice Modal -->
+<!-- 5. Add / Edit Invoice Modal (Itemized Invoice Builder) -->
 <div class="modal" id="invoiceModal" role="dialog" aria-modal="true" aria-labelledby="invoiceModalTitle">
   <div class="mbg" data-close="invoiceModal"></div>
-  <div class="mbox">
+  <div class="mbox" style="max-width:740px">
     <button class="mclose" data-close="invoiceModal" title="Close" aria-label="Close modal">&times;</button>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span class="badge" style="background:rgba(197,37,35,0.12);color:var(--red);font-size:10.5px;font-weight:700">COMMERCIAL INVOICING ENGINE</span>
+    </div>
     <h3 id="invoiceModalTitle">Issue new invoice</h3>
-    <p class="msub" id="invoiceModalSub">Record an outgoing client invoice in JMOS.</p>
+    <p class="msub" id="invoiceModalSub">Create an itemized commercial &amp; tax invoice with deliverables, eTIMS compliance, and official banking remittance.</p>
     <input type="hidden" id="editInvoiceId" value="">
+    <input type="hidden" id="niQuoteId" value="">
+
+    <!-- Client & Invoice No Header -->
     <div class="grid2">
       <div class="field">
         <label for="niNo">Invoice No <span style="font-size:11px;color:var(--muted);font-weight:normal">(Auto-assigned ascending)</span></label>
@@ -1393,7 +1357,7 @@
       </div>
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <label for="niClientSelect" style="margin:0">Client *</label>
+          <label for="niClientSelect" style="margin:0">Client / Billed To *</label>
           <button type="button" id="niToggleNewClientBtn" style="background:none;border:none;color:var(--red);font-size:11.5px;font-weight:600;cursor:pointer;padding:0">
             + New Client
           </button>
@@ -1413,57 +1377,116 @@
         <input type="hidden" id="niClient" name="client">
       </div>
     </div>
+
+    <!-- Title & Milestone Type -->
     <div class="grid2">
       <div class="field">
-        <label for="niType">Invoice Type</label>
+        <label for="niTitle">Invoice Title / Project Scope *</label>
+        <input id="niTitle" placeholder="e.g. Brand Commercial Video Production" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="niType">Payment Milestone / Type</label>
         <select id="niType">
           <option value="Deposit 60%">Deposit 60%</option>
           <option value="Balance 40%">Balance 40%</option>
-          <option value="Retainer">Monthly Retainer</option>
-          <option value="Full 100%">Full 100%</option>
+          <option value="Full Payment 100%">Full Payment 100%</option>
+          <option value="Monthly Retainer">Monthly Retainer</option>
+          <option value="Milestone Phase">Milestone Phase</option>
+          <option value="Custom">Custom / Direct</option>
         </select>
       </div>
-      <div class="field">
-        <label for="niAmount">Amount (KES) *</label>
-        <input id="niAmount" type="number" placeholder="e.g. 192000" required autocomplete="off">
+    </div>
+
+    <!-- Line Items & Deliverables Table (Exact same procedure as quote generator) -->
+    <div style="margin:16px 0 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <label style="font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.5px">Invoice Deliverables &amp; Line Items</label>
+        <button type="button" class="linkbtn" onclick="window.addInvoiceItemRow()" style="font-size:11.5px;font-weight:600;color:var(--red)">+ Add Line Item</button>
+      </div>
+      <div class="tablewrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;width:100%">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:540px">
+          <thead>
+            <tr style="background:var(--panel-2);color:var(--muted)">
+              <th style="padding:6px;text-align:left">Description</th>
+              <th style="padding:6px;width:70px;text-align:center">Qty</th>
+              <th style="padding:6px;width:120px;text-align:right">Rate (KES)</th>
+              <th style="padding:6px;width:120px;text-align:right">Amount</th>
+              <th style="padding:6px;width:30px"></th>
+            </tr>
+          </thead>
+          <tbody id="invoiceItemsTableBody">
+            <!-- Dynamic invoice item rows -->
+          </tbody>
+        </table>
       </div>
     </div>
-    <div class="grid2">
+
+    <!-- Breakdown & Totals -->
+    <div class="grid4" style="align-items:end;margin-bottom:12px">
       <div class="field">
         <label for="niDue">Due Date *</label>
         <input id="niDue" type="date" required autocomplete="off" style="cursor:pointer" onclick="this.showPicker && this.showPicker()">
       </div>
       <div class="field">
-        <label for="niEtims">eTIMS Compliant?</label>
-        <select id="niEtims">
-          <option value="1">Yes (KRA eTIMS)</option>
-          <option value="0">No / Pending</option>
+        <label for="niDiscount">Discount (KES)</label>
+        <input id="niDiscount" type="number" value="0" min="0" oninput="window.calcInvoiceTotals()" placeholder="0">
+      </div>
+      <div class="field">
+        <label for="niEtims">eTIMS / VAT Mode</label>
+        <select id="niEtims" onchange="window.calcInvoiceTotals()">
+          <option value="0">VAT 0% (Service Exempt)</option>
+          <option value="1">eTIMS Registered (Direct)</option>
+          <option value="vat16">VAT 16% Applicable</option>
         </select>
       </div>
+      <div class="field">
+        <label>Total Amount Due</label>
+        <div class="mono" id="niTotalDisplay" style="font-size:16px;font-weight:700;color:var(--red);padding:8px 0">KES 0</div>
+        <input type="hidden" id="niAmount" value="0">
+        <input type="hidden" id="niSubtotal" value="0">
+        <input type="hidden" id="niTax" value="0">
+      </div>
     </div>
+
     <div class="grid2" id="invoiceStatusFields">
       <div class="field">
         <label for="niStatus">Invoice Status</label>
         <select id="niStatus">
-          <option value="Sent">Sent</option>
-          <option value="Paid">Paid</option>
+          <option value="Sent">Sent (Pending Payment)</option>
+          <option value="Paid">Paid &amp; Settled</option>
           <option value="Overdue">Overdue</option>
         </select>
       </div>
       <div class="field">
-        <label for="niMethod">Payment Method</label>
-        <input id="niMethod" placeholder="e.g. M-Pesa, Bank Transfer, Cheque" autocomplete="off">
+        <label for="niMethod">Payment Mode / Notes</label>
+        <input id="niMethod" placeholder="e.g. M-Pesa Paybill 880100 / NCBA Bank" autocomplete="off">
       </div>
     </div>
-    <div class="mfoot" style="display:flex;justify-content:space-between;align-items:center">
+
+    <div class="field">
+      <label for="niNotes">Invoice Remittance Notes &amp; Scope Details</label>
+      <textarea id="niNotes" rows="2" placeholder="e.g. Banking: NCBA Upper Hill A/C 1002349871, Paybill 880100. Deliverables handover upon settlement." style="resize:vertical"></textarea>
+    </div>
+
+    <div class="mfoot" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <div>
         <button type="button" class="btn danger" id="deleteInvoiceModalBtn" style="display:none;align-items:center;gap:4px">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete
         </button>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <button type="button" class="btn" data-close="invoiceModal">Cancel</button>
-        <button type="button" class="btn primary" id="saveInvoiceBtn">Issue invoice</button>
+        <button type="button" class="btn" onclick="window.submitInvoiceForm('whatsapp')" style="background:rgba(37,211,102,0.12);color:#128C7E;border-color:rgba(37,211,102,0.3);font-weight:600">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>
+          Save &amp; WhatsApp
+        </button>
+        <button type="button" class="btn" onclick="window.submitInvoiceForm('email')" style="font-weight:600">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Save &amp; Email
+        </button>
+        <button type="button" class="btn primary" id="saveInvoiceBtn" onclick="window.submitInvoiceForm('preview')" style="background:var(--red);border-color:var(--red);font-weight:700">
+          Save &amp; Preview PDF ➔
+        </button>
       </div>
     </div>
   </div>
@@ -1591,7 +1614,7 @@
       <button type="button" class="btn danger" id="deleteExpenseModalBtn" style="display:none">Delete expense</button>
       <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
         <button type="button" class="btn" data-close="expenseModal">Cancel</button>
-        <button type="button" class="btn primary" id="saveExpenseBtn">Log expense</button>
+        <button type="button" class="btn primary" id="saveExpenseBtn" onclick="window.submitExpenseForm(this)">Log expense</button>
       </div>
     </div>
   </div>
@@ -1699,7 +1722,7 @@
 
     <div class="mfoot">
       <button type="button" class="btn" data-close="userModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveUserBtn">Add person &amp; create login</button>
+      <button type="button" class="btn primary" id="saveUserBtn" onclick="window.submitUserForm(this)">Add person &amp; create login</button>
     </div>
   </div>
 </div>
@@ -1731,7 +1754,7 @@
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="serviceModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveServiceBtn">Save service</button>
+      <button type="button" class="btn primary" id="saveServiceBtn" onclick="window.submitServiceForm(this)">Save service</button>
     </div>
   </div>
 </div>
@@ -1838,7 +1861,7 @@
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="eventModal">Cancel</button>
-      <button type="button" class="btn primary" id="saveEventBtn">Schedule event</button>
+      <button type="button" class="btn primary" id="saveEventBtn" onclick="window.submitEventForm(this)">Schedule event</button>
     </div>
   </div>
 </div>
@@ -1935,6 +1958,7 @@
       </div>
       <div style="display:flex;gap:8px">
         <button type="button" class="btn" data-close="eventDetailModal">Close</button>
+        <button type="button" class="btn primary" id="eventDetailViewSourceBtn" style="display:none;font-weight:600"></button>
       </div>
     </div>
   </div>
@@ -2285,9 +2309,6 @@
         <select id="leadOwner">
           <option value="Jeota Media">Jeota Media</option>
           <option value="Barny Kiome">Barny Kiome (Owner)</option>
-          <option value="Patrick Mwendwa">Patrick Mwendwa (Sales)</option>
-          <option value="Lesley Chacha">Lesley Chacha (Client Relations)</option>
-          <option value="Amos Muthama">Amos Muthama</option>
         </select>
       </div>
     </div>
@@ -3363,8 +3384,8 @@
         <input id="frAmount" type="number" placeholder="e.g. 15000000" autocomplete="off">
       </div>
       <div class="field">
-        <label for="frDeadline">Deadline / Timeline</label>
-        <input id="frDeadline" type="text" placeholder="e.g. Rolling basis or YYYY-MM-DD" autocomplete="off">
+        <label for="frDeadline">Deadline / Timeline Date</label>
+        <input id="frDeadline" type="date" class="date-input" autocomplete="off" style="font-family:inherit;cursor:pointer" onclick="this.showPicker && this.showPicker()">
       </div>
       <div class="field">
         <label for="frStatus">Status</label>

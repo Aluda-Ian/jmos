@@ -7,6 +7,7 @@ use App\Models\AppNotification;
 use App\Models\AuditLog;
 use App\Models\Deal;
 use App\Models\Invoice;
+use App\Models\Lead;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
@@ -72,6 +73,11 @@ class DealController extends Controller
             'stage' => 'won',
             'is_won' => true,
         ]);
+
+        // Re-attribute the originating lead to whoever closed the deal
+        if ($deal->lead_id && $deal->deal_owner) {
+            Lead::where('id', $deal->lead_id)->update(['lead_owner' => $deal->deal_owner]);
+        }
 
         // 1. Create live project
         $project = Project::create([
