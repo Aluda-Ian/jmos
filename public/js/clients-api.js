@@ -1581,7 +1581,7 @@ window.printClientStatement = function(client, ledger = [], stats = {}) {
 
         <div class="footer">
           This statement is an official computer-generated record from Jeota Media Operating System (JMOS).<br>
-          For queries or invoice reconciliations, contact finance@jeotamedia.com or account lead.
+          For queries or invoice reconciliations, contact info@jeotamedia.co.ke · +254 791 388 683.
         </div>
 
         <script>

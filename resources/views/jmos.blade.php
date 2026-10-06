@@ -223,6 +223,10 @@
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span class="nav-text">Quotations</span>
       </a>
+      <a class="item" href="#" data-view="contracts" data-perm="owner" title="Client Contracts & E-Signatures">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 17c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span class="nav-text">Contracts</span>
+      </a>
       <a class="item" href="#" data-view="invoices" data-perm="owner" title="Invoices & Billing">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
         <span class="nav-text">Invoices</span>
@@ -392,6 +396,9 @@
         <!-- 8b. QUOTATIONS & COMMERCIAL PROPOSALS VIEW -->
         @include('pages.quotes')
 
+        <!-- 8c. CLIENT CONTRACTS & E-SIGNATURES VIEW -->
+        @include('pages.contracts')
+
         <!-- 9. INVOICES VIEW -->
         @include('pages.invoices')
 
@@ -430,6 +437,7 @@
        MODALS & OVERLAYS
        ========================================================================== -->
   @include('partials.modals')
+  @include('partials.contract-modals')
 
   <!-- ==========================================================================
        J- AI OPERATING ASSISTANT & INTELLIGENCE DRAWER
@@ -516,6 +524,7 @@
   <script src="{{ asset('js/notifications.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/leads-pipeline.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/quotes.js') }}?v={{ time() }}"></script>
+  <script src="{{ asset('js/contracts.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/documents.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/fundraising.js') }}?v={{ time() }}"></script>
   <script src="{{ asset('js/settings.js') }}?v={{ time() }}"></script>

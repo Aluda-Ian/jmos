@@ -83,6 +83,9 @@ function showView(view) {
   if (view === 'quotes' && window.JMOS_QUOTES && typeof window.JMOS_QUOTES.loadQuotes === 'function') {
     window.JMOS_QUOTES.loadQuotes();
   }
+  if (view === 'contracts' && window.JMOS_CONTRACTS) {
+    window.JMOS_CONTRACTS.load();
+  }
   if (view === 'people') {
     if (typeof ensurePeople === 'function') {
       ensurePeople();
@@ -101,7 +104,7 @@ function showView(view) {
 function resolveTargetViewFromUrl() {
   const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
   const hash = window.location.hash.replace(/^#\/?/, '');
-  const validViews = ['dashboard', 'pipeline', 'leads', 'clients', 'projects', 'tasks', 'calendar', 'quotes', 'finance', 'statements', 'invoices', 'documents', 'fundraising', 'partnerships', 'people', 'settings', 'chat'];
+  const validViews = ['dashboard', 'pipeline', 'leads', 'clients', 'projects', 'tasks', 'calendar', 'quotes', 'contracts', 'finance', 'statements', 'invoices', 'documents', 'fundraising', 'partnerships', 'people', 'settings', 'chat'];
 
   if (validViews.includes(path)) return path;
   if (validViews.includes(hash)) return hash;

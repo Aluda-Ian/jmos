@@ -462,7 +462,7 @@ window.openModal = function(id) {
     const disc = document.getElementById('niDiscount');
     if (disc) disc.value = '0';
     const notes = document.getElementById('niNotes');
-    if (notes) notes.value = 'Payment Remittance: NCBA Bank Upper Hill Branch · A/C 1002349871 (Jeota Media Ltd) or Lipa na M-Pesa Paybill 880100.';
+    if (notes) notes.value = 'Payment Remittance: NCBA Bank Junction Branch · A/C 6237790012 (Jeota Media Limited) or Lipa na M-Pesa Paybill 880100 · Acc 6237790012.';
     const method = document.getElementById('niMethod');
     if (method) method.value = 'Bank Transfer / M-Pesa Paybill 880100';
 
@@ -2499,8 +2499,8 @@ window.dispatchInvoiceEmail = async function() {
     bullets: [
       `Client: ${inv.client}`,
       `Invoice Amount: KES ${Number(inv.amount || 0).toLocaleString()}`,
-      `M-Pesa Paybill: 880100 · Account: ${inv.invoice_no}`,
-      'Official branded HTML invoice notification with payment remittance details will be delivered.'
+      `M-Pesa Paybill: 880100 · Account: 6237790012 · Ref: ${inv.invoice_no}`,
+      'Branded email with a link to view & download the invoice, plus payment details.'
     ]
   });
   if (!confirmed) return;
@@ -2511,6 +2511,29 @@ window.dispatchInvoiceEmail = async function() {
   } catch (err) {
     showToast('Email Error', err.message, true);
   }
+};
+
+window.copyInvoiceClientLink = async function() {
+  const inv = window.activeInvoiceData;
+  if (!inv) return;
+  let url = inv.public_url;
+  if (!url) {
+    try {
+      const res = await JMOS_API.get(`/invoices/${inv.id}`);
+      url = res?.data?.public_url;
+    } catch (e) { /* handled below */ }
+  }
+  if (!url) {
+    showToast('Link Unavailable', 'Could not generate the client invoice link', true);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast('Link Copied', 'Branded invoice link copied — opening preview 🔗');
+  } catch (e) {
+    showToast('Client Link', 'Opening the branded invoice page');
+  }
+  window.open(url, '_blank');
 };
 
 window.dispatchInvoiceWhatsApp = async function() {

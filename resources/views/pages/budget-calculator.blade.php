@@ -413,8 +413,8 @@ function seed(){
   return {
     meta:{project:'Moyo Honey — Brand Film',client:'Moyo Honey Ltd',currency:'KES',quoteNo:'JM-Q-0001',date:today()},
     pricing:{markup:40,vat:false,wht:false,deposit:60},
-    contact:{email:'info@jeotamedia.co.ke',phone:'+254 791 388 683',web:'www.jeotamedia.co.ke',addr1:'Keystone Park',addr2:'Nairobi, Kenya'},
-    quote:{items:null,attn:'',mpesa:'Paybill 880100 · Acc: 352655',bank:'NCBA — Junction Branch · A/C: Jeota Media Limited · A/C No. 6237790012',cheque:'Cheques should be made payable to Jeota Media Limited.',
+    contact:{email:'info@jeotamedia.co.ke',phone:'+254 791 388 683',web:'jeotamedia.co.ke',addr1:'Keystone Park Riverside',addr2:'Nairobi, Kenya'},
+    quote:{items:null,attn:'',mpesa:'Paybill 880100 · Acc: 6237790012',bank:'NCBA — Junction Branch · A/C: Jeota Media Limited · A/C No. 6237790012',cheque:'Cheques should be made payable to Jeota Media Limited.',
       notes:['All prices are exclusive of any applicable taxes unless otherwise stated.','Client to provide any existing brand assets (logo files, brand guidelines, fonts) before production begins.']},
     data:{
       production:[{name:'Director',rate:0,qty:1},{name:'Camera Operator',rate:10000,qty:1},{name:'2nd Camera Operator',rate:10000,qty:1},{name:'Photographer',rate:10000,qty:1}],
@@ -620,7 +620,7 @@ function openInvoice(){
       date: today(),
       dueDate: plusDays(today(), 14),
       items: defaultQuoteItems(),
-      mpesa: 'Paybill 880100 · Acc: JMOS-INV',
+      mpesa: 'Paybill 880100 · Acc: 6237790012',
       bank: 'NCBA — Junction Branch · A/C: Jeota Media Limited · A/C No. 6237790012',
       notes: [
         'Payment terms: Remittance due upon receipt or within 14 days of invoice issue date.',

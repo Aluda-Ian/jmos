@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\CalendarController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\ContractController;
 use App\Http\Controllers\Api\DealController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\ExpenseController;
@@ -62,6 +63,17 @@ Route::post('quotes/{quote}/send-email', [QuoteController::class, 'sendEmail']);
 Route::get('quotes/{quote}/whatsapp', [QuoteController::class, 'getWhatsAppLink']);
 Route::post('quotes/{quote}/upgrade-invoice', [QuoteController::class, 'upgradeToInvoice']);
 Route::post('quotes/{quote}/approve', [QuoteController::class, 'approve']);
+
+// Client Contracts (template + AI drafting, company signature, client e-signature)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('contracts/templates', [ContractController::class, 'templates']);
+    Route::apiResource('contracts', ContractController::class);
+    Route::post('contracts/{contract}/ai-revise', [ContractController::class, 'aiRevise']);
+    Route::post('contracts/{contract}/send-email', [ContractController::class, 'sendEmail']);
+    Route::get('contracts/{contract}/whatsapp', [ContractController::class, 'whatsapp']);
+    Route::post('contracts/{contract}/mark-sent', [ContractController::class, 'markAsSent']);
+    Route::post('contracts/{contract}/void', [ContractController::class, 'void']);
+});
 
 // Documents Repository (Contracts, Proposals, Brand Guides, Grants)
 Route::apiResource('documents', DocumentController::class);

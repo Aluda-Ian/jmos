@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\URL;
 
 class Invoice extends Model
 {
@@ -30,6 +31,8 @@ class Invoice extends Model
         'quote_id',
     ];
 
+    protected $appends = ['public_url'];
+
     protected $casts = [
         'items' => 'array',
         'etims' => 'boolean',
@@ -52,6 +55,20 @@ class Invoice extends Model
     public function quote(): BelongsTo
     {
         return $this->belongsTo(Quote::class, 'quote_id');
+    }
+
+    /**
+     * Branded client-facing invoice link (signed so invoice numbers can't be guessed).
+     */
+    public function publicUrl(): string
+    {
+        // Relative signature so the link still works if the site is reached over http or https.
+        return url(URL::signedRoute('invoices.public.view', ['invoiceNo' => $this->invoice_no], null, false));
+    }
+
+    public function getPublicUrlAttribute(): ?string
+    {
+        return $this->invoice_no ? $this->publicUrl() : null;
     }
 
     protected static function booted(): void

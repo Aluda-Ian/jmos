@@ -160,9 +160,12 @@ class InvoiceController extends Controller
         $sent = NotificationService::sendInvoiceReminder([
             'clientName' => $invoice->client,
             'invoiceNo' => $invoice->invoice_no,
+            'invoiceTitle' => $invoice->title,
             'invoiceType' => $invoice->type,
             'amount' => (float) $invoice->amount,
             'dueDate' => $invoice->due_date ?? 'Immediate',
+            'etims' => (bool) $invoice->etims,
+            'invoiceUrl' => $invoice->publicUrl(),
         ], $recipientEmail);
 
         if ($sent) {
@@ -196,22 +199,28 @@ class InvoiceController extends Controller
         $totalFormatted = number_format((float) $invoice->amount, 2);
         $dueDate = $invoice->due_date ?: 'Immediate';
 
+        $b = config('jeota');
+        $invoiceUrl = $invoice->publicUrl();
+
         $message = "Hello *{$invoice->client}*,\n\n"
-            ."Here is your official commercial & tax invoice from *Jeota Media*:\n\n"
+            ."Here is your official invoice from *Jeota Media*:\n\n"
             ."📄 *Invoice Ref:* {$invoice->invoice_no}\n"
+            .($invoice->title ? "🎬 *Project:* {$invoice->title}\n" : '')
             ."🎯 *Milestone / Type:* {$invoice->type}\n"
             ."📅 *Due Date:* {$dueDate}\n"
             ."💰 *Total Due:* KES {$totalFormatted}\n\n"
+            ."👉 *View & download your invoice:*\n{$invoiceUrl}\n\n"
             ."*Payment Details:*\n"
-            ."📱 *M-Pesa Paybill:* 880100\n"
-            ."🔢 *Account No:* {$invoice->invoice_no}\n"
-            ."🏦 *Bank:* NCBA Bank Kenya · Branch: Upper Hill\n"
-            ."*Acc Name:* Jeota Media Limited · *Acc No:* 1002349871\n\n"
+            ."🏦 *Bank:* {$b['bank']['name']} · {$b['bank']['branch']}\n"
+            ."*Acc Name:* {$b['bank']['account_name']} · *Acc No:* {$b['bank']['account_no']}\n"
+            ."📱 *M-Pesa Paybill:* {$b['mpesa']['paybill']} · *Account:* {$b['mpesa']['account']}\n"
+            ."🔖 *Payment Reference:* {$invoice->invoice_no}\n\n"
             .($invoice->etims ? "✅ *eTIMS Electronic Tax Invoice:* Verified & Transmitted to KRA\n\n" : '')
             ."Kindly share payment confirmation once processed.\n\n"
             ."Best regards,\n"
-            ."*Jeota Media Finance Team*\n"
-            .'https://jeotamedia.co.ke';
+            ."*Jeota Media*\n"
+            ."{$b['email']} · {$b['phone']}\n"
+            .$b['website'];
 
         $encodedText = urlencode($message);
         $waUrl = ! empty($phone)
@@ -223,6 +232,19 @@ class InvoiceController extends Controller
             'whatsapp_url' => $waUrl,
             'phone' => $phone,
             'message' => $message,
+            'public_url' => $invoiceUrl,
         ]);
+    }
+
+    /**
+     * Branded public invoice page for clients (signed link).
+     */
+    public function publicView(string $invoiceNo)
+    {
+        $invoice = Invoice::where('invoice_no', $invoiceNo)
+            ->with(['clientModel', 'quote'])
+            ->firstOrFail();
+
+        return view('pages.public-invoice', compact('invoice'));
     }
 }

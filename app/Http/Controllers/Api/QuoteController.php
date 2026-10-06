@@ -177,12 +177,13 @@ class QuoteController extends Controller
             $notesFormatted = ! empty($quote->notes) ? "<p style='margin-top:15px;color:#555;font-size:13px;'><b>Scope & Deliverables:</b><br>".nl2br(htmlspecialchars($quote->notes)).'</p>' : '';
 
             $approvalUrl = url('/quotes/view/'.$quote->quote_number);
+            $b = config('jeota');
 
             $htmlContent = "
             <div style='font-family:Inter,Arial,sans-serif;max-width:620px;margin:0 auto;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;'>
-                <div style='background:#C52523;color:#ffffff;padding:24px 28px;'>
-                    <h2 style='margin:0;font-size:22px;letter-spacing:0.5px;'>JEOTA MEDIA</h2>
-                    <p style='margin:4px 0 0;font-size:13px;opacity:0.9;'>OFFICIAL COMMERCIAL QUOTATION</p>
+                <div style='background-color:#AE2221;background:linear-gradient(100deg,#DA4433 0%,#AE2221 52%,#8B0714 100%);color:#ffffff;padding:26px 28px;'>
+                    <h2 style='margin:0;font-size:24px;letter-spacing:0.5px;font-family:Archivo,Arial Black,Arial,sans-serif;'>JEOTA MEDIA LTD</h2>
+                    <p style='margin:6px 0 0;font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:0.92;'>{$b['tagline']}</p>
                 </div>
                 <div style='padding:24px 28px;'>
                     <p style='font-size:15px;color:#1e293b;margin:0 0 16px;'>Dear <b>".htmlspecialchars($quote->recipient_name)."</b>,</p>
@@ -208,7 +209,7 @@ class QuoteController extends Controller
                         <tfoot>
                             <tr>
                                 <td colspan='3' style='padding:12px 10px;text-align:right;font-weight:700;font-size:14px;'>Total Proposal Value:</td>
-                                <td style='padding:12px 10px;text-align:right;font-weight:700;font-size:15px;color:#C52523;'>KES {$totalFormatted}</td>
+                                <td style='padding:12px 10px;text-align:right;font-weight:700;font-size:15px;color:#D62828;'>KES {$totalFormatted}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -216,21 +217,21 @@ class QuoteController extends Controller
                     {$notesFormatted}
 
                     <!-- Client Direct Approval CTA -->
-                    <div style='text-align:center;margin:24px 0 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:18px;'>
-                        <div style='font-size:14px;font-weight:700;color:#166534;margin-bottom:8px;'>Approve Proposal &amp; Request Invoice</div>
-                        <a href='{$approvalUrl}' style='display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:700;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,0.1);'>
+                    <div style='text-align:center;margin:24px 0 16px;background:#FBECEC;border:1px solid #f3c9c9;border-radius:8px;padding:18px;'>
+                        <div style='font-size:14px;font-weight:700;color:#17161A;margin-bottom:8px;'>Approve Proposal &amp; Request Invoice</div>
+                        <a href='{$approvalUrl}' style='display:inline-block;background:#D62828;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:700;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,0.1);'>
                             ✓ Click Here to Review &amp; Approve Quote
                         </a>
-                        <div style='font-size:11.5px;color:#15803d;margin-top:8px;'>Upon clicking approve, your official invoice will be generated and dispatched.</div>
+                        <div style='font-size:11.5px;color:#6E6A66;margin-top:8px;'>Upon clicking approve, your official invoice will be generated and dispatched.</div>
                     </div>
 
                     <div style='margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;'>
                         <p style='margin:0 0 6px;'><b>Payment Terms:</b> 60% production commencement deposit upon contract signing, balance upon final delivery approval.</p>
-                        <p style='margin:0;'>For questions or customized adjustments, reply directly to this email or call <a href='tel:+254712345678' style='color:#C52523;'>+254 712 345 678</a>.</p>
+                        <p style='margin:0;'>For questions or customized adjustments, reply directly to this email, write to <a href='mailto:{$b['email']}' style='color:#D62828;'>{$b['email']}</a> or call <a href='tel:{$b['phone_e164']}' style='color:#D62828;'>{$b['phone']}</a>.</p>
                     </div>
                 </div>
                 <div style='background:#f8fafc;padding:12px 28px;text-align:center;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0;'>
-                    JMOS · Jeota Media Operating System · Nairobi, Kenya · <a href='https://jeotamedia.co.ke' style='color:#64748b;'>jeotamedia.co.ke</a>
+                    {$b['company']} · {$b['address_line1']}, {$b['address_line2']} · <a href='{$b['website']}' style='color:#64748b;'>{$b['website_label']}</a>
                 </div>
             </div>
             ";
@@ -294,7 +295,8 @@ class QuoteController extends Controller
             ."Let us know if you would like to proceed or schedule a discovery alignment call!\n\n"
             ."Best regards,\n"
             ."*Jeota Media Production Team*\n"
-            .'https://jeotamedia.co.ke';
+            .config('jeota.email').' · '.config('jeota.phone')."\n"
+            .config('jeota.website');
 
         $encodedText = urlencode($message);
         $whatsappUrl = "https://api.whatsapp.com/send?phone={$phone}&text={$encodedText}";
@@ -428,13 +430,34 @@ class QuoteController extends Controller
             $invoice = Invoice::create([
                 'invoice_no' => $nextNo,
                 'client' => $clientName,
+                'client_id' => $quote->client_id,
+                'title' => $quote->title,
                 'type' => 'Deposit 60%',
+                'items' => $quote->items,
                 'amount' => $depositAmount,
+                'subtotal' => $quote->subtotal ?: $quote->total_amount,
+                'discount' => $quote->discount ?: 0,
+                'tax' => $quote->tax ?: 0,
                 'method' => null,
                 'etims' => false,
                 'status' => 'Sent',
-                'due_date' => now()->addDays(7)->format('M d'),
+                'due_date' => now()->addDays(7)->format('Y-m-d'),
+                'notes' => $quote->notes,
+                'quote_id' => $quote->id,
             ]);
+
+            // Send the client their branded invoice link straight away
+            if (! empty($quote->recipient_email)) {
+                NotificationService::sendInvoiceReminder([
+                    'clientName' => $clientName,
+                    'invoiceNo' => $invoice->invoice_no,
+                    'invoiceTitle' => $invoice->title,
+                    'invoiceType' => $invoice->type,
+                    'amount' => (float) $invoice->amount,
+                    'dueDate' => $invoice->due_date,
+                    'invoiceUrl' => $invoice->publicUrl(),
+                ], $quote->recipient_email);
+            }
 
             $quote->update([
                 'status' => 'Accepted',

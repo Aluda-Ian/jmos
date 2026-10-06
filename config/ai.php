@@ -35,6 +35,8 @@ return [
         'model' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022'),
         'endpoint' => env('ANTHROPIC_ENDPOINT', 'https://api.anthropic.com/v1/messages'),
         'timeout' => (int) env('AI_CLAUDE_TIMEOUT', 20),
+        // Drafting a full agreement takes longer than a chat reply
+        'contract_timeout' => (int) env('AI_CONTRACT_TIMEOUT', 120),
     ],
 
     /*

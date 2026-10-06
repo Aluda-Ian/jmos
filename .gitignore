@@ -39,3 +39,9 @@ DEPLOYMENT_INSTRUCTIONS.zip
 *.zip
 *.tar.gz
 *.rar
+
+# Local working artifacts & working documents
+Claude outputs/
+*.docx
+barny signature*.png
+

@@ -1465,7 +1465,7 @@
 
     <div class="field">
       <label for="niNotes">Invoice Remittance Notes &amp; Scope Details</label>
-      <textarea id="niNotes" rows="2" placeholder="e.g. Banking: NCBA Upper Hill A/C 1002349871, Paybill 880100. Deliverables handover upon settlement." style="resize:vertical"></textarea>
+      <textarea id="niNotes" rows="2" placeholder="e.g. Banking: NCBA Junction A/C 6237790012, Paybill 880100 Acc 6237790012. Deliverables handover upon settlement." style="resize:vertical"></textarea>
     </div>
 
     <div class="mfoot" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
@@ -2930,6 +2930,9 @@
           <button type="button" class="btn" id="qdmApproveBtn" onclick="window.approveActiveQuote()" style="font-size:11.5px;padding:6px 12px;background:var(--green-soft);color:var(--green);border-color:rgba(19,115,51,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Approve quotation and mark ready for invoicing">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve Quote
           </button>
+          <button type="button" class="btn" data-perm="owner" onclick="window.createContractFromQuote()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Generate a client contract from this quotation">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 17c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/></svg>Create Contract
+          </button>
           <button type="button" class="btn primary" onclick="window.printQuotePdf()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>Print / Save PDF
           </button>
@@ -2957,7 +2960,8 @@
             </div>
             <div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.4">
               Jeota Media Limited · Creative Agency &amp; Production House<br>
-              Nairobi, Kenya · info@jeotamedia.co.ke · +254 712 345 678<br>
+              Keystone Park Riverside, Nairobi, Kenya<br>
+              info@jeotamedia.co.ke · +254 791 388 683 · jeotamedia.co.ke<br>
               <b>KRA PIN:</b> P052209707D · Tax Exempt (0% Professional Creative Services)
             </div>
           </div>
@@ -3105,6 +3109,10 @@
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
             Print / Save PDF
           </button>
+          <button type="button" class="btn" id="idmClientLinkBtn" onclick="window.copyInvoiceClientLink()" style="font-size:11.5px;padding:6px 13px;font-weight:600;display:inline-flex;align-items:center;gap:6px" title="Copy the branded client invoice link">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Client Link
+          </button>
           <button type="button" class="btn" id="idmSendEmailBtn" onclick="window.dispatchInvoiceEmail()" style="font-size:11.5px;padding:6px 13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             Send Email
@@ -3135,7 +3143,8 @@
             </div>
             <div style="font-size:11.5px;color:#555;margin-top:4px;line-height:1.4">
               Jeota Media Limited · Creative Agency &amp; Production House<br>
-              Nairobi, Kenya · info@jeotamedia.co.ke · +254 712 345 678<br>
+              Keystone Park Riverside, Nairobi, Kenya<br>
+              info@jeotamedia.co.ke · +254 791 388 683 · jeotamedia.co.ke<br>
               <b>KRA PIN:</b> P052209707D · eTIMS Registered
             </div>
           </div>
@@ -3209,13 +3218,14 @@
             <div>
               <div style="font-weight:700;color:#0f172a;margin-bottom:2px">Option 1: Lipa na M-Pesa (Paybill)</div>
               <div>• <b>Paybill Business Number:</b> <span class="mono" style="font-weight:700">880100</span></div>
-              <div>• <b>Account Number:</b> <span class="mono" style="font-weight:700;color:#C52523" id="idmDocMpesaAcc">JM-0146</span></div>
+              <div>• <b>Account Number:</b> <span class="mono" style="font-weight:700">6237790012</span></div>
+              <div>• <b>Payment Reference:</b> <span class="mono" style="font-weight:700;color:#C52523" id="idmDocMpesaAcc">JM-0146</span></div>
             </div>
             <div>
               <div style="font-weight:700;color:#0f172a;margin-bottom:2px">Option 2: Electronic Bank Transfer (EFT / RTGS)</div>
-              <div>• <b>Bank:</b> NCBA Bank Kenya · Branch: Upper Hill</div>
+              <div>• <b>Bank:</b> NCBA Bank Kenya · Junction Branch</div>
               <div>• <b>Account Name:</b> Jeota Media Limited</div>
-              <div>• <b>Account No:</b> <span class="mono" style="font-weight:700">1002349871</span></div>
+              <div>• <b>Account No:</b> <span class="mono" style="font-weight:700">6237790012</span></div>
             </div>
           </div>
         </div>
@@ -3224,7 +3234,7 @@
         <div style="font-size:11px;color:#64748b;line-height:1.5;border-top:1px solid #e2e8f0;padding-top:10px;display:flex;justify-content:space-between;align-items:flex-end">
           <div>
             <b>Payment Terms:</b> Payment is due strictly upon the specified due date.<br>
-            For billing inquiries or KRA eTIMS invoice certificates, contact <b>finance@jeotamedia.co.ke</b>.
+            For billing inquiries or KRA eTIMS invoice certificates, contact <b>info@jeotamedia.co.ke</b> or +254 791 388 683.
           </div>
           <div style="text-align:right">
             <div style="font-size:10px;text-transform:uppercase;color:#94a3b8">Authorized Signatory</div>
