@@ -18,7 +18,7 @@ class CalendarMeetTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_scheduling_event_auto_generates_google_meet_link(): void
+    public function test_scheduling_event_saves_the_pasted_google_meet_link_and_attendee_emails(): void
     {
         $user = User::where('role', 'owner')->first();
         $token = $user->createToken('test_token')->plainTextToken;
@@ -32,7 +32,8 @@ class CalendarMeetTest extends TestCase
                 'location' => '',
                 'attendees' => 'Barny Kiome, Client Lead',
                 'description' => 'Initial scope discussion',
-                'generate_meet' => true,
+                'meet_link' => 'https://meet.google.com/abc-defg-hij',
+                'attendee_emails' => ['Client@Brand.co.ke', 'barny@jeotamedia.co.ke'],
             ]);
 
         $response->assertStatus(201)
@@ -41,9 +42,9 @@ class CalendarMeetTest extends TestCase
             ]);
 
         $eventData = $response->json('data');
-        $this->assertNotEmpty($eventData['meet_link']);
-        $this->assertStringStartsWith('https://meet.google.com/', $eventData['meet_link']);
+        $this->assertSame('https://meet.google.com/abc-defg-hij', $eventData['meet_link']);
         $this->assertEquals('Google Meet', $eventData['location']);
+        $this->assertSame(['client@brand.co.ke', 'barny@jeotamedia.co.ke'], $eventData['attendee_emails']);
 
         // Verify stored in DB
         $dbEvent = CalendarEvent::find($eventData['id']);
@@ -85,7 +86,7 @@ class CalendarMeetTest extends TestCase
         $this->assertEquals('https://meet.google.com/abc-defg-hij', $matching['meet_link']);
     }
 
-    public function test_generate_meet_endpoint_assigns_link_to_existing_event(): void
+    public function test_a_pasted_meet_link_can_be_added_to_an_existing_event(): void
     {
         $user = User::where('role', 'owner')->first();
         $token = $user->createToken('test_token')->plainTextToken;
@@ -98,20 +99,17 @@ class CalendarMeetTest extends TestCase
             'meet_link' => null,
         ]);
 
+        // Without a Google connection JMOS must not invent a fake meet.google.com code
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson("/api/calendar/events/{$event->id}/meet")
+            ->assertStatus(422);
+        $this->assertNull($event->fresh()->meet_link);
+
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->postJson("/api/calendar/events/{$event->id}/meet");
+            ->postJson("/api/calendar/events/{$event->id}/meet", ['meet_link' => 'https://meet.google.com/xyz-abcd-efg']);
 
-        $response->assertStatus(200)
-            ->assertJson([
-                'status' => 'success',
-            ]);
-
-        $meetLink = $response->json('data.meet_link');
-        $this->assertNotEmpty($meetLink);
-        $this->assertStringStartsWith('https://meet.google.com/', $meetLink);
-
-        $event->refresh();
-        $this->assertEquals($meetLink, $event->meet_link);
+        $response->assertStatus(200)->assertJson(['status' => 'success']);
+        $this->assertEquals('https://meet.google.com/xyz-abcd-efg', $event->fresh()->meet_link);
     }
 
     public function test_sync_calendar_with_personal_google_account(): void
@@ -188,7 +186,7 @@ class CalendarMeetTest extends TestCase
         $this->assertNull($user->google_calendar_synced_at);
     }
 
-    public function test_can_schedule_status_meeting_and_generate_meet_link(): void
+    public function test_can_schedule_status_meeting_without_a_meet_link(): void
     {
         $user = User::where('role', 'owner')->first();
         $token = $user->createToken('test_token')->plainTextToken;
@@ -215,8 +213,7 @@ class CalendarMeetTest extends TestCase
             ]);
 
         $eventData = $response->json('data');
-        $this->assertNotEmpty($eventData['meet_link']);
-        $this->assertStringStartsWith('https://meet.google.com/', $eventData['meet_link']);
+        $this->assertNull($eventData['meet_link']);
 
         $dbEvent = CalendarEvent::find($eventData['id']);
         $this->assertNotNull($dbEvent);

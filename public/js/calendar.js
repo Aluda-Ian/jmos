@@ -624,6 +624,7 @@ function initAttendeesPicker() {
       CALENDAR_STATE.selectedAttendees.push({
         id: attendeeId,
         name: client.client_name,
+        email: client.email || null,
         type: 'client',
         color: '#f59e0b',
         ini: getInitials(client.client_name) || 'CL'
@@ -645,6 +646,7 @@ function initAttendeesPicker() {
       CALENDAR_STATE.selectedAttendees.push({
         id: attendeeId,
         name: val,
+        email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) ? val : null,
         type: 'guest',
         color: '#10b981',
         ini: getInitials(val) || 'G'
@@ -681,6 +683,7 @@ window.toggleTeamMemberAttendee = function(userId) {
     CALENDAR_STATE.selectedAttendees.push({
       id: attendeeId,
       name: user.name,
+      email: user.email || null,
       type: 'team',
       color: user.color || 'var(--red)',
       ini: user.ini || getInitials(user.name)
@@ -742,7 +745,7 @@ window.openScheduleModal = function(prefillDate) {
   if (dateInput) {
     dateInput.value = prefillDate || new Date().toISOString().split('T')[0];
   }
-  ['nevtTitle', 'nevtLocation', 'nevtDesc', 'nevtGuestInput'].forEach(id => {
+  ['nevtTitle', 'nevtLocation', 'nevtDesc', 'nevtGuestInput', 'nevtMeetLink'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -902,10 +905,15 @@ window.submitEventForm = async function(btn = null) {
   const location = document.getElementById('nevtLocation')?.value.trim();
   const attendees = document.getElementById('nevtAttendees')?.value.trim();
   const desc = document.getElementById('nevtDesc')?.value.trim();
-  const addMeet = document.getElementById('nevtAddMeet') ? document.getElementById('nevtAddMeet').checked : true;
+  const meetLink = (document.getElementById('nevtMeetLink')?.value || '').trim();
+  const attendeeEmails = (CALENDAR_STATE.selectedAttendees || []).map(a => a.email).filter(Boolean);
 
   if (!title || !date) {
     showToast('Title and Date Required', 'Please enter event title and date', true);
+    return;
+  }
+  if (meetLink && !/^https:\/\//i.test(meetLink)) {
+    showToast('Check the meeting link', 'Paste the full link starting with https:// (e.g. https://meet.google.com/abc-defg-hij)', true);
     return;
   }
 
@@ -926,14 +934,16 @@ window.submitEventForm = async function(btn = null) {
       location,
       attendees,
       description: desc,
-      generate_meet: addMeet ? 1 : 0
+      meet_link: meetLink || null,
+      attendee_emails: attendeeEmails
     });
 
     closeModal('eventModal');
     const hasMeet = res.data && res.data.meet_link;
+    const reminderNote = attendeeEmails.length ? ` · ${attendeeEmails.length} attendee${attendeeEmails.length > 1 ? 's' : ''} will get reminders 1 day & 1 hour before` : '';
     showToast(
       'Event Scheduled',
-      hasMeet ? `${title} scheduled with Google Meet video link` : `${title} added to calendar`
+      (hasMeet ? `${title} scheduled with the Google Meet link` : `${title} added to calendar`) + reminderNote
     );
     await fetchCalendarEvents();
     renderDashboardCalendar();
@@ -1161,22 +1171,28 @@ window.openEventDetailModal = function(eventId) {
         noMeetBox.style.display = 'block';
         if (genMeetBtn) {
           genMeetBtn.onclick = async () => {
+            const input = document.getElementById('eventDetailMeetInput');
+            const link = (input ? input.value : '').trim();
+            if (!/^https:\/\//i.test(link)) {
+              showToast('Paste the meeting link', 'Create a meeting at meet.google.com/new, copy its link and paste it here.', true);
+              return;
+            }
             genMeetBtn.disabled = true;
-            genMeetBtn.textContent = 'Generating…';
             try {
-              const res = await JMOS_API.post(`/calendar/events/${event.db_id}/meet`, {});
+              const res = await JMOS_API.post(`/calendar/events/${event.db_id}/meet`, { meet_link: link });
               if (res.status === 'success' && res.data?.meet_link) {
                 event.meet_link = res.data.meet_link;
-                showToast('Google Meet Generated', 'Video conference room created');
+                if (input) input.value = '';
+                showToast('Meeting link added', 'Attendees will get it in their reminder emails.');
+                await fetchCalendarEvents();
                 window.openEventDetailModal(event.id);
                 renderDashboardCalendar();
                 renderFullCalendar();
               }
             } catch (err) {
-              showToast('Notice', err.message, true);
+              showToast('Could not save link', err.message, true);
             } finally {
               genMeetBtn.disabled = false;
-              genMeetBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>Generate Google Meet Link';
             }
           };
         }

@@ -20,7 +20,9 @@
     const token = localStorage.getItem('jmos_api_token') || (typeof JMOS_STATE !== 'undefined' ? JMOS_STATE.apiToken : null);
     const headers = Object.assign({
       'Accept': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : ''
+      'Authorization': token ? `Bearer ${token}` : '',
+      // Fallback for hosts that strip the Authorization header
+      'X-Api-Token': token || ''
     }, options.body ? { 'Content-Type': 'application/json' } : {});
     const res = await fetch(path, Object.assign({}, options, { headers }));
     let data = {};
@@ -134,29 +136,24 @@
       }).join('');
     },
 
-    /* ---------------------------- Builder ----------------------------- */
+
+    /* ------------------------- Document editor ------------------------ */
+
+    active: null,
+    dirty: false,
+    isNew: false,
+    meta: null,
+    clients: [],
+    quotes: [],
+
+    PARTY_KEYS: ['client_name', 'title', 'client_registration', 'client_po_box', 'client_address', 'client_email', 'client_phone', 'signatory_name', 'signatory_position'],
+    NUMBER_KEYS: ['deposit_percent', 'payment_days', 'late_interest', 'feedback_days', 'revision_rounds', 'reschedule_days', 'termination_days'],
+    WORD_KEYS: ['payment_days', 'feedback_days', 'revision_rounds', 'reschedule_days', 'termination_days'],
 
     ensureMeta: async function () {
-      if (this.meta) return this.meta;
-      const data = await api('/api/contracts/templates');
-      this.meta = data.data;
-
-      const tpl = document.getElementById('ctrTemplate');
-      if (tpl) tpl.innerHTML = this.meta.templates.map(t => `<option value="${esc(t.key)}">${esc(t.label)}</option>`).join('');
-
-      const svc = document.getElementById('ctrServices');
-      if (svc) {
-        svc.innerHTML = this.meta.services.map(s => `<label><input type="checkbox" name="ctService" value="${esc(s.key)}" onchange="window.JMOS_CONTRACTS.syncOther()"> ${esc(s.label)}</label>`).join('');
-      }
-
-      const sigName = document.getElementById('ctrdSignatoryName');
-      if (sigName && this.meta.signatory) sigName.textContent = this.meta.signatory.name;
-
-      if (!this.meta.ai_available) {
-        const useAi = document.getElementById('ctrUseAi');
-        if (useAi) { useAi.disabled = true; useAi.checked = false; }
-        const note = document.getElementById('ctrAiNote');
-        if (note) note.textContent = 'AI drafting is off: add ANTHROPIC_API_KEY to the server .env to enable it. The template draft still works.';
+      if (!this.meta) {
+        const data = await api('/api/contracts/templates');
+        this.meta = data.data;
       }
       return this.meta;
     },
@@ -166,336 +163,329 @@
         const [clients, quotes] = await Promise.all([api('/api/clients'), api('/api/quotes')]);
         this.clients = Array.isArray(clients) ? clients : (clients.data || []);
         this.quotes = quotes.data || [];
-      } catch (_) { /* pickers are optional */ }
-
-      const cSel = document.getElementById('ctrClientSelect');
-      if (cSel) cSel.innerHTML = '<option value="">— New / not in JMOS —</option>' + this.clients.map(c => `<option value="${c.id}">${esc(c.client_name)}</option>`).join('');
-      const qSel = document.getElementById('ctrQuoteSelect');
-      if (qSel) qSel.innerHTML = '<option value="">— None —</option>' + this.quotes.map(q => `<option value="${q.id}">${esc(q.quote_number)} · ${esc(q.recipient_name)} · ${money(q.total_amount)}</option>`).join('');
+      } catch (_) { /* optional */ }
+      const sel = document.getElementById('ctrEdFill');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Fill from client / quote…</option>' +
+        (this.clients.length ? '<optgroup label="Clients">' + this.clients.map(c => `<option value="c:${c.id}">${esc(c.client_name)}</option>`).join('') + '</optgroup>' : '') +
+        (this.quotes.length ? '<optgroup label="Quotations">' + this.quotes.map(q => `<option value="q:${q.id}">${esc(q.quote_number)} · ${esc(q.recipient_name)} · ${money(q.total_amount)}</option>`).join('') + '</optgroup>' : '');
     },
 
-    syncOther: function () {
-      const other = document.querySelector('input[name="ctService"][value="other"]');
-      const wrap = document.getElementById('ctrOtherWrap');
-      if (wrap) wrap.style.display = other && other.checked ? '' : 'none';
-    },
-
-    setVal: function (id, value) {
-      const el = document.getElementById(id);
-      if (el) el.value = value == null ? '' : value;
-    },
-
-    openBuilder: async function (contract, prefill) {
-      try { await this.ensureMeta(); } catch (err) { return toast('Contracts unavailable', err.message, true); }
-      await this.loadPickers();
-
-      const editing = contract && contract.id;
-      const c = contract || {};
-      const f = Object.assign({}, this.meta.defaults, c.fields || {});
-
-      document.getElementById('ctrBuilderTitle').textContent = editing ? `Edit ${c.contract_number}` : 'New Contract';
-      document.getElementById('ctrBuilderSubmit').textContent = editing ? 'Save Details' : 'Generate Contract';
-      this.setVal('ctrFormId', editing ? c.id : '');
-      this.setVal('ctrClientSelect', c.client_id || '');
-      this.setVal('ctrQuoteSelect', c.quote_id || '');
-      this.setVal('ctrTemplate', c.template || (this.meta.templates[0] && this.meta.templates[0].key));
-      this.setVal('ctrClientName', c.client_name);
-      this.setVal('ctrTitle', c.title || 'Photography, Videography & Social Media Services');
-      this.setVal('ctrRegistration', c.client_registration);
-      this.setVal('ctrPoBox', c.client_po_box);
-      this.setVal('ctrAddress', c.client_address);
-      this.setVal('ctrEmail', c.client_email);
-      this.setVal('ctrPhone', c.client_phone);
-      this.setVal('ctrSignatoryName', c.signatory_name);
-      this.setVal('ctrSignatoryPosition', c.signatory_position);
-      this.setVal('ctrAiInstructions', editing ? '' : (c.ai_instructions || ''));
-
-      document.querySelectorAll('[data-ct-field]').forEach(el => {
-        const key = el.getAttribute('data-ct-field');
-        el.value = f[key] == null ? '' : f[key];
-      });
-      if (!f.fee) this.setVal('ctrF_fee', '');
-      document.querySelectorAll('input[name="ctService"]').forEach(cb => { cb.checked = (f.services || []).includes(cb.value); });
-      this.syncOther();
-
-      const useAi = document.getElementById('ctrUseAi');
-      if (useAi) useAi.checked = false;
-      const regenWrap = document.getElementById('ctrRegenerateWrap');
-      if (regenWrap) regenWrap.style.display = editing ? 'flex' : 'none';
-      const regen = document.getElementById('ctrRegenerate');
-      if (regen) regen.checked = editing ? !c.ai_generated : false;
-
-      if (prefill) {
-        if (prefill.quoteId) { this.setVal('ctrQuoteSelect', prefill.quoteId); this.onPickQuote(prefill.quoteId); }
-        if (prefill.clientId) { this.setVal('ctrClientSelect', prefill.clientId); this.onPickClient(prefill.clientId); }
-      }
-
-      if (editing) window.closeModal('contractDetailModal');
-      window.openModal('contractBuilderModal');
-    },
-
-    onPickClient: function (id) {
-      const c = this.clients.find(x => String(x.id) === String(id));
-      if (!c) return;
-      this.setVal('ctrClientName', c.client_name);
-      if (c.email) this.setVal('ctrEmail', c.email);
-      if (c.phone) this.setVal('ctrPhone', c.phone);
-      if (c.address) this.setVal('ctrAddress', c.address);
-      if (c.contact_person) this.setVal('ctrSignatoryName', c.contact_person);
-    },
-
-    onPickQuote: function (id) {
-      const q = this.quotes.find(x => String(x.id) === String(id));
-      if (!q) return;
-      if (!document.getElementById('ctrClientName').value) this.setVal('ctrClientName', q.client ? q.client.client_name : q.recipient_name);
-      if (q.client_id) this.setVal('ctrClientSelect', q.client_id);
-      this.setVal('ctrTitle', q.title);
-      if (q.recipient_email) this.setVal('ctrEmail', q.recipient_email);
-      if (q.recipient_phone) this.setVal('ctrPhone', q.recipient_phone);
-      this.setVal('ctrF_fee', q.total_amount);
-
-      // Guess services from the quotation wording
-      const text = [q.title, q.notes].concat((q.items || []).map(i => i.description || '')).join(' ').toLowerCase();
-      const guess = [];
-      if (/photo/.test(text)) guess.push(/event|wedding|launch|conference/.test(text) ? 'photography_event' : 'photography_project');
-      if (/video|film|reel|commercial|documentary/.test(text)) guess.push(/event|launch|conference/.test(text) ? 'videography_event' : 'videography_project');
-      if (/social|content|caption|post/.test(text)) guess.push('social_content');
-      if (/account|community|management/.test(text)) guess.push('social_management');
-      if (guess.length) document.querySelectorAll('input[name="ctService"]').forEach(cb => { cb.checked = cb.checked || guess.includes(cb.value); });
-      this.syncOther();
-    },
-
-    collectBuilder: function () {
-      const fields = {};
-      document.querySelectorAll('[data-ct-field]').forEach(el => { fields[el.getAttribute('data-ct-field')] = el.value.trim(); });
-      fields.services = Array.from(document.querySelectorAll('input[name="ctService"]:checked')).map(cb => cb.value);
-      fields.fee = fields.fee === '' ? 0 : parseFloat(fields.fee);
-
-      const val = id => (document.getElementById(id).value || '').trim();
-      return {
-        template: val('ctrTemplate') || null,
-        client_id: val('ctrClientSelect') || null,
-        quote_id: val('ctrQuoteSelect') || null,
-        client_name: val('ctrClientName'),
-        title: val('ctrTitle'),
-        client_registration: val('ctrRegistration') || null,
-        client_po_box: val('ctrPoBox') || null,
-        client_address: val('ctrAddress') || null,
-        client_email: val('ctrEmail') || null,
-        client_phone: val('ctrPhone') || null,
-        signatory_name: val('ctrSignatoryName') || null,
-        signatory_position: val('ctrSignatoryPosition') || null,
-        ai_instructions: val('ctrAiInstructions') || null,
-        use_ai: document.getElementById('ctrUseAi').checked,
-        fields
-      };
-    },
-
-    submitBuilder: async function () {
-      const payload = this.collectBuilder();
-      if (!payload.client_name || !payload.title) return toast('Missing details', 'Client name and contract title are required.', true);
-      if (!payload.fields.services.length) return toast('Choose services', 'Tick at least one service for the agreement.', true);
-      if (payload.use_ai && !payload.ai_instructions) return toast('AI instructions needed', 'Tell AI what to tailor, or untick the AI option.', true);
-
-      const id = document.getElementById('ctrFormId').value;
-      const btn = document.getElementById('ctrBuilderSubmit');
-      const label = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = payload.use_ai ? 'Generating & tailoring with AI…' : (id ? 'Saving…' : 'Generating…');
-
+    /** New contract: create a draft from the template and open it as a document. */
+    openBuilder: async function (_unused, prefill) {
       try {
-        let data;
-        if (id) {
-          const aiText = payload.ai_instructions;
-          const useAi = payload.use_ai;
-          delete payload.use_ai;
-          delete payload.ai_instructions; // keep the AI instruction history intact
-          payload.regenerate = document.getElementById('ctrRegenerate').checked;
-          data = await api(`/api/contracts/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-          if (useAi && aiText) {
-            try {
-              data = await api(`/api/contracts/${id}/ai-revise`, { method: 'POST', body: JSON.stringify({ instructions: aiText }) });
-              data.ai_message = data.message;
-            } catch (aiErr) {
-              data.ai_message = 'AI customisation skipped: ' + aiErr.message;
-            }
-          }
-        } else {
-          data = await api('/api/contracts', { method: 'POST', body: JSON.stringify(payload) });
-        }
-        window.closeModal('contractBuilderModal');
-        const aiSkipped = data.ai_message && data.ai_message.indexOf('skipped') > -1;
-        toast(id ? 'Contract saved' : 'Contract generated', data.ai_message || data.message, aiSkipped);
-        await this.load();
-        this.showDetail(data.data);
+        await this.ensureMeta();
+        const data = await api('/api/contracts', { method: 'POST', body: JSON.stringify({}) });
+        this.isNew = true;
+        await this.showEditor(data.data);
+        if (prefill && prefill.quoteId) this.fillFrom('q:' + prefill.quoteId);
       } catch (err) {
-        toast('Could not save contract', err.message, true);
-      } finally {
-        btn.disabled = false;
-        btn.textContent = label;
+        toast('Could not start a contract', err.message, true);
       }
     },
 
-    /* --------------------------- Workspace ---------------------------- */
-
-    open: async function (id, tab) {
+    open: async function (id, then) {
       try {
         await this.ensureMeta();
         const data = await api(`/api/contracts/${id}`);
-        this.showDetail(data.data, tab);
+        this.isNew = false;
+        await this.showEditor(data.data);
+        if (then === 'send' && !data.data.is_locked) this.openSend();
       } catch (err) {
         toast('Could not open contract', err.message, true);
       }
     },
 
-    showDetail: function (c, tab) {
+    showEditor: async function (c) {
       this.active = c;
+      this.dirty = false;
+      const locked = !!c.is_locked;
       const pill = STATUS_PILL[c.status] || STATUS_PILL.Draft;
-      document.getElementById('ctrdId').value = c.id;
-      document.getElementById('ctrdTitle').textContent = `${c.contract_number} · ${c.client_name}`;
-      document.getElementById('ctrdSubtitle').textContent = `${c.title}${c.services_label ? ' — ' + c.services_label : ''}`;
-      const st = document.getElementById('ctrdStatus');
+      const doc = document.getElementById('ctrEdDoc');
+
+      document.getElementById('ctrEdNumber').textContent = c.contract_number;
+      document.getElementById('ctrEdRef').textContent = c.contract_number;
+      const st = document.getElementById('ctrEdStatus');
       st.className = `pill ${pill[0]}`;
       st.textContent = pill[1];
-      document.getElementById('ctrdFee').textContent = c.fields && c.fields.fee ? money(c.fields.fee) : '';
+      document.getElementById('ctrEdBannerStatus').textContent = c.status;
 
-      const locked = !!c.is_locked;
-      const editor = document.getElementById('ctrdEditor');
-      editor.innerHTML = c.body || '';
-      editor.setAttribute('contenteditable', locked ? 'false' : 'true');
-      document.getElementById('ctrdEditorBar').style.display = locked ? 'none' : 'flex';
-      document.getElementById('ctrdEditBtn').style.display = locked ? 'none' : '';
-      document.getElementById('ctrdVoidBtn').style.display = (locked) ? 'none' : '';
-      document.getElementById('ctrdDeleteBtn').style.display = c.status === 'Signed' ? 'none' : '';
-      document.querySelector('[data-ct-tab="ai"]').style.display = locked ? 'none' : '';
-      document.querySelector('[data-ct-tab="send"]').style.display = locked ? 'none' : '';
+      document.getElementById('ctrEdClauses').innerHTML = c.body || '';
 
-      const signedInfo = document.getElementById('ctrdSignedInfo');
-      if (c.status === 'Signed') {
-        signedInfo.style.display = '';
-        signedInfo.innerHTML = `✓ Signed by ${esc(c.client_signed_name)}${c.client_signed_position ? ', ' + esc(c.client_signed_position) : ''} on ${esc(new Date(c.signed_at).toLocaleString())}${c.data_consent ? ' · Appendix 2 consent granted' : ''}. <a href="${esc(c.sign_url)}" target="_blank" rel="noopener" style="color:inherit">Open signed copy ↗</a>`;
-      } else if (c.status === 'Void') {
-        signedInfo.style.display = '';
-        signedInfo.style.background = 'var(--red-soft)'; signedInfo.style.color = 'var(--red)';
-        signedInfo.textContent = 'This contract was voided. The client can no longer sign it.';
-      } else {
-        signedInfo.style.display = 'none';
-        signedInfo.style.background = ''; signedInfo.style.color = '';
+      // Party fields outside the clauses (cover, parties paragraph, signature block)
+      this.PARTY_KEYS.forEach(key => {
+        doc.querySelectorAll(`.ce-cover [data-f="${key}"], .ce-intro [data-f="${key}"], .ce-sigs [data-f="${key}"]`).forEach(el => this.setField(el, c[key]));
+      });
+
+      doc.classList.toggle('locked', locked);
+      doc.querySelectorAll('[contenteditable]').forEach(el => el.setAttribute('contenteditable', locked ? 'false' : 'true'));
+      document.getElementById('ctrEdTools').style.display = locked ? 'none' : 'flex';
+      document.getElementById('ctrEdLockedTools').style.display = locked ? 'flex' : 'none';
+      document.getElementById('ctrEdVoid').style.display = c.status === 'Draft' ? 'none' : '';
+      document.getElementById('ctrEdProviderNote').textContent = c.provider_signed_at ? 'Signed ' + new Date(c.provider_signed_at).toLocaleDateString() : 'Signature applied when sent';
+      document.getElementById('ctrEdClientSig').textContent = c.status === 'Signed'
+        ? `Signed by ${c.client_signed_name} on ${new Date(c.signed_at).toLocaleDateString()}`
+        : 'Signed online by the client';
+
+      this.toggleAi(false);
+      if (this.meta && !this.meta.ai_available) {
+        document.getElementById('ctrEdAiNote').textContent = 'AI is not configured on the server yet (GEMINI_API_KEY). You can still edit everything by hand.';
       }
+      this.updateHint();
+      document.getElementById('ctrEditor').classList.add('on');
+      document.body.style.overflow = 'hidden';
+      this.loadPickers();
+    },
 
-      const blanks = document.getElementById('ctrdBlanks');
-      if (c.blanks > 0 && !locked) {
-        blanks.style.display = '';
-        blanks.textContent = `${c.blanks} blank${c.blanks > 1 ? 's' : ''} (highlighted) still to fill — use Edit details, type over them, or ask AI.`;
-      } else {
-        blanks.style.display = 'none';
+    setField: function (el, value) {
+      const v = value == null ? '' : String(value).trim();
+      el.textContent = v || '________';
+      el.classList.toggle('blank', !v);
+    },
+
+    fieldValue: function (el) {
+      const t = (el.textContent || '').replace(/ /g, ' ').trim();
+      return /^_+$/.test(t) ? '' : t;
+    },
+
+    updateHint: function () {
+      const c = this.active;
+      const hint = document.getElementById('ctrEdHint');
+      if (!c) return;
+      if (c.is_locked) {
+        hint.innerHTML = c.status === 'Signed' ? '✓ Signed by both parties — this agreement is locked.' : 'This contract was voided.';
+        return;
       }
-
-      document.getElementById('ctrdAiHistory').textContent = c.ai_instructions || '—';
-      document.getElementById('ctrdAiInstructions').value = '';
-      document.getElementById('ctrdSendEmail').value = c.client_email || '';
-      document.getElementById('ctrdLink').textContent = c.sign_url || '';
-
-      this.tab(tab && !locked ? tab : 'text');
-      window.openModal('contractDetailModal');
+      const blanks = document.querySelectorAll('#ctrEdDoc .cf.blank').length;
+      hint.innerHTML = 'Click any text on the agreement to edit it.' +
+        (blanks ? ` <span class="warn">${blanks} highlighted field${blanks > 1 ? 's' : ''} still to fill.</span>` : ' All fields filled.') +
+        (this.dirty ? ' <span class="warn">Unsaved changes.</span>' : '');
     },
 
-    tab: function (name) {
-      document.querySelectorAll('[data-ct-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-ct-tab') === name));
-      document.querySelectorAll('[data-ct-pane]').forEach(p => { p.hidden = p.getAttribute('data-ct-pane') !== name; });
+    /** Copy an edited field to every other place it appears, and keep amounts in words in step. */
+    onInput: function (e) {
+      const c = this.active;
+      if (!c || c.is_locked) return;
+      this.dirty = true;
+      let el = e.target.closest && e.target.closest('[data-f]');
+      if (!el) {
+        const sel = window.getSelection();
+        const node = sel && sel.anchorNode;
+        el = node ? (node.nodeType === 1 ? node : node.parentElement).closest('[data-f]') : null;
+      }
+      if (el && el.closest('#ctrEdDoc')) {
+        const key = el.getAttribute('data-f');
+        const value = this.fieldValue(el);
+        el.classList.toggle('blank', !value);
+        document.querySelectorAll(`#ctrEdDoc [data-f="${key}"]`).forEach(other => {
+          if (other !== el) this.setField(other, value);
+        });
+        if (key === 'fee_formatted') {
+          const n = parseFloat(value.replace(/[^0-9.]/g, ''));
+          document.querySelectorAll('#ctrEdDoc [data-f="fee_words"]').forEach(w => this.setField(w, n > 0 ? numberWords(n) + ' Only' : ''));
+        }
+        if (this.WORD_KEYS.includes(key)) {
+          const n = parseInt(value, 10);
+          document.querySelectorAll(`#ctrEdDoc [data-f="${key}_words"]`).forEach(w => this.setField(w, n >= 0 ? numberWords(n).toLowerCase() : ''));
+        }
+      }
+      clearTimeout(this._hintTimer);
+      this._hintTimer = setTimeout(() => this.updateHint(), 250);
     },
 
-    fmt: function (cmd, value) {
-      document.getElementById('ctrdEditor').focus();
-      document.execCommand(cmd, false, value ? `<${value}>` : null);
+    onClick: function (e) {
+      const tick = e.target.closest('#ctrEdDoc .tick');
+      if (tick && this.active && !this.active.is_locked) {
+        e.preventDefault();
+        tick.textContent = tick.textContent.trim() === '☑' ? '☐' : '☑';
+        this.dirty = true;
+        this.updateHint();
+      }
     },
 
-    refreshActive: function (contract) {
-      this.showDetail(contract, document.querySelector('[data-ct-tab].active')?.getAttribute('data-ct-tab'));
+    collect: function () {
+      const doc = document.getElementById('ctrEdDoc');
+      const payload = { fields: {} };
+      const seen = {};
+      doc.querySelectorAll('[data-f]').forEach(el => {
+        const key = el.getAttribute('data-f');
+        if (seen[key] || key.startsWith('svc_') || key.endsWith('_words') && key !== 'fee_words') return;
+        seen[key] = true;
+        const value = this.fieldValue(el);
+        if (this.PARTY_KEYS.includes(key)) {
+          payload[key] = value || null;
+        } else if (key === 'fee_formatted') {
+          payload.fields.fee = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+        } else if (this.NUMBER_KEYS.includes(key)) {
+          const n = parseFloat(value);
+          if (!isNaN(n)) payload.fields[key] = n;
+        } else {
+          payload.fields[key] = value;
+        }
+      });
+      payload.fields.services = Array.from(doc.querySelectorAll('.tick[data-f^="svc_"]'))
+        .filter(t => t.textContent.trim() === '☑')
+        .map(t => t.getAttribute('data-f').slice(4));
+      payload.client_name = payload.client_name || 'Client Name';
+      payload.title = payload.title || 'Photography, Videography and Social Media Services';
+      payload.body = document.getElementById('ctrEdClauses').innerHTML;
+      if (this.active.client_id) payload.client_id = this.active.client_id;
+      if (this.active.quote_id) payload.quote_id = this.active.quote_id;
+      return payload;
+    },
+
+    save: async function (quiet) {
+      const c = this.active;
+      if (!c || c.is_locked) return c;
+      const btn = document.getElementById('ctrEdSave');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      try {
+        const data = await api(`/api/contracts/${c.id}`, { method: 'PUT', body: JSON.stringify(this.collect()) });
+        this.active = data.data;
+        this.dirty = false;
+        this.isNew = false;
+        this.updateHint();
+        if (!quiet) toast('Contract saved', c.contract_number);
+        this.load();
+        return data.data;
+      } catch (err) {
+        toast('Could not save', err.message, true);
+        throw err;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save';
+      }
+    },
+
+    close: async function () {
+      const c = this.active;
+      if (c && this.dirty && !c.is_locked) {
+        if (window.confirm('Save your changes before closing?')) {
+          try { await this.save(true); } catch (_) { return; }
+        }
+      } else if (c && this.isNew) {
+        // Opened "New Contract" and left without touching it: don't keep an empty draft
+        try { await api(`/api/contracts/${c.id}`, { method: 'DELETE' }); } catch (_) {}
+      }
+      document.getElementById('ctrEditor').classList.remove('on');
+      document.body.style.overflow = '';
+      this.active = null;
       this.load();
     },
 
-    saveText: async function () {
-      const c = this.active;
-      if (!c) return;
-      const btn = document.getElementById('ctrdSaveTextBtn');
-      btn.disabled = true;
-      try {
-        const data = await api(`/api/contracts/${c.id}`, { method: 'PUT', body: JSON.stringify({ body: document.getElementById('ctrdEditor').innerHTML }) });
-        toast('Agreement text saved', c.contract_number);
-        this.refreshActive(data.data);
-      } catch (err) {
-        toast('Could not save', err.message, true);
-      } finally {
-        btn.disabled = false;
+    fillFrom: function (value) {
+      if (!value || !this.active || this.active.is_locked) return;
+      const [kind, id] = value.split(':');
+      const set = (key, v) => {
+        if (v == null || v === '') return;
+        document.querySelectorAll(`#ctrEdDoc [data-f="${key}"]`).forEach(el => this.setField(el, v));
+      };
+      if (kind === 'c') {
+        const c = this.clients.find(x => String(x.id) === String(id));
+        if (!c) return;
+        set('client_name', c.client_name); set('client_address', c.address); set('client_email', c.email);
+        set('client_phone', c.phone); set('signatory_name', c.contact_person);
+        this.active.client_id = c.id;
+      } else {
+        const q = this.quotes.find(x => String(x.id) === String(id));
+        if (!q) return;
+        set('client_name', q.client ? q.client.client_name : q.recipient_name);
+        set('client_email', q.recipient_email); set('client_phone', q.recipient_phone);
+        const fee = parseFloat(q.total_amount) || 0;
+        if (fee > 0) {
+          set('fee_formatted', fee.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+          set('fee_words', numberWords(fee) + ' Only');
+        }
+        this.active.quote_id = q.id;
       }
+      this.dirty = true;
+      this.updateHint();
+      toast('Details filled', 'Check the highlighted fields, then Save.');
+    },
+
+    toggleAi: function (force) {
+      const panel = document.getElementById('ctrEdAi');
+      const on = typeof force === 'boolean' ? force : !panel.classList.contains('on');
+      panel.classList.toggle('on', on);
+      if (on) document.getElementById('ctrEdAiText').focus();
     },
 
     aiRevise: async function () {
       const c = this.active;
-      const instructions = document.getElementById('ctrdAiInstructions').value.trim();
+      const instructions = document.getElementById('ctrEdAiText').value.trim();
       if (!instructions) return toast('Add instructions', 'Tell AI what to change in the agreement.', true);
-      if (this.meta && !this.meta.ai_available) return toast('AI not configured', 'Add ANTHROPIC_API_KEY to the server .env.', true);
-
-      const btn = document.getElementById('ctrdAiBtn');
-      const status = document.getElementById('ctrdAiStatus');
+      const btn = document.getElementById('ctrEdAiRun');
       btn.disabled = true;
       btn.textContent = '✦ Revising…';
-      status.textContent = 'J- ai is rewriting the agreement — this can take up to a minute.';
       try {
-        // Save any unsaved manual edits first so AI works on the latest text
-        await api(`/api/contracts/${c.id}`, { method: 'PUT', body: JSON.stringify({ body: document.getElementById('ctrdEditor').innerHTML }) });
+        await this.save(true);
         const data = await api(`/api/contracts/${c.id}/ai-revise`, { method: 'POST', body: JSON.stringify({ instructions }) });
+        await this.showEditor(data.data);
+        document.getElementById('ctrEdAiText').value = '';
         toast('Agreement revised', data.message);
-        this.refreshActive(data.data);
-        this.tab('text');
       } catch (err) {
         toast('AI revision failed', err.message, true);
       } finally {
         btn.disabled = false;
         btn.textContent = '✦ Revise agreement';
-        status.textContent = 'Takes up to a minute. You can review and edit the result afterwards.';
       }
     },
 
-    confirmBlanks: function () {
+    preview: async function (signed) {
       const c = this.active;
-      if (c && c.blanks > 0) {
-        return window.confirm(`This agreement still has ${c.blanks} blank${c.blanks > 1 ? 's' : ''}. Send it anyway?`);
-      }
-      return true;
+      if (!c) return;
+      if (!signed && this.dirty) { try { await this.save(true); } catch (_) { return; } }
+      window.open(c.sign_url + (signed ? '' : '?preview=1'), '_blank', 'noopener');
+    },
+
+    openSend: async function () {
+      const c = this.active;
+      if (!c) return;
+      try { await this.save(true); } catch (_) { return; }
+      const blanks = document.querySelectorAll('#ctrEdDoc .cf.blank').length;
+      if (blanks && !window.confirm(`${blanks} field${blanks > 1 ? 's are' : ' is'} still blank (highlighted). Send anyway?`)) return;
+      document.getElementById('ctrSendEmail').value = this.active.client_email || '';
+      document.getElementById('ctrSendPhone').value = this.active.client_phone || '';
+      window.openModal('ctrSendModal');
+    },
+
+    afterSend: async function (data, title, msg) {
+      window.closeModal('ctrSendModal');
+      toast(title, msg);
+      await this.showEditor(data.data);
+      this.load();
     },
 
     sendEmail: async function () {
       const c = this.active;
-      const email = document.getElementById('ctrdSendEmail').value.trim();
+      const email = document.getElementById('ctrSendEmail').value.trim();
       if (!email) return toast('Email required', 'Enter the client\'s email address.', true);
-      if (!this.confirmBlanks()) return;
-
-      const btn = document.getElementById('ctrdSendEmailBtn');
+      const btn = document.getElementById('ctrSendEmailBtn');
       btn.disabled = true;
       btn.textContent = 'Sending…';
       try {
-        const data = await api(`/api/contracts/${c.id}/send-email`, { method: 'POST', body: JSON.stringify({ email, message: document.getElementById('ctrdSendMessage').value.trim() || null }) });
-        toast('Sent for signature', data.message);
-        this.refreshActive(data.data);
+        const data = await api(`/api/contracts/${c.id}/send-email`, { method: 'POST', body: JSON.stringify({ email, message: document.getElementById('ctrSendMessage').value.trim() || null }) });
+        await this.afterSend(data, 'Sent for signature', data.message);
       } catch (err) {
         toast('Email failed', err.message, true);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Send by Email';
+        btn.textContent = 'Send by email';
       }
     },
 
     sendWhatsApp: async function () {
       const c = this.active;
-      if (!this.confirmBlanks()) return;
+      const phone = document.getElementById('ctrSendPhone').value.trim();
       const win = window.open('about:blank', '_blank');
       try {
+        if (phone && phone !== c.client_phone) {
+          await api(`/api/contracts/${c.id}`, { method: 'PUT', body: JSON.stringify({ client_phone: phone }) });
+        }
         const data = await api(`/api/contracts/${c.id}/whatsapp`);
         if (win) win.location = data.whatsapp_url; else window.location.href = data.whatsapp_url;
-        toast('WhatsApp ready', 'Signing link shared — Barny\'s signature is applied.');
-        this.refreshActive(data.data);
+        await this.afterSend(data, 'WhatsApp ready', 'Signing link shared — Barny\'s signature is applied.');
       } catch (err) {
         if (win) win.close();
         toast('Could not prepare WhatsApp', err.message, true);
@@ -504,22 +494,13 @@
 
     copyLink: async function () {
       const c = this.active;
-      if (!this.confirmBlanks()) return;
       try {
-        let data = { data: c };
-        if (c.status === 'Draft') {
-          data = await api(`/api/contracts/${c.id}/mark-sent`, { method: 'POST' });
-        }
-        await navigator.clipboard.writeText(c.sign_url);
-        toast('Signing link copied', 'Paste it to the client — the agreement is now open for signature.');
-        this.refreshActive(data.data);
+        const data = c.status === 'Draft' ? await api(`/api/contracts/${c.id}/mark-sent`, { method: 'POST' }) : { data: c };
+        try { await navigator.clipboard.writeText(c.sign_url); } catch (_) { window.prompt('Copy the signing link:', c.sign_url); }
+        await this.afterSend(data, 'Signing link copied', 'Paste it to the client — the agreement is open for signature.');
       } catch (err) {
-        toast('Could not copy link', err.message || 'Copy it from the box below.', true);
+        toast('Could not issue link', err.message, true);
       }
-    },
-
-    preview: function () {
-      if (this.active) window.open(this.active.sign_url + '?preview=1', '_blank', 'noopener');
     },
 
     voidActive: async function () {
@@ -528,7 +509,8 @@
       try {
         const data = await api(`/api/contracts/${c.id}/void`, { method: 'POST' });
         toast('Contract voided', data.message);
-        this.refreshActive(data.data);
+        await this.showEditor(data.data);
+        this.load();
       } catch (err) {
         toast('Could not void', err.message, true);
       }
@@ -538,15 +520,65 @@
       const c = this.active;
       if (!window.confirm(`Delete ${c.contract_number} permanently?`)) return;
       try {
-        const data = await api(`/api/contracts/${c.id}`, { method: 'DELETE' });
-        toast('Contract deleted', data.message);
-        window.closeModal('contractDetailModal');
+        await api(`/api/contracts/${c.id}`, { method: 'DELETE' });
+        toast('Contract deleted', c.contract_number);
+        this.dirty = false;
+        this.isNew = false;
+        document.getElementById('ctrEditor').classList.remove('on');
+        document.body.style.overflow = '';
+        this.active = null;
         this.load();
       } catch (err) {
         toast('Could not delete', err.message, true);
       }
     }
   };
+
+  /** Number to words, e.g. 150000 => "One Hundred and Fifty Thousand". */
+  function numberWords(num) {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const under1000 = n => {
+      const parts = [];
+      if (n >= 100) { parts.push(ones[Math.floor(n / 100)] + ' Hundred'); n %= 100; if (n) parts.push('and'); }
+      if (n >= 20) parts.push(tens[Math.floor(n / 10)] + (n % 10 ? '-' + ones[n % 10] : ''));
+      else if (n > 0) parts.push(ones[n]);
+      return parts.join(' ');
+    };
+    const whole = Math.floor(num);
+    const cents = Math.round((num - whole) * 100);
+    if (whole === 0 && !cents) return 'Zero';
+    let n = whole;
+    const parts = [];
+    [[1e9, 'Billion'], [1e6, 'Million'], [1e3, 'Thousand']].forEach(([v, label]) => {
+      if (n >= v) { parts.push(under1000(Math.floor(n / v)) + ' ' + label); n %= v; }
+    });
+    if (n > 0) parts.push((parts.length && n < 100 ? 'and ' : '') + under1000(n));
+    let words = parts.join(' ');
+    if (cents) words += ' and ' + under1000(cents) + ' Cents';
+    return words;
+  }
+
+  document.addEventListener('input', e => {
+    if (e.target.closest && e.target.closest('#ctrEdDoc')) window.JMOS_CONTRACTS.onInput(e);
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest && e.target.closest('#ctrEdDoc')) window.JMOS_CONTRACTS.onClick(e);
+  });
+  // Paste as plain text so pasted Word/web formatting doesn't break the branded layout
+  document.addEventListener('paste', e => {
+    if (!(e.target.closest && e.target.closest('#ctrEdDoc [contenteditable="true"]'))) return;
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, text);
+  });
+  document.addEventListener('keydown', e => {
+    const ed = document.getElementById('ctrEditor');
+    if (!ed || !ed.classList.contains('on')) return;
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); window.JMOS_CONTRACTS.save(); }
+    // Enter inside a single-line field would break it into paragraphs
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('span.cf[contenteditable]')) { e.preventDefault(); e.target.blur(); }
+  });
 
   /** Called from the quotation detail modal: start a contract from the open quote. */
   window.createContractFromQuote = function (quoteId) {

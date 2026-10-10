@@ -258,6 +258,7 @@ const JMOS_API = {
 
     if (JMOS_STATE.apiToken) {
       headers['Authorization'] = 'Bearer ' + JMOS_STATE.apiToken;
+      headers['X-Api-Token'] = JMOS_STATE.apiToken;
     }
     if (JMOS_STATE.currentUser && JMOS_STATE.currentUser.id) {
       headers['X-User-Id'] = String(JMOS_STATE.currentUser.id);
@@ -314,7 +315,10 @@ const JMOS_API = {
     const headers = { 'Accept': 'application/json' };
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
     if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
-    if (JMOS_STATE.apiToken) headers['Authorization'] = 'Bearer ' + JMOS_STATE.apiToken;
+    if (JMOS_STATE.apiToken) {
+      headers['Authorization'] = 'Bearer ' + JMOS_STATE.apiToken;
+      headers['X-Api-Token'] = JMOS_STATE.apiToken;
+    }
 
     const url = endpoint.startsWith('http') ? endpoint : (this.baseUrl + (endpoint.startsWith('/') ? '' : '/') + endpoint);
     return fetch(url, {

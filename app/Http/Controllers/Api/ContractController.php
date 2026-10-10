@@ -93,6 +93,8 @@ class ContractController extends Controller
         ]);
 
         $contract = new Contract($this->partyAttributes($validated));
+        $contract->client_name = $contract->client_name ?: 'Client Name';
+        $contract->title = $contract->title ?: 'Photography, Videography and Social Media Services';
         $contract->template = $validated['template'] ?? 'photo-video-social';
         $contract->fields = $this->templates->normalizeInput($validated['fields'] ?? []);
         $contract->ai_instructions = $validated['ai_instructions'] ?? null;
@@ -408,7 +410,8 @@ class ContractController extends Controller
      */
     protected function rules(bool $updating = false): array
     {
-        $required = $updating ? 'sometimes|required' : 'required';
+        // A new contract can start blank: details are typed straight into the document editor.
+        $required = $updating ? 'sometimes|required' : 'nullable';
 
         return [
             'template' => ['nullable', 'string', Rule::in(array_keys($this->templates->templates()))],
@@ -543,7 +546,7 @@ class ContractController extends Controller
         abort_unless(
             $role && in_array($role, config('jeota.contracts.allowed_roles', ['owner']), true),
             403,
-            'Only the account owner can manage client contracts.'
+            'Only the owner and managers can manage client contracts.'
         );
     }
 

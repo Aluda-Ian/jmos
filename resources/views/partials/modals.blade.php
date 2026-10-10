@@ -1798,8 +1798,8 @@
       </div>
     </div>
     <div class="field">
-      <label for="nevtLocation">Location / Meeting Link</label>
-      <input id="nevtLocation" placeholder="e.g. Google Meet or Westlands Studio" autocomplete="off">
+      <label for="nevtLocation">Location</label>
+      <input id="nevtLocation" placeholder="e.g. Online (Google Meet) or Westlands Studio" autocomplete="off">
     </div>
     <!-- Attendees Selection & Guest Integration -->
     <div class="field" style="margin-bottom:14px">
@@ -1849,15 +1849,16 @@
       <label for="nevtDesc">Description / Notes</label>
       <input id="nevtDesc" placeholder="e.g. Discuss script storyboard and location permits" autocomplete="off">
     </div>
-    <div style="margin-bottom:14px;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.18);border-radius:8px;padding:10px 12px">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0;font-size:12.5px">
-        <input type="checkbox" id="nevtAddMeet" checked style="accent-color:var(--red)">
-        <span style="font-weight:600;display:flex;align-items:center;gap:6px">
+    <div style="margin-bottom:14px;background:rgba(26,115,232,0.06);border:1px solid rgba(26,115,232,0.22);border-radius:10px;padding:12px 14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <label for="nevtMeetLink" style="margin:0;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          Add Google Meet video conferencing (Auto-generate Meet link)
-        </span>
-      </label>
-      <p style="font-size:11px;color:var(--muted);margin:4px 0 0 24px">Creates an active Google Meet room and syncs with Google Calendar.</p>
+          Google Meet link
+        </label>
+        <a href="https://meet.google.com/new" target="_blank" rel="noopener" class="btn" style="font-size:11.5px;padding:5px 10px;text-decoration:none;color:#1a73e8;border-color:rgba(26,115,232,0.35)">1. Create a meeting in Google Meet ↗</a>
+      </div>
+      <input id="nevtMeetLink" type="url" placeholder="2. Paste the link here, e.g. https://meet.google.com/abc-defg-hij" autocomplete="off" style="width:100%">
+      <p style="font-size:11px;color:var(--muted);margin:6px 0 0">In Google Meet choose <b>“Create a meeting for later”</b>, copy the link and paste it above. Everyone in Attendees (team members, clients and guest emails) gets an email reminder with this link <b>1 day</b> and <b>1 hour</b> before the meeting.</p>
     </div>
     <div class="mfoot">
       <button type="button" class="btn" data-close="eventModal">Cancel</button>
@@ -1925,11 +1926,14 @@
 
     <!-- Generate Meet Link Fallback (if event has no meet link yet) -->
     <div id="eventDetailNoMeetBox" style="display:none;background:var(--paper);border:1px dashed var(--line-strong);border-radius:10px;padding:12px;margin-bottom:14px;text-align:center">
-      <span style="font-size:12px;color:var(--muted);display:block;margin-bottom:8px">No Google Meet link attached to this event.</span>
-      <button type="button" class="btn" id="eventDetailGenerateMeetBtn" style="font-size:12px;margin:0 auto">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-        Generate Google Meet Link
-      </button>
+      <span style="font-size:12px;color:var(--muted);display:block;margin-bottom:8px">No Google Meet link yet. <a href="https://meet.google.com/new" target="_blank" rel="noopener" style="color:#1a73e8;font-weight:600">Create one in Google Meet ↗</a> and paste it here:</span>
+      <div style="display:flex;gap:8px">
+        <input id="eventDetailMeetInput" type="url" placeholder="https://meet.google.com/abc-defg-hij" autocomplete="off" style="flex:1;font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+        <button type="button" class="btn" id="eventDetailGenerateMeetBtn" style="font-size:12px;white-space:nowrap">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Save link
+        </button>
+      </div>
     </div>
 
     <!-- Details Metadata List -->
@@ -2930,7 +2934,7 @@
           <button type="button" class="btn" id="qdmApproveBtn" onclick="window.approveActiveQuote()" style="font-size:11.5px;padding:6px 12px;background:var(--green-soft);color:var(--green);border-color:rgba(19,115,51,0.25);font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Approve quotation and mark ready for invoicing">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Approve Quote
           </button>
-          <button type="button" class="btn" data-perm="owner" onclick="window.createContractFromQuote()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Generate a client contract from this quotation">
+          <button type="button" class="btn" data-perm="owner manager" onclick="window.createContractFromQuote()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px" title="Generate a client contract from this quotation">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 17c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/></svg>Create Contract
           </button>
           <button type="button" class="btn primary" onclick="window.printQuotePdf()" style="font-size:11.5px;padding:6px 12px;font-weight:600;display:inline-flex;align-items:center;gap:5px">

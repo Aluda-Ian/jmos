@@ -20,6 +20,31 @@
   flex-direction: column;
   padding: 18px 13px;
   user-select: none;
+  /* Scroll the menu when it is taller than the screen */
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* Keep menu items at full size instead of squashing them to fit */
+.nav > * {
+  flex-shrink: 0;
+}
+
+.nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 6px;
+}
+
+.nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .brand {
@@ -540,6 +565,9 @@ h1.pt {
   }
   .nav {
     position: fixed;
+    top: 0;
+    bottom: 0;
+    height: 100dvh;
     z-index: 45;
     width: 250px;
     transform: translateX(-102%);

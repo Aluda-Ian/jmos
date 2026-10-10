@@ -12,7 +12,7 @@ function showView(view) {
   if (role && targetSection && targetSection.getAttribute('data-perm')) {
     const allowed = targetSection.getAttribute('data-perm').split(' ');
     if (allowed.indexOf(role) < 0) {
-      if (typeof showToast === 'function') showToast('Owner access only', 'Money tools are reserved for the account owner.', true);
+      if (typeof showToast === 'function') showToast('No access', 'This section is not available for your role.', true);
       if (view !== 'dashboard') return showView('dashboard');
       return;
     }

@@ -19,6 +19,9 @@ class CalendarEvent extends Model
         'location',
         'meet_link',
         'attendees',
+        'attendee_emails',
+        'reminder_day_sent_at',
+        'reminder_hour_sent_at',
         'google_event_id',
         'status',
         'related_type',
@@ -30,5 +33,8 @@ class CalendarEvent extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'all_day' => 'boolean',
+        'attendee_emails' => 'array',
+        'reminder_day_sent_at' => 'datetime',
+        'reminder_hour_sent_at' => 'datetime',
     ];
 }

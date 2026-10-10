@@ -84,6 +84,17 @@ class ContractTemplateService
             'posts_per_week' => '',
             'engagement_hours' => '',
             'special_terms' => '',
+            // Free-text overrides typed directly into the document editor
+            'services_label' => '',
+            'fee_words' => '',
+            'initial_term' => '',
+            'dates_photography_project' => '',
+            'dates_photography_event' => '',
+            'dates_videography_project' => '',
+            'dates_videography_event' => '',
+            'dates_social_content' => '',
+            'dates_social_management' => '',
+            'dates_other' => '',
         ];
     }
 
@@ -135,11 +146,15 @@ class ContractTemplateService
         $f = array_merge($defaults, $provided);
 
         $f['services'] = array_values(array_intersect(array_keys(self::SERVICES), (array) $f['services']));
-        $f['services_label'] = $this->servicesSentence($f['services'], (string) $f['other_description']);
+        if (trim((string) $f['services_label']) === '') {
+            $f['services_label'] = $this->servicesSentence($f['services'], (string) $f['other_description']);
+        }
 
         $f['fee'] = round((float) $f['fee'], 2);
         $f['fee_formatted'] = $f['fee'] > 0 ? number_format($f['fee'], 2) : '';
-        $f['fee_words'] = $f['fee'] > 0 ? $this->amountInWords($f['fee']) : '';
+        if (trim((string) $f['fee_words']) === '') {
+            $f['fee_words'] = $f['fee'] > 0 ? $this->amountInWords($f['fee']) : '';
+        }
 
         foreach (['deposit_percent', 'payment_days', 'late_interest', 'feedback_days', 'revision_rounds', 'reschedule_days', 'termination_days'] as $key) {
             $f[$key] = max(0, (int) $f[$key]);
@@ -163,15 +178,27 @@ class ContractTemplateService
             throw new InvalidArgumentException("Unknown contract template [{$template}].");
         }
 
-        $fields = $this->normalize($contract->fields ?? []);
+        $raw = $contract->fields ?? [];
+        if (empty($raw['services'])) {
+            // A fresh contract starts with every standard service; unwanted sections are deleted in the editor.
+            $raw['services'] = ['photography_project', 'videography_project', 'social_content', 'social_management'];
+        }
+        $fields = $this->normalize($raw);
+        $party = [
+            'client_name' => $contract->client_name,
+            'signatory_name' => $contract->signatory_name,
+            'signatory_position' => $contract->signatory_position,
+            'client_email' => $contract->client_email,
+            'client_phone' => $contract->client_phone,
+            'client_address' => $contract->client_address,
+        ];
 
         $html = view("contracts.templates.{$template}", [
             'f' => $fields,
-            'v' => fn (string $key): string => $this->valueOrBlank($fields[$key] ?? ''),
+            'v' => fn (string $key): string => $this->field($key, $fields[$key] ?? ''),
+            'p' => fn (string $key): string => $this->field($key, $party[$key] ?? ''),
             'has' => fn (string ...$services): bool => count(array_intersect($services, $fields['services'])) > 0,
-            'party' => [
-                'client_name' => $contract->client_name,
-            ],
+            'party' => $party,
             'b' => config('jeota'),
             'quote' => $contract->quote,
         ])->render();
@@ -215,7 +242,7 @@ class ContractTemplateService
      */
     public function countBlanks(?string $html): int
     {
-        return substr_count((string) $html, 'class="blank"');
+        return preg_match_all('/class="[^"]*\bblank\b[^"]*"/', (string) $html);
     }
 
     /**
@@ -304,11 +331,24 @@ class ContractTemplateService
         return implode(' ', $parts);
     }
 
-    private function valueOrBlank(mixed $value): string
+    /**
+     * An inline, editable template field. The editor syncs every span with the same data-f key
+     * and reads them back on save; unfilled values show as highlighted blanks.
+     */
+    public function field(string $key, mixed $value): string
     {
         $value = is_scalar($value) ? trim((string) $value) : '';
 
-        return $value === '' ? '<span class="blank">________</span>' : e($value);
+        return $value === ''
+            ? '<span class="cf blank" data-f="'.e($key).'">________</span>'
+            : '<span class="cf" data-f="'.e($key).'">'.e($value).'</span>';
+    }
+
+    private function allowedClasses(string $value): string
+    {
+        $tokens = preg_split('/\s+/', trim($value)) ?: [];
+
+        return implode(' ', array_values(array_intersect($tokens, ['cf', 'blank', 'appendix', 'tick', 'order-form'])));
     }
 
     private function cleanNode(DOMNode $node): void
@@ -348,7 +388,14 @@ class ContractTemplateService
                 $name = strtolower($attribute->name);
                 $keep = ($name === 'type' && $tag === 'ol' && in_array($attribute->value, ['1', 'a', 'A', 'i', 'I'], true))
                     || (in_array($name, ['colspan', 'rowspan'], true) && ctype_digit($attribute->value))
-                    || ($name === 'class' && in_array($attribute->value, ['blank', 'appendix'], true));
+                    || ($name === 'data-f' && $tag === 'span' && preg_match('/^[a-z_]{1,40}$/', $attribute->value))
+                    || ($name === 'class' && $this->allowedClasses($attribute->value) !== '');
+
+                if ($name === 'class' && $keep) {
+                    $child->setAttribute('class', $this->allowedClasses($attribute->value));
+
+                    continue;
+                }
 
                 if (! $keep) {
                     $child->removeAttribute($attribute->name);

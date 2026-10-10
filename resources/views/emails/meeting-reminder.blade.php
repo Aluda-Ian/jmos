@@ -1,11 +1,24 @@
 @extends('emails.layout')
 
 @section('content')
-  <div class="headline">📅 Upcoming Event Reminder</div>
+  <div class="headline">📅 {{ $eventTitle ?? 'Upcoming meeting' }} {{ !empty($whenLabel) ? '— '.$whenLabel : '' }}</div>
   <p class="body-text">
-    Hello <strong>{{ $recipientName ?? 'Team Member' }}</strong>,<br>
-    This is an automated reminder regarding your upcoming schedule in <strong>JMOS &amp; Google Calendar</strong>.
+    Hello <strong>{{ $recipientName ?? 'there' }}</strong>,<br>
+    @if(($reminderKind ?? '') === 'hour')
+      A quick reminder: <strong>{{ $eventTitle }}</strong> {{ $whenLabel ?? 'starts soon' }}.
+    @elseif(($reminderKind ?? '') === 'day')
+      This is a reminder that <strong>{{ $eventTitle }}</strong> is scheduled for {{ $whenLabel ?? 'tomorrow' }}.
+    @else
+      This is an automated reminder regarding your upcoming schedule with <strong>Jeota Media</strong>.
+    @endif
   </p>
+
+  @if(!empty($meetLink))
+    <div style="text-align:center;margin:0 0 22px">
+      <a href="{{ $meetLink }}" class="btn-action" style="background-color:#1a73e8;color:#FFFFFF;text-decoration:none;display:inline-block;padding:13px 28px;border-radius:8px;font-weight:600;font-size:14px">🎥 Join Google Meet</a>
+      <div style="font-size:12px;color:#6E6763;margin-top:8px;word-break:break-all">{{ $meetLink }}</div>
+    </div>
+  @endif
 
   <div class="info-card">
     <div class="info-row">
@@ -40,7 +53,7 @@
   </p>
   @endif
 
-  <div style="text-align:center;margin:24px 0 10px">
-    <a href="{{ url('/') }}" class="btn-action">View Calendar in JMOS &rarr;</a>
-  </div>
+  <p class="body-text" style="font-size:12.5px;color:#6E6763;margin-top:20px">
+    Sent by {{ config('jeota.company') }} · {{ config('jeota.email') }} · {{ config('jeota.phone') }}
+  </p>
 @endsection

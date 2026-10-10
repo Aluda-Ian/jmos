@@ -32,6 +32,9 @@ class User extends Authenticatable
         'google_calendar_email',
         'google_calendar_status',
         'google_calendar_synced_at',
+        'invitation_sent_at',
+        'activated_at',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -44,9 +47,35 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'google_calendar_synced_at' => 'datetime',
+            'invitation_sent_at' => 'datetime',
+            'activated_at' => 'datetime',
+            'last_login_at' => 'datetime',
             'custom_permissions' => 'array',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Onboarding state shown on the People page: active, invited or not_invited.
+     */
+    public function accountStatus(): string
+    {
+        return match (true) {
+            $this->activated_at !== null => 'active',
+            $this->invitation_sent_at !== null => 'invited',
+            default => 'not_invited',
+        };
+    }
+
+    /**
+     * Record a successful sign-in (the first one activates the account).
+     */
+    public function markSignedIn(): void
+    {
+        $this->forceFill([
+            'activated_at' => $this->activated_at ?? now(),
+            'last_login_at' => now(),
+        ])->saveQuietly();
     }
 
     public function roleModel(): BelongsTo

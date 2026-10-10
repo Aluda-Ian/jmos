@@ -95,7 +95,8 @@ async function performLogout(reason = 'user') {
   stopIdleTracker();
 
   const token = JMOS_STATE.apiToken || localStorage.getItem('jmos_api_token');
-  if (token && reason !== 'sync') {
+  // Only tell the server for a real, still-valid token (avoids a 401 → logout → 401 loop)
+  if (token && token !== 'demo_token' && reason !== 'sync' && reason !== 'server_expired' && reason !== 'demo_session') {
     try {
       await JMOS_API.post('/auth/logout', {});
     } catch (_) {}
@@ -130,7 +131,10 @@ async function performLogout(reason = 'user') {
   if (loginErr) loginErr.classList.remove('show');
 
   if (loginNotice) {
-    if (reason === 'idle') {
+    if (reason === 'demo_session') {
+      loginNotice.textContent = 'Please sign in again with your JMOS password — your previous session was not connected to the server.';
+      loginNotice.classList.add('show');
+    } else if (reason === 'idle') {
       loginNotice.textContent = 'You have been signed out due to 15 minutes of inactivity. Please sign in again.';
       loginNotice.classList.add('show');
     } else if (reason === 'server_expired') {
@@ -310,7 +314,9 @@ function initAuth() {
   const lastActive = parseInt(localStorage.getItem('jmos_last_activity') || '0', 10);
   const now = Date.now();
 
-  if (storedToken && storedUserRaw) {
+  if (storedToken === 'demo_token') {
+    performLogout('demo_session');
+  } else if (storedToken && storedUserRaw) {
     if (lastActive > 0 && (now - lastActive >= IDLE_TIMEOUT_MS)) {
       performLogout('idle');
     } else {
@@ -355,16 +361,8 @@ function initAuth() {
         };
       }
     } catch (err) {
-      console.warn('API login failed, checking fallback:', err.message);
-    }
-
-    // 2. Fallback check for local demo accounts
-    if (!user) {
-      const matched = JMOS_STATE.users.find(x => x.email.toLowerCase() === em && (x.pass === pw || pw === 'jeota2024'));
-      if (matched) {
-        user = matched;
-        token = 'demo_token';
-      }
+      // No offline/demo fallback: only the server can confirm a password.
+      console.warn('API login failed:', err.message);
     }
 
     if (signinBtn) {

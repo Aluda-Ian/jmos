@@ -40,6 +40,20 @@ async function loadSettings() {
         if (data.google_calendar.google_api_key) document.getElementById('cfg_google_api_key').value = data.google_calendar.google_api_key.value || '••••••••';
       }
 
+      // 2b. Google Gemini AI
+      if (data.ai) {
+        const keyEl = document.getElementById('cfg_gemini_api_key');
+        const modelEl = document.getElementById('cfg_gemini_model');
+        if (keyEl && data.ai.gemini_api_key) keyEl.value = data.ai.gemini_api_key.has_value ? '••••••••' : '';
+        if (modelEl && data.ai.gemini_model) modelEl.value = data.ai.gemini_model.value || '';
+        const badge = document.getElementById('aiGeminiBadge');
+        if (badge && data.ai.gemini_api_key && data.ai.gemini_api_key.has_value) {
+          badge.textContent = 'Key saved';
+          badge.style.background = 'var(--green-soft)';
+          badge.style.color = 'var(--green)';
+        }
+      }
+
       // 3. General Settings
       if (data.general) {
         if (data.general.company_name) document.getElementById('cfg_company_name').value = data.general.company_name.value || 'Jeota Media Ltd';
@@ -94,6 +108,10 @@ async function saveAllSettings() {
     { group: 'google_calendar', key: 'google_client_id', value: document.getElementById('cfg_google_client_id')?.value.trim() },
     { group: 'google_calendar', key: 'google_client_secret', value: document.getElementById('cfg_google_client_secret')?.value.trim(), is_secret: true },
     { group: 'google_calendar', key: 'google_api_key', value: document.getElementById('cfg_google_api_key')?.value.trim(), is_secret: true },
+
+    // Google Gemini AI
+    { group: 'ai', key: 'gemini_api_key', value: document.getElementById('cfg_gemini_api_key')?.value.trim(), is_secret: true },
+    { group: 'ai', key: 'gemini_model', value: document.getElementById('cfg_gemini_model')?.value.trim() },
 
     // General
     { group: 'general', key: 'company_name', value: document.getElementById('cfg_company_name')?.value.trim() },
@@ -1402,7 +1420,7 @@ window.updateUserRoleDropdowns = function() {
 };
 
 window.switchApiDocsTab = function(tabName) {
-  const tabs = ['kra', 'google', 'zoho', 'mpesa', 'smtp'];
+  const tabs = ['kra', 'google', 'zoho', 'mpesa', 'smtp', 'gemini'];
   tabs.forEach(t => {
     const tabBtn = document.getElementById(`apiDocTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
     const pane = document.getElementById(`apiPane${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -1415,3 +1433,63 @@ window.switchApiDocsTab = function(tabName) {
   });
 };
 
+
+
+/* ==========================================================================
+   Google Gemini AI connection (Settings → AI Assistant)
+   ========================================================================== */
+
+window.testGeminiConnection = async function () {
+  const btn = document.getElementById('testGeminiBtn');
+  const out = document.getElementById('geminiTestResult');
+  const badge = document.getElementById('aiGeminiBadge');
+  const key = document.getElementById('cfg_gemini_api_key').value.trim();
+  const model = document.getElementById('cfg_gemini_model').value.trim();
+  btn.disabled = true;
+  btn.textContent = 'Testing…';
+  out.style.color = 'var(--muted)';
+  out.textContent = 'Contacting Google…';
+  try {
+    const res = await fetch('/api/settings/test-ai', {
+      method: 'POST',
+      headers: JMOS_API.getHeaders(),
+      body: JSON.stringify({ api_key: key || null, model: model || null })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (Array.isArray(data.models)) {
+      document.getElementById('cfgGeminiModels').innerHTML = data.models.map(m => `<option value="${escHtml(m)}"></option>`).join('');
+    }
+    if (data.model && !model) document.getElementById('cfg_gemini_model').value = data.model;
+    const ok = res.ok && data.ok;
+    out.style.color = ok ? 'var(--green)' : 'var(--red)';
+    out.textContent = (ok ? '✓ ' : '') + (data.message || ('Test failed (' + res.status + ')'));
+    if (badge) {
+      badge.textContent = ok ? 'Connected' : 'Not connected';
+      badge.style.background = ok ? 'var(--green-soft)' : 'var(--red-soft)';
+      badge.style.color = ok ? 'var(--green)' : 'var(--red)';
+    }
+  } catch (err) {
+    out.style.color = 'var(--red)';
+    out.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Test connection';
+  }
+};
+
+window.saveGeminiSettings = async function () {
+  const key = document.getElementById('cfg_gemini_api_key').value.trim();
+  const model = document.getElementById('cfg_gemini_model').value.trim();
+  try {
+    const res = await JMOS_API.post('/settings', {
+      settings: [
+        { group: 'ai', key: 'gemini_api_key', value: key, is_secret: true },
+        { group: 'ai', key: 'gemini_model', value: model }
+      ]
+    });
+    showToast('AI settings saved', res.message || 'Gemini connection updated.');
+    if (key && key !== '••••••••') document.getElementById('cfg_gemini_api_key').value = '••••••••';
+  } catch (err) {
+    showToast('Save failed', err.message, true);
+  }
+};

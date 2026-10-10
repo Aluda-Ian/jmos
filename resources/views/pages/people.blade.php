@@ -14,6 +14,30 @@
     </div>
   </div>
 
+  <!-- Account activation tracker -->
+  <div class="kpis" style="margin-bottom:14px" id="peopleInviteKpis">
+    <div class="kpi" style="cursor:pointer" onclick="window.filterPeopleStatus('all')">
+      <div class="lbl">Team members</div>
+      <div class="val mono" id="pplKpiTotal">0</div>
+      <div class="sub">Click a card to filter</div>
+    </div>
+    <div class="kpi" style="cursor:pointer" onclick="window.filterPeopleStatus('active')">
+      <div class="lbl">Active</div>
+      <div class="val mono" id="pplKpiActive" style="color:var(--green)">0</div>
+      <div class="sub">Set a password &amp; signed in</div>
+    </div>
+    <div class="kpi" style="cursor:pointer" onclick="window.filterPeopleStatus('invited')">
+      <div class="lbl">Invite sent</div>
+      <div class="val mono" id="pplKpiInvited" style="color:var(--amber)">0</div>
+      <div class="sub">Waiting for them to activate</div>
+    </div>
+    <div class="kpi" style="cursor:pointer" onclick="window.filterPeopleStatus('not_invited')">
+      <div class="lbl">Not invited</div>
+      <div class="val mono" id="pplKpiNotInvited" style="color:var(--red)">0</div>
+      <div class="sub">No invite email delivered yet</div>
+    </div>
+  </div>
+
   <div class="tablecard">
     <div class="tablewrap">
       <table>
@@ -23,6 +47,7 @@
             <th>Role</th>
             <th>Department</th>
             <th>Access</th>
+            <th>Account</th>
             <th>Type</th>
             <th>Pay / Salary</th>
             <th>Login &amp; Contact</th>

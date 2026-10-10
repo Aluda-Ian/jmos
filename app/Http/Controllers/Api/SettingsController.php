@@ -9,6 +9,7 @@ use App\Mail\MeetingReminderMail;
 use App\Mail\NewChatMessageMail;
 use App\Mail\TaskAssignedMail;
 use App\Models\SystemSetting;
+use App\Services\Ai\GeminiSettings;
 use App\Services\GoogleCalendarService;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
@@ -213,5 +214,27 @@ class SettingsController extends Controller
                 'calendar_id' => $calendarId,
             ],
         ], $result['success'] ? 200 : 422);
+    }
+
+    /**
+     * Test the Google Gemini connection with the key/model typed in Settings (or the saved ones).
+     */
+    public function testAi(Request $request, GeminiSettings $gemini): JsonResponse
+    {
+        abort_unless(in_array($request->user()?->role, ['owner', 'manager'], true), 403, 'Only the owner and managers can change AI settings.');
+
+        $validated = $request->validate([
+            'api_key' => 'nullable|string|max:300',
+            'model' => 'nullable|string|max:120',
+        ]);
+
+        $key = $validated['api_key'] ?? null;
+        if ($key === '••••••••') {
+            $key = null; // use the saved key
+        }
+
+        $result = $gemini->test($key, $validated['model'] ?? null);
+
+        return response()->json(['status' => $result['ok'] ? 'success' : 'error'] + $result);
     }
 }

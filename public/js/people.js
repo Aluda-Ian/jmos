@@ -12,9 +12,18 @@ function renderPeople() {
   const isOwner = JMOS_STATE.currentUser && JMOS_STATE.currentUser.role === 'owner';
   if (addUserBtn) addUserBtn.style.display = isOwner ? '' : 'none';
 
-  const list = JMOS_STATE.users || [];
+  const allPeople = JMOS_STATE.users || [];
+  const counts = { active: 0, invited: 0, not_invited: 0 };
+  allPeople.forEach(u => { counts[u.account_status || 'not_invited'] = (counts[u.account_status || 'not_invited'] || 0) + 1; });
+  const setKpi = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setKpi('pplKpiTotal', allPeople.length);
+  setKpi('pplKpiActive', counts.active);
+  setKpi('pplKpiInvited', counts.invited);
+  setKpi('pplKpiNotInvited', counts.not_invited);
+  const statusFilter = window.PEOPLE_STATUS_FILTER || 'all';
+  const list = statusFilter === 'all' ? allPeople : allPeople.filter(u => (u.account_status || 'not_invited') === statusFilter);
   if (!list.length) {
-    peopleBody.innerHTML = '<tr><td colspan="8" style="padding:26px;text-align:center;color:var(--muted)">No team members found in database.</td></tr>';
+    peopleBody.innerHTML = '<tr><td colspan="9" style="padding:26px;text-align:center;color:var(--muted)">No team members found in database.</td></tr>';
     return;
   }
 
@@ -36,6 +45,12 @@ function renderPeople() {
          </button>` 
       : '';
 
+    const inviteBtn = isOwner && u.id
+      ? `<button class="iconact" onclick="window.resendTeamInvite(${u.id})" title="Resend invitation / password setup email">
+           <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+         </button>`
+      : '';
+
     const removeBtn = isOwner 
       ? `<button class="iconact danger" data-remove-user-id="${u.id || i}" title="Remove user">
            <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
@@ -55,16 +70,44 @@ function renderPeople() {
       <td>${escHtml(u.title || 'Team')}</td>
       <td><span class="pill" style="background:var(--paper);border:1px solid var(--line);font-size:11px;color:var(--ink)">${escHtml(u.department || '—')}</span></td>
       <td>${pill}</td>
+      <td>${accountStatusPill(u)}</td>
       <td>${escHtml(u.type || 'Full-time')}</td>
       <td class="mono" style="font-weight:600;color:var(--ink)">${escHtml(u.pay || '—')}</td>
       <td class="mono" style="color:var(--faint);font-size:11px">
         <div>${escHtml(u.email)}</div>
         ${u.secondary_email ? `<div style="font-size:10px;color:var(--muted)" title="Secondary alert email">↳ ${escHtml(u.secondary_email)}</div>` : ''}
       </td>
-      <td><div class="rowact" style="justify-content:flex-end">${editBtn}${removeBtn}</div></td>
+      <td><div class="rowact" style="justify-content:flex-end">${inviteBtn}${editBtn}${removeBtn}</div></td>
     </tr>`;
   }).join('');
 }
+
+function shortDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); } catch (_) { return ''; }
+}
+
+/** Account activation status: Active / Invite sent / Not invited. */
+function accountStatusPill(u) {
+  const st = u.account_status || 'not_invited';
+  if (st === 'active') {
+    const when = u.last_login_at ? `Last sign-in ${shortDate(u.last_login_at)}` : (u.activated_at ? `Activated ${shortDate(u.activated_at)}` : '');
+    return `<span class="pill tint-green">✓ Active</span>${when ? `<div style="font-size:10.5px;color:var(--muted);margin-top:3px">${escHtml(when)}</div>` : ''}`;
+  }
+  if (st === 'invited') {
+    return `<span class="pill tint-amber">✉ Invite sent</span><div style="font-size:10.5px;color:var(--muted);margin-top:3px">${escHtml(shortDate(u.invitation_sent_at))} · not activated yet</div>`;
+  }
+  return `<span class="pill tint-red">Not invited</span><div style="font-size:10.5px;color:var(--muted);margin-top:3px">Use ✉ to send the invite</div>`;
+}
+
+window.filterPeopleStatus = function (status) {
+  window.PEOPLE_STATUS_FILTER = status;
+  document.querySelectorAll('#peopleInviteKpis .kpi').forEach((k, i) => {
+    const keys = ['all', 'active', 'invited', 'not_invited'];
+    k.style.outline = keys[i] === status && status !== 'all' ? '2px solid var(--red)' : '';
+  });
+  renderPeople();
+};
 
 async function ensurePeople() {
   try {
@@ -85,7 +128,11 @@ async function ensurePeople() {
         type: u.type || 'Full-time',
         pay: u.pay || '—',
         color: u.color || (typeof JMOS_COLORS !== 'undefined' ? JMOS_COLORS[i % JMOS_COLORS.length] : '#C52523'),
-        ini: u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : 'TM')
+        ini: u.initials || (typeof getInitials === 'function' ? getInitials(u.name) : 'TM'),
+        account_status: u.account_status || (u.activated_at ? 'active' : (u.invitation_sent_at ? 'invited' : 'not_invited')),
+        invitation_sent_at: u.invitation_sent_at || null,
+        activated_at: u.activated_at || null,
+        last_login_at: u.last_login_at || null
       }));
 
       // If current user is in list, sync local state
@@ -209,6 +256,7 @@ window.submitUserForm = async function(btn = null) {
   const sendInviteEl = document.getElementById('nuSendInviteEmail');
   const sendInvite = sendInviteEl ? sendInviteEl.checked : true;
 
+  let result = null;
   try {
     if (avatarFile) {
       const formData = new FormData();
@@ -227,7 +275,7 @@ window.submitUserForm = async function(btn = null) {
       if (isEdit) {
         await JMOS_API.upload('/users/' + editUserId, formData);
       } else {
-        await JMOS_API.upload('/users', formData);
+        result = await JMOS_API.upload('/users', formData);
       }
     } else {
       const payload = {
@@ -247,15 +295,19 @@ window.submitUserForm = async function(btn = null) {
         await JMOS_API.put('/users/' + editUserId, payload);
       } else {
         payload.password = password || 'jeota2024';
-        await JMOS_API.post('/users', payload);
+        result = await JMOS_API.post('/users', payload);
       }
     }
 
     closeModal('userModal');
-    showToast(
-      isEdit ? 'Team member updated' : name + ' added',
-      isEdit ? 'Details, department, salary and role saved.' : (sendInvite ? `Invitation & password setup email sent to ${email}` : `${email} can now sign in.`)
-    );
+    if (!isEdit && sendInvite && result && result.email_sent === false) {
+      showInviteFallback(name, email, result);
+    } else {
+      showToast(
+        isEdit ? 'Team member updated' : name + ' added',
+        isEdit ? 'Details, department, salary and role saved.' : (sendInvite ? `Invitation & password setup email sent to ${email}` : `${email} can now sign in.`)
+      );
+    }
     await ensurePeople();
   } catch (err) {
     showToast(isEdit ? 'Failed to update member' : 'Failed to add person', err.message, true);
@@ -264,6 +316,33 @@ window.submitUserForm = async function(btn = null) {
       saveUserBtn.disabled = false;
       saveUserBtn.textContent = isEdit ? 'Update team member' : 'Add person & create login';
     }
+  }
+};
+
+/**
+ * The invite email failed: say why, and give the owner the setup link to share another way.
+ */
+function showInviteFallback(name, email, result) {
+  showToast('Invitation email not sent', result.email_error || 'Check the SMTP settings.', true);
+  const link = result.setup_url || '';
+  const msg = `${name} was added, but the invitation email to ${email} could not be sent.\n\n` +
+    `Reason: ${result.email_error || 'unknown'}\n\n` +
+    `Share this setup link with them another way (e.g. WhatsApp) — setup code ${result.setup_otp}, valid 48 hours:\n${link}\n\n` +
+    'Press OK to copy the link.';
+  if (window.confirm(msg) && link && navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(() => showToast('Setup link copied', `Send it to ${name}`)).catch(() => {});
+  }
+}
+
+window.resendTeamInvite = async function (userId) {
+  const list = (typeof JMOS_STATE !== 'undefined' && JMOS_STATE.users) || [];
+  const u = list.find(x => String(x.id) === String(userId)) || {};
+  try {
+    const res = await JMOS_API.post('/users/' + userId + '/resend-invitation', {});
+    showToast('Invitation re-sent', res.message || `Sent to ${u.email || 'the team member'}`);
+    if (typeof ensurePeople === 'function') ensurePeople();
+  } catch (err) {
+    showToast('Invitation email not sent', err.message, true);
   }
 };
 

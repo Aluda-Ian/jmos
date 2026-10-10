@@ -21,6 +21,9 @@ return [
     'address_line1' => 'Keystone Park Riverside',
     'address_line2' => 'Nairobi, Kenya',
 
+    // Calendar times are entered and stored in local (East Africa) time
+    'timezone' => 'Africa/Nairobi',
+
     'kra_pin' => 'P052209707D',
 
     'bank' => [
@@ -51,7 +54,7 @@ return [
     ],
 
     'contracts' => [
-        'allowed_roles' => ['owner'],
+        'allowed_roles' => ['owner', 'manager'],
 
         // Template key => label. Each key maps to resources/views/contracts/templates/{key}.blade.php
         'templates' => [

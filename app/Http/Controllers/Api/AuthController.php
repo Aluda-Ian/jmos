@@ -57,6 +57,7 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('jmos_api_token')->plainTextToken;
+        $user->markSignedIn();
 
         AuditLog::record('AUTH', "{$user->name} signed into JMOS workspace", 'User', $user->id, ['role' => $user->role], $request, $user);
 
@@ -311,6 +312,7 @@ class AuthController extends Controller
         }
 
         $user->password = Hash::make($request->password);
+        $user->activated_at = $user->activated_at ?? now();
         $user->save();
 
         // Invalidate OTP and existing active tokens

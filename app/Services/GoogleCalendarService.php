@@ -241,11 +241,8 @@ class GoogleCalendarService
             Log::warning('Google Calendar API event creation notice: '.$e->getMessage());
         }
 
-        // Fallback: If Google API is offline or not configured, generate a valid Google Meet link
-        if (empty($meetLink)) {
-            $meetLink = $this->generateMeetLink();
-            $googleEventId = 'gcal_'.Str::random(16);
-        }
+        // No fallback: a made-up meet.google.com code is not a real room and would send people
+        // to a dead link. Without a working Google connection, paste a link from meet.google.com/new.
 
         return [
             'meet_link' => $meetLink,

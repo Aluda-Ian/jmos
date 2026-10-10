@@ -17,7 +17,7 @@
   } else {
       $madeOn = null;
   }
-  $servicesUpper = strtoupper($fields['services_label'] ?: 'Photography, Videography and Social Media Services');
+  $servicesUpper = strtoupper($contract->title ?: 'Photography, Videography and Social Media Services');
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -51,6 +51,9 @@
     .contract-body th{background:var(--panel-2);text-align:left;padding:8px 10px;font-weight:600}
     .contract-body td{padding:8px 10px;border-bottom:1px solid var(--line-soft)}
     .contract-body .blank{background:#FFF4CC;color:#8A6100;padding:0 4px;border-radius:3px;font-weight:600}
+    .contract-body table.order-form th{background:var(--red);color:#fff;font-weight:600;font-size:12px;border:1px solid var(--red)}
+    .contract-body table.order-form td{border:1px solid var(--line);vertical-align:top}
+    .contract-body .tick{color:var(--red);font-weight:700;margin-right:4px}
     .c-section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin:34px 0 12px;padding-top:22px;border-top:1px solid var(--line)}
     .order-form{width:100%;border-collapse:collapse;font-size:12.5px}
     .order-form td{border:1px solid var(--line);padding:9px 11px;vertical-align:top}
@@ -159,29 +162,6 @@
 
     {{-- Agreement clauses --}}
     <div class="contract-body">{!! $contract->body !!}</div>
-
-    {{-- Order form --}}
-    <div class="c-section-title">Jeota Media Limited — Order Form</div>
-    <table class="order-form">
-      <tr><td class="k">Client</td><td>{{ $contract->client_name }}</td></tr>
-      <tr><td class="k">Contact</td><td>{{ $contract->signatory_name ?: '—' }}</td></tr>
-      <tr><td class="k">Address</td><td>{{ collect([$contract->client_po_box ? 'P.O. Box '.$contract->client_po_box : null, $contract->client_address])->filter()->implode(', ') ?: '—' }}</td></tr>
-      <tr><td class="k">Phone / E-mail</td><td>{{ collect([$contract->client_phone, $contract->client_email])->filter()->implode(' · ') ?: '—' }}</td></tr>
-      <tr><td class="k">Authorized signatory</td><td>{{ $contract->signatory_name ?: '—' }}{{ $contract->signatory_position ? ' — '.$contract->signatory_position : '' }}</td></tr>
-      <tr>
-        <td class="k">Services</td>
-        <td>
-          <ul class="svc-list">
-            @foreach(ContractTemplateService::SERVICES as $key => $label)
-              @php $on = in_array($key, $fields['services'], true); @endphp
-              <li class="{{ $on ? 'on' : '' }}"><span class="box">{{ $on ? '✓' : '○' }}</span>{{ $key === 'other' && $on && $fields['other_description'] ? 'Other: '.$fields['other_description'] : $label }}</li>
-            @endforeach
-          </ul>
-        </td>
-      </tr>
-      <tr><td class="k">Services fees</td><td>@if($fields['fee'] > 0) KES {{ number_format($fields['fee'], 2) }} <span style="color:var(--muted)">({{ $fields['fee_words'] }})</span> exclusive of taxes · {{ $fields['deposit_percent'] }}% deposit @else — @endif</td></tr>
-      <tr><td class="k">Dates / Location</td><td>{{ collect([$fields['event_date'] ? 'Event: '.$fields['event_date'] : null, $fields['start_date'] ? 'From '.$fields['start_date'] : null, $fields['end_date'] ? 'to '.$fields['end_date'] : null, $fields['location'] ?: null])->filter()->implode(' · ') ?: '—' }}</td></tr>
-    </table>
 
     {{-- Execution --}}
     <div class="c-section-title">Execution</div>

@@ -23,6 +23,8 @@ return [
         'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
         'endpoint' => env('GEMINI_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models'),
         'timeout' => (int) env('AI_GEMINI_TIMEOUT', 15),
+        // Drafting / revising a full agreement takes longer than a report
+        'contract_timeout' => (int) env('AI_CONTRACT_TIMEOUT', 120),
     ],
 
     /*

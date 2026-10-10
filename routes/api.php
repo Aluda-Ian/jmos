@@ -122,6 +122,7 @@ Route::get('settings', [SettingsController::class, 'index']);
 Route::post('settings', [SettingsController::class, 'update']);
 Route::post('settings/test-email', [SettingsController::class, 'testEmail']);
 Route::post('settings/test-calendar', [SettingsController::class, 'testCalendar']);
+Route::post('settings/test-ai', [SettingsController::class, 'testAi'])->middleware('auth:sanctum');
 
 // System Software Upgrade & IT Maintenance (Super Admin & IT)
 Route::prefix('system')->group(function () {

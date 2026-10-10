@@ -66,6 +66,32 @@ class ContractsTest extends TestCase
         $this->assertStringNotContainsString('Videography Services including', $contract->body);
     }
 
+    public function test_a_blank_contract_opens_as_an_editable_document_and_saves_inline_edits(): void
+    {
+        $owner = $this->owner();
+
+        $response = $this->actingAs($owner)->postJson('/api/contracts', [])->assertCreated();
+        $id = $response->json('data.id');
+        $body = $response->json('data.body');
+
+        $this->assertSame('Client Name', $response->json('data.client_name'));
+        $this->assertStringContainsString('data-f="fee_formatted"', $body);
+        $this->assertStringContainsString('ORDER FORM', $body);
+        $this->assertStringContainsString('Videography Services including', $body);
+
+        $edited = str_replace('<span class="cf blank" data-f="fee_formatted">________</span>', '<span class="cf" data-f="fee_formatted">120,000.00</span>', $body);
+        $this->actingAs($owner)->putJson("/api/contracts/{$id}", [
+            'client_name' => 'Acacia Lodge Ltd',
+            'title' => 'Photography Services',
+            'body' => $edited,
+            'fields' => ['fee' => 120000, 'services' => ['photography_event']],
+        ])->assertOk()
+            ->assertJsonPath('data.client_name', 'Acacia Lodge Ltd')
+            ->assertJsonPath('data.fields.fee', 120000);
+
+        $this->assertStringContainsString('<span class="cf" data-f="fee_formatted">120,000.00</span>', Contract::find($id)->body);
+    }
+
     public function test_unfilled_template_values_are_marked_as_blanks(): void
     {
         $this->actingAs($this->owner())->postJson('/api/contracts', $this->payload([
@@ -96,14 +122,26 @@ class ContractsTest extends TestCase
         $this->assertStringContainsString('Full-day event photography', $contract->body);
     }
 
-    public function test_only_the_owner_can_manage_contracts(): void
+    public function test_owner_and_managers_can_manage_contracts_but_other_roles_cannot(): void
     {
         $this->getJson('/api/contracts')->assertUnauthorized();
 
-        $sales = User::factory()->create(['role' => 'sales']);
+        $manager = User::factory()->create(['role' => 'manager']);
+        $this->actingAs($manager)->postJson('/api/contracts', $this->payload())->assertCreated();
 
+        $sales = User::factory()->create(['role' => 'sales']);
         $this->actingAs($sales)->postJson('/api/contracts', $this->payload())->assertForbidden();
         $this->actingAs($sales)->getJson('/api/contracts')->assertForbidden();
+    }
+
+    public function test_api_token_is_accepted_when_the_host_strips_the_authorization_header(): void
+    {
+        $token = $this->owner()->createToken('jmos_api_token')->plainTextToken;
+
+        $this->getJson('/api/contracts', ['X-Api-Token' => $token])->assertOk();
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/contracts', ['X-Api-Token' => 'invalid-token'])->assertUnauthorized();
     }
 
     public function test_manual_edits_are_sanitised(): void
@@ -124,11 +162,13 @@ class ContractsTest extends TestCase
 
     public function test_ai_revision_replaces_the_body_with_sanitised_output(): void
     {
-        config(['ai.anthropic.api_key' => 'test-key']);
+        config(['ai.gemini.api_key' => 'test-key', 'ai.gemini.model' => 'gemini-test']);
         $aiBody = '<h2>1. INTERPRETATION</h2><p>'.str_repeat('Tailored clause text for the hotel. ', 20).'</p><h2>2. EXCLUSIVITY</h2><p>The Service Provider shall be the exclusive media partner.</p><script>bad()</script>';
-        Http::fake(['api.anthropic.com/*' => Http::response([
-            'content' => [['type' => 'text', 'text' => "```html\n{$aiBody}\n```"]],
-            'stop_reason' => 'end_turn',
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
+            'candidates' => [[
+                'content' => ['parts' => [['text' => "```html\n{$aiBody}\n```"]]],
+                'finishReason' => 'STOP',
+            ]],
         ])]);
 
         $contract = Contract::factory()->create();
@@ -141,12 +181,13 @@ class ContractsTest extends TestCase
         $this->assertTrue($contract->ai_generated);
         $this->assertStringContainsString('EXCLUSIVITY', $contract->body);
         $this->assertStringNotContainsString('script', $contract->body);
-        Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], 'exclusivity clause'));
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'gemini-test:generateContent')
+            && str_contains($request['contents'][0]['parts'][0]['text'], 'exclusivity clause'));
     }
 
     public function test_ai_revision_reports_when_ai_is_not_configured(): void
     {
-        config(['ai.anthropic.api_key' => '']);
+        config(['ai.gemini.api_key' => '']);
         $contract = Contract::factory()->create(['body' => '<p>Original</p>']);
 
         $this->actingAs($this->owner())->postJson("/api/contracts/{$contract->id}/ai-revise", [

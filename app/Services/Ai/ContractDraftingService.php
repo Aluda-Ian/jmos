@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Uses Claude to tailor a contract generated from a Jeota Media template to one client.
+ * Uses Google Gemini to tailor a contract generated from a Jeota Media template to one client.
  */
 class ContractDraftingService
 {
@@ -18,11 +18,11 @@ class ContractDraftingService
 
     public function isAvailable(): bool
     {
-        return (bool) config('ai.enabled', true) && ! empty(config('ai.anthropic.api_key'));
+        return (bool) config('ai.enabled', true) && ! empty(config('ai.gemini.api_key'));
     }
 
     /**
-     * Revise the contract body according to the given instructions.
+     * Revise the contract body according to the given instructions (Google Gemini).
      *
      * @return array{ok: bool, message: string, body?: string, model?: string}
      */
@@ -31,25 +31,24 @@ class ContractDraftingService
         if (! $this->isAvailable()) {
             return [
                 'ok' => false,
-                'message' => 'AI drafting is not configured. Add ANTHROPIC_API_KEY to the server .env to enable it — the template draft is still available.',
+                'message' => 'AI drafting is not configured. Add GEMINI_API_KEY to the server .env to enable it — you can still edit the contract by hand.',
             ];
         }
 
-        $model = config('ai.anthropic.model');
+        $model = config('ai.gemini.model');
+        $endpoint = rtrim((string) config('ai.gemini.endpoint', 'https://generativelanguage.googleapis.com/v1beta/models'), '/')."/{$model}:generateContent";
 
         try {
-            $response = Http::timeout((int) config('ai.anthropic.contract_timeout', 120))
-                ->withHeaders([
-                    'x-api-key' => config('ai.anthropic.api_key'),
-                    'anthropic-version' => '2023-06-01',
-                    'content-type' => 'application/json',
-                ])
-                ->post(config('ai.anthropic.endpoint', 'https://api.anthropic.com/v1/messages'), [
-                    'model' => $model,
-                    'max_tokens' => 12000,
-                    'system' => $this->systemPrompt(),
-                    'messages' => [
-                        ['role' => 'user', 'content' => $this->userPrompt($contract, $instructions)],
+            $response = Http::timeout((int) config('ai.gemini.contract_timeout', 120))
+                ->withHeaders(['x-goog-api-key' => config('ai.gemini.api_key')])
+                ->post($endpoint, [
+                    'systemInstruction' => ['parts' => [['text' => $this->systemPrompt()]]],
+                    'contents' => [
+                        ['role' => 'user', 'parts' => [['text' => $this->userPrompt($contract, $instructions)]]],
+                    ],
+                    'generationConfig' => [
+                        'temperature' => 0.2,
+                        'maxOutputTokens' => 16000,
                     ],
                 ]);
         } catch (\Throwable $e) {
@@ -61,17 +60,16 @@ class ContractDraftingService
         if (! $response->successful()) {
             Log::warning('Contract AI drafting returned an error', ['status' => $response->status(), 'body' => $response->body()]);
 
-            return ['ok' => false, 'message' => 'The AI service returned an error ('.$response->status().'). Check the ANTHROPIC_MODEL and API key settings.'];
+            return ['ok' => false, 'message' => 'The AI service returned an error ('.$response->status().'). Check the GEMINI_API_KEY and GEMINI_MODEL settings.'];
         }
 
-        if ($response->json('stop_reason') === 'max_tokens') {
+        $candidate = $response->json('candidates.0', []);
+
+        if (($candidate['finishReason'] ?? null) === 'MAX_TOKENS') {
             return ['ok' => false, 'message' => 'The AI response was cut off before the end of the agreement, so the current draft was kept.'];
         }
 
-        $text = collect($response->json('content', []))
-            ->where('type', 'text')
-            ->pluck('text')
-            ->implode("\n");
+        $text = collect($candidate['content']['parts'] ?? [])->pluck('text')->filter()->implode("\n");
 
         $text = trim(preg_replace('/^```(?:html)?\s*|\s*```$/i', '', trim($text)));
         $body = $this->templates->sanitize($text);
@@ -94,11 +92,12 @@ You tailor the company's standard services agreement to one specific client, fol
 Rules:
 1. Keep the agreement governed by the Laws of Kenya and keep the Kenya Data Protection Act consent appendix.
 2. Preserve the Service Provider's protections (non-refundable deposit, late-payment interest, right to suspend services, intellectual property, termination and confidentiality clauses) unless an instruction explicitly asks to change them.
-3. Never invent names, fees, dates, quantities or other facts. If information is missing, leave <span class="blank">________</span> in its place. Keep any existing blanks the instructions do not fill.
+3. Never invent names, fees, dates, quantities or other facts. If information is missing, leave <span class="cf blank" data-f="note">________</span> in its place. Keep any existing blanks the instructions do not fill.
 4. Keep clause numbering sequential (1, 2, 3 …) and keep Appendix 1 (Deliverables) and Appendix 2 (Consent) at the end.
 5. Do not add a title page, parties paragraph or signature blocks — the system adds those.
 6. Write in clear, formal British English.
-7. Output ONLY the full revised agreement body as HTML using only these tags: h2, h3, p, ol, ul, li, strong, em, u, br, table, thead, tbody, tr, th, td. Use <h2> for clause headings and <ol type="a"> for lettered sub-clauses. No markdown, no code fences, no commentary before or after.
+7. Output ONLY the full revised agreement body as HTML using only these tags: h2, h3, p, ol, ul, li, strong, em, u, br, span, table, thead, tbody, tr, th, td. Use <h2> for clause headings and <ol type="a"> for lettered sub-clauses. No markdown, no code fences, no commentary before or after.
+8. Keep every <span class="cf" data-f="..."> element and its data-f attribute exactly; you may change the text inside it. Keep the Order Form table at the end.
 PROMPT;
     }
 

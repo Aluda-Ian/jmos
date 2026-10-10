@@ -223,7 +223,7 @@
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         <span class="nav-text">Quotations</span>
       </a>
-      <a class="item" href="#" data-view="contracts" data-perm="owner" title="Client Contracts & E-Signatures">
+      <a class="item" href="#" data-view="contracts" data-perm="owner manager" title="Client Contracts & E-Signatures">
         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 17c1.2-1.6 2.2-1.6 3 0s1.8 1.6 3 0"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         <span class="nav-text">Contracts</span>
       </a>

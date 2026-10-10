@@ -404,6 +404,45 @@
       </div>
     </div>
 
+    <!-- 2b. AI Assistant — Google Gemini connection -->
+    <div class="card" style="padding:24px;grid-column:span 2" id="aiGeminiCard">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;display:grid;place-items:center;font-weight:700">✦</div>
+          <div>
+            <h3 style="font-family:'Poppins',sans-serif;font-size:16px;font-weight:600">AI Assistant — Google Gemini</h3>
+            <p style="font-size:12px;color:var(--muted)">Powers contract drafting (✦ AI assist) and AI reports. <a href="javascript:void(0)" onclick="switchApiDocsTab('gemini');document.getElementById('thirdPartyApiDocsCard').scrollIntoView({behavior:'smooth'})" style="color:var(--red);font-weight:600">How to connect →</a></p>
+          </div>
+        </div>
+        <span class="badge" id="aiGeminiBadge" style="background:var(--panel-2);color:var(--muted)">Not tested</span>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="cfg_gemini_api_key">Gemini API key *</label>
+          <input id="cfg_gemini_api_key" type="password" placeholder="Paste the key from Google AI Studio (starts with AIza…)" autocomplete="new-password">
+          <span style="font-size:11px;color:var(--muted);margin-top:3px">Saved on your server and hidden after saving. Leave the dots to keep the saved key.</span>
+        </div>
+        <div class="field">
+          <label for="cfg_gemini_model">Model</label>
+          <input id="cfg_gemini_model" list="cfgGeminiModels" placeholder="Click “Test connection” to see the models your key can use" autocomplete="off">
+          <datalist id="cfgGeminiModels"></datalist>
+          <span style="font-size:11px;color:var(--muted);margin-top:3px">A “Flash” model is fast and inexpensive — recommended for contracts.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn" id="testGeminiBtn" onclick="window.testGeminiConnection()" style="font-weight:600">Test connection</button>
+        <button type="button" class="btn primary" onclick="window.saveGeminiSettings()" style="font-weight:600">Save AI settings</button>
+        <span id="geminiTestResult" style="font-size:12.5px;color:var(--muted)"></span>
+      </div>
+
+      <div style="margin-top:14px;background:var(--amber-soft);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--ink);line-height:1.6">
+        <b>Free key or paid?</b> A free key works for trying things out, but its daily limit is small and Google may use and human-review what you send.
+        Contracts contain client names, IDs and fees — for real client work, turn on billing for the key in Google AI Studio (pay-as-you-go).
+      </div>
+    </div>
+
     <!-- 3. Branded Email Templates & Live Notification Dispatch -->
     <div class="card" style="padding:24px;grid-column:span 2">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
@@ -747,7 +786,7 @@
             <p style="font-size:12px;color:var(--muted)">Technical integration guides, live webhook URLs, authentication structures, and setup instructions for external platforms.</p>
           </div>
         </div>
-        <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:11px">5 Core Gateways Documented</span>
+        <span class="badge" style="background:var(--green-soft);color:var(--green);font-size:11px">6 Core Gateways Documented</span>
       </div>
 
       <!-- Navigation Tabs for API Docs -->
@@ -766,6 +805,9 @@
         </button>
         <button type="button" class="crm-nav-tab" id="apiDocTabSmtp" onclick="switchApiDocsTab('smtp')">
           ✉️ SMTP &amp; Web Push
+        </button>
+        <button type="button" class="crm-nav-tab" id="apiDocTabGemini" onclick="switchApiDocsTab('gemini')">
+          ✦ Google Gemini AI
         </button>
       </div>
 
@@ -877,6 +919,56 @@
       </div>
 
       <!-- PANE 5: SMTP & Web Push Notifications Gateway -->
+      <div class="api-doc-pane" id="apiPaneGemini" style="display:none">
+        <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <b style="font-size:14px;color:var(--ink)">Connect Google Gemini (AI contract drafting &amp; reports)</b>
+            <span class="badge" style="background:var(--amber-soft);color:var(--amber)">~5 minutes</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:12px">
+            JMOS uses Google Gemini to tailor contracts (the <b>✦ AI assist</b> button in the contract editor) and to write AI reports. You only need an API key from Google — no code or server access.
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:12px;margin-bottom:14px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">1. Open Google AI Studio</div>
+              <div style="font-size:12px;color:var(--ink);line-height:1.6">Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--red)">aistudio.google.com/apikey</a> and sign in with the company Google account (e.g. the one that owns jeotamedia.co.ke).</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">2. Create an API key</div>
+              <div style="font-size:12px;color:var(--ink);line-height:1.6">Click <b>Create API key</b>, choose (or create) a Google Cloud project such as “JMOS”, then copy the key. It starts with <code>AIza</code>.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">3. Paste it into JMOS</div>
+              <div style="font-size:12px;color:var(--ink);line-height:1.6">In <b>Settings → AI Assistant — Google Gemini</b>, paste the key and click <b>Test connection</b>. JMOS lists the models your key can use and suggests a Flash model.</div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+              <div style="font-weight:600;font-size:12px;color:var(--red);margin-bottom:4px">4. Save &amp; try it</div>
+              <div style="font-size:12px;color:var(--ink);line-height:1.6">Click <b>Save AI settings</b>. Open any draft in <b>Contracts</b>, click <b>✦ AI assist</b>, describe the change and click <b>Revise agreement</b>.</div>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px">
+            <div style="font-weight:600;font-size:12px;color:var(--ink);margin-bottom:6px">Free key vs. paid (billing enabled)</div>
+            <ul style="font-size:12px;color:var(--muted);line-height:1.7;margin:0;padding-left:18px">
+              <li><b>Free:</b> only Flash models, small daily limits (shared by contracts and reports). Google may use free-tier prompts to improve its products and human reviewers may read them — avoid real client data.</li>
+              <li><b>Paid:</b> in AI Studio open <b>Billing</b> and link a billing account to the same project — the key stays the same. Higher limits, and paid usage is not used to train Google's models. Flash models are among Google's lowest-cost options — see <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener" style="color:var(--red)">Google's pricing page</a> for current rates.</li>
+            </ul>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px">
+            <div style="font-weight:600;font-size:12px;color:var(--ink);margin-bottom:6px">Troubleshooting</div>
+            <ul style="font-size:12px;color:var(--muted);line-height:1.7;margin:0;padding-left:18px">
+              <li><b>400 / 403 — key refused:</b> copy the whole key again; in Google Cloud make sure the key is not restricted away from the “Generative Language API”.</li>
+              <li><b>404 — model not found:</b> the model name is retired or misspelled. Click Test connection and pick one from the list.</li>
+              <li><b>429 — quota reached:</b> the free daily limit is used up. Wait until tomorrow or enable billing.</li>
+              <li><b>Cut off / incomplete agreement:</b> JMOS keeps your current draft. Try again, or ask for smaller changes at a time.</li>
+              <li>A key saved here overrides <code>GEMINI_API_KEY</code> / <code>GEMINI_MODEL</code> in the server <code>.env</code>. Clear the field and save to fall back to <code>.env</code>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div class="api-doc-pane" id="apiPaneSmtp" style="display:none">
         <div style="background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">

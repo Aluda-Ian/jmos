@@ -1,7 +1,7 @@
 <!-- ==========================================================================
      JMOS — View: Client Contracts & E-Signatures
      ========================================================================== -->
-<section class="view" data-view="contracts" hidden data-perm="owner">
+<section class="view" data-view="contracts" hidden data-perm="owner manager">
   <div class="page-head">
     <div>
       <h1 class="pt">Contracts</h1>

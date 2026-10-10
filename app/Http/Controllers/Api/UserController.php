@@ -20,6 +20,7 @@ class UserController extends Controller
         $users = User::with('roleModel')->orderBy('name')->get()->map(function ($u) {
             $data = $u->toArray();
             $data['permissions'] = $u->allPermissions();
+            $data['account_status'] = $u->accountStatus();
 
             return $data;
         });
@@ -119,9 +120,10 @@ class UserController extends Controller
         $setupUrl = url('/?email='.urlencode($user->email).'&otp='.$otp);
 
         $sendInvite = $request->boolean('send_invite_email', true);
+        $emailSent = false;
         if ($sendInvite) {
             $inviter = $request->user()?->name ?? 'Admin';
-            NotificationService::sendUserInvitation([
+            $emailSent = NotificationService::sendUserInvitation([
                 'userName' => $user->name,
                 'email' => $user->email,
                 'role' => $user->roleModel?->name ?? ucfirst($user->role),
@@ -133,16 +135,30 @@ class UserController extends Controller
             ], $user->email);
         }
 
-        AuditLog::record('CREATE', "Added team member '{$user->name}' ({$user->role}) and sent password setup invite", 'User', $user->id, ['role' => $user->role, 'department' => $user->department, 'email_sent' => $sendInvite], $request);
+        $emailError = $sendInvite && ! $emailSent ? NotificationService::$lastError : null;
+        if ($emailSent) {
+            $user->forceFill(['invitation_sent_at' => now()])->saveQuietly();
+        }
+
+        AuditLog::record('CREATE', "Added team member '{$user->name}' ({$user->role})".($emailSent ? ' and sent password setup invite' : ''), 'User', $user->id, ['role' => $user->role, 'department' => $user->department, 'email_sent' => $emailSent, 'email_error' => $emailError], $request);
 
         $userData = $user->toArray();
         $userData['permissions'] = $user->allPermissions();
 
+        $message = match (true) {
+            ! $sendInvite => 'Person added to team.',
+            $emailSent => 'Person added to team. Invitation email sent to '.$user->email,
+            default => "Person added, but the invitation email could not be sent: {$emailError}",
+        };
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Person added to team. Invitation email sent to '.$user->email,
+            'message' => $message,
             'data' => $userData,
+            'email_sent' => $emailSent,
+            'email_error' => $emailError,
             'setup_otp' => $otp,
+            'setup_url' => $setupUrl,
         ], 201);
     }
 
@@ -259,7 +275,7 @@ class UserController extends Controller
         $setupUrl = url('/?email='.urlencode($user->email).'&otp='.$otp);
         $inviter = $request->user()?->name ?? 'Admin';
 
-        NotificationService::sendUserInvitation([
+        $emailSent = NotificationService::sendUserInvitation([
             'userName' => $user->name,
             'email' => $user->email,
             'role' => $user->roleModel?->name ?? ucfirst($user->role),
@@ -270,12 +286,22 @@ class UserController extends Controller
             'expiresInHours' => 48,
         ], $user->email);
 
-        AuditLog::record('AUTH', "Resent password setup invite to '{$user->name}' ({$user->email})", 'User', $user->id, [], $request);
+        $emailError = $emailSent ? null : NotificationService::$lastError;
+        if ($emailSent) {
+            $user->forceFill(['invitation_sent_at' => now()])->saveQuietly();
+        }
+
+        AuditLog::record('AUTH', ($emailSent ? 'Resent' : 'Failed to resend')." password setup invite to '{$user->name}' ({$user->email})", 'User', $user->id, ['email_error' => $emailError], $request);
 
         return response()->json([
-            'status' => 'success',
-            'message' => "Invitation email with password setup instructions sent to {$user->email}",
+            'status' => $emailSent ? 'success' : 'error',
+            'message' => $emailSent
+                ? "Invitation email with password setup instructions sent to {$user->email}"
+                : "The invitation email could not be sent: {$emailError}",
+            'email_sent' => $emailSent,
+            'email_error' => $emailError,
             'setup_otp' => $otp,
-        ]);
+            'setup_url' => $setupUrl,
+        ], $emailSent ? 200 : 502);
     }
 }

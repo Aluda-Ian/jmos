@@ -429,17 +429,21 @@ class CalendarController extends Controller
             'related_type' => 'nullable|string|max:50',
             'related_id' => 'nullable|integer',
             'generate_meet' => 'nullable|boolean',
-            'meet_link' => 'nullable|string|max:255',
+            'meet_link' => ['nullable', 'string', 'max:255', 'regex:#^https://#i'],
+            'attendee_emails' => 'nullable|array',
+            'attendee_emails.*' => 'nullable|email|max:255',
+        ], [
+            'meet_link.regex' => 'Paste the full meeting link, starting with https:// (e.g. https://meet.google.com/abc-defg-hij).',
         ]);
 
-        $shouldGenerateMeet = $request->boolean('generate_meet', true);
+        $shouldGenerateMeet = $request->boolean('generate_meet', false);
         $meetLink = $validated['meet_link'] ?? null;
         $googleEventId = null;
 
         $user = auth('sanctum')->user() ?? auth()->user();
 
-        // Auto-generate Google Meet link if requested or if event type is meeting / status meeting
-        if ($shouldGenerateMeet || in_array($validated['event_type'], ['meeting', 'status_meeting'], true)) {
+        // Only ask Google to create a Meet room when explicitly requested (needs a working Google connection)
+        if ($shouldGenerateMeet) {
             if (empty($meetLink)) {
                 $meetResult = $this->googleCalendarService->createCalendarEvent($validated, $user);
                 $meetLink = $meetResult['meet_link'];
@@ -462,6 +466,7 @@ class CalendarController extends Controller
             'location' => $location,
             'meet_link' => $meetLink,
             'attendees' => $validated['attendees'] ?? null,
+            'attendee_emails' => array_values(array_unique(array_filter(array_map(fn ($e) => strtolower(trim((string) $e)), $validated['attendee_emails'] ?? [])))),
             'google_event_id' => $googleEventId,
             'related_type' => $validated['related_type'] ?? null,
             'related_id' => $validated['related_id'] ?? null,
@@ -480,14 +485,34 @@ class CalendarController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Event scheduled and Google Meet link generated.',
+            'message' => $meetLink
+                ? 'Event scheduled with the meeting link. Attendees get email reminders 1 day and 1 hour before.'
+                : 'Event scheduled. Attendees get email reminders 1 day and 1 hour before.',
             'data' => $event,
         ], 201);
     }
 
-    public function generateMeet(CalendarEvent $event): JsonResponse
+    public function generateMeet(Request $request, CalendarEvent $event): JsonResponse
     {
         $user = auth('sanctum')->user() ?? auth()->user();
+
+        // Pasting a link created at meet.google.com/new
+        if ($request->filled('meet_link')) {
+            $request->validate(['meet_link' => ['string', 'max:255', 'regex:#^https://#i']], [
+                'meet_link.regex' => 'Paste the full meeting link, starting with https://',
+            ]);
+            $event->meet_link = trim($request->input('meet_link'));
+            if (empty($event->location)) {
+                $event->location = 'Google Meet';
+            }
+            $event->save();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Meeting link added to the event.',
+                'data' => ['meet_link' => $event->meet_link, 'event' => $event],
+            ]);
+        }
 
         if (empty($event->meet_link)) {
             $result = $this->googleCalendarService->createCalendarEvent([
@@ -498,6 +523,13 @@ class CalendarController extends Controller
                 'location' => $event->location,
                 'attendees' => $event->attendees,
             ], $user);
+
+            if (empty($result['meet_link'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Google Calendar is not connected, so JMOS cannot create the room itself. Create one at meet.google.com/new and paste the link.',
+                ], 422);
+            }
 
             $event->meet_link = $result['meet_link'];
             if (empty($event->location)) {

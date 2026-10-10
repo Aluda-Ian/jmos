@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\Mail;
 class NotificationService
 {
     /**
+     * The reason the most recent email failed to send (null when it was sent).
+     */
+    public static ?string $lastError = null;
+
+    /**
      * Apply runtime SMTP configuration from system settings or explicit overrides.
      *
      * @param  array<string, mixed>|null  $overrides
@@ -65,7 +70,22 @@ class NotificationService
             Config::set('mail.from.name', $fromName);
         }
 
+        // SMTP saved in Settings must actually be used: if the server .env still points the
+        // default mailer at "log" (the Laravel default), emails were silently written to the log.
+        if ($host && config('mail.default') === 'log' && SystemSetting::where('key', 'mail_host')->exists()) {
+            Config::set('mail.default', 'smtp');
+        }
+
         Mail::purge('smtp');
+        Mail::purge(config('mail.default'));
+    }
+
+    /**
+     * True when emails would only be written to the log file instead of being delivered.
+     */
+    public static function mailIsLogOnly(): bool
+    {
+        return in_array(config('mail.default'), ['log', 'array'], true) && ! app()->runningUnitTests();
     }
 
     /**
@@ -194,18 +214,29 @@ class NotificationService
 
     public static function sendUserInvitation(array $data, string $recipientEmail): bool
     {
-        self::applySmtpSettings();
+        self::$lastError = null;
+
         try {
+            self::applySmtpSettings();
+
+            if (self::mailIsLogOnly()) {
+                self::$lastError = 'Email delivery is turned off on the server (MAIL_MAILER='.config('mail.default').'). Save your SMTP details in Settings → Email, or set MAIL_MAILER=smtp in .env.';
+                \Log::warning('User invitation email not delivered: '.self::$lastError);
+
+                return false;
+            }
+
             $mail = Mail::to($recipientEmail);
             $cc = self::resolveSecondaryEmail($recipientEmail);
-            if ($cc) {
+            if ($cc && filter_var($cc, FILTER_VALIDATE_EMAIL) && strcasecmp($cc, $recipientEmail) !== 0) {
                 $mail->cc($cc);
             }
             $mail->send(new UserInvitationMail($data));
 
             return true;
-        } catch (\Exception $e) {
-            \Log::warning('User invitation email notice: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            self::$lastError = $e->getMessage();
+            \Log::warning('User invitation email failed: '.$e->getMessage());
 
             return false;
         }
